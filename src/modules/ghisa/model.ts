@@ -24,12 +24,32 @@ export interface Session {
 export interface GhisaState {
   active: Session | null
   history: Session[] // newest first
+  /** Rest timer target (epoch ms) — timestamp-based, throttling-proof. */
+  restUntil: number | null
+  restSeconds: number
 }
 
-export const ghisaStore = createPersistedStore<GhisaState>('ghisa', {
+const DEFAULTS: GhisaState = {
   active: null,
   history: [],
-})
+  restUntil: null,
+  restSeconds: 90,
+}
+
+/** v1 predates the rest timer — carry sessions over, fill new fields. */
+export function migrateGhisa(data: unknown, fromVersion: number): GhisaState {
+  if (fromVersion === 1 && data !== null && typeof data === 'object') {
+    const d = data as Partial<GhisaState>
+    return {
+      ...DEFAULTS,
+      active: d.active ?? null,
+      history: Array.isArray(d.history) ? d.history : [],
+    }
+  }
+  return DEFAULTS
+}
+
+export const ghisaStore = createPersistedStore<GhisaState>('ghisa', DEFAULTS, 2, migrateGhisa)
 
 export const EXERCISES: readonly string[] = [
   'Squat',
@@ -104,6 +124,7 @@ export function addSet(exerciseId: string, weight: number, reps: number): void {
     if (!st.active) return st
     return {
       ...st,
+      restUntil: Date.now() + st.restSeconds * 1000,
       active: {
         ...st.active,
         exercises: st.active.exercises.map((ex) =>
@@ -138,14 +159,14 @@ export function finishSession(): Session | null {
   const done: Session = { ...st.active, endTs: Date.now() }
   const hasWork = done.exercises.some((ex) => ex.sets.length > 0)
   if (!hasWork) {
-    ghisaStore.set((s) => ({ ...s, active: null }))
+    ghisaStore.set((s) => ({ ...s, active: null, restUntil: null }))
     return null
   }
   const trimmed: Session = {
     ...done,
     exercises: done.exercises.filter((ex) => ex.sets.length > 0),
   }
-  ghisaStore.set((s) => ({ active: null, history: [trimmed, ...s.history] }))
+  ghisaStore.set((s) => ({ ...s, active: null, restUntil: null, history: [trimmed, ...s.history] }))
   const minutes = Math.round(((trimmed.endTs ?? Date.now()) - trimmed.startTs) / 60000)
   logEvent({
     module: 'ghisa',
@@ -158,5 +179,42 @@ export function finishSession(): Session | null {
 }
 
 export function discardSession(): void {
-  ghisaStore.set((st) => ({ ...st, active: null }))
+  ghisaStore.set((st) => ({ ...st, active: null, restUntil: null }))
+}
+
+export function skipRest(): void {
+  ghisaStore.set((st) => ({ ...st, restUntil: null }))
+}
+
+export function adjustRest(deltaSeconds: number): void {
+  ghisaStore.set((st) => {
+    if (st.restUntil === null) return st
+    const base = Math.max(st.restUntil, Date.now())
+    return { ...st, restUntil: Math.max(Date.now(), base + deltaSeconds * 1000) }
+  })
+}
+
+/* ---------- prototype soul: previous values + PR detection ---------- */
+
+/** Sets from the most recent past session containing this exercise. */
+export function previousSets(history: readonly Session[], exerciseName: string): SetEntry[] {
+  const name = exerciseName.trim().toLowerCase()
+  for (const session of history) {
+    const match = session.exercises.find((ex) => ex.name.trim().toLowerCase() === name)
+    if (match && match.sets.length > 0) return match.sets
+  }
+  return []
+}
+
+/** Heaviest weight ever logged for this exercise across history. */
+export function historicalMaxWeight(history: readonly Session[], exerciseName: string): number {
+  const name = exerciseName.trim().toLowerCase()
+  let max = 0
+  for (const session of history) {
+    for (const ex of session.exercises) {
+      if (ex.name.trim().toLowerCase() !== name) continue
+      for (const s of ex.sets) if (s.weight > max) max = s.weight
+    }
+  }
+  return max
 }

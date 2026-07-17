@@ -1,25 +1,33 @@
 /* ============================================================
-   1% — design tokens
-   Graphite instrument base, ember core accent, one accent per
-   module carried over from its original standalone identity.
+   1% — design tokens · v0.2
+   Dark is home; light is a first-class instrument finish.
+   Every component reads these variables — themes never touch
+   component CSS. --accent is contextual: the shell sets it per
+   module so entering a module recolors its world.
    ============================================================ */
 :root {
+  color-scheme: dark;
+
   /* surfaces */
-  --bg: #0c0d10;
-  --surface: #14161b;
-  --raised: #1b1e24;
-  --line: #262a32;
-  --line-soft: #1f232a;
+  --bg: #0b0c0f;
+  --surface: #13151a;
+  --raised: #1a1d24;
+  --line: #2a2f38;
+  --line-soft: #20242c;
 
   /* ink */
-  --ink: #eae6dd;
-  --dim: #918d85;
-  --faint: #5c5952;
+  --ink: #ecead9;
+  --dim: #94908a;
+  --faint: #5d5a54;
 
   /* accents */
   --ember: #e8622c;
   --ember-soft: rgba(232, 98, 44, 0.14);
   --danger: #c4453b;
+  --btn-ink: #14100c;
+
+  /* contextual accent — modules override via the shell */
+  --accent: var(--ember);
 
   /* module accents */
   --m-ghisa: #e8622c;   /* forged iron ember   */
@@ -27,13 +35,48 @@
   --m-caliber: #c89b4b; /* brass gauge         */
   --m-cadence: #8fa7c9; /* moon rhythm         */
 
+  /* RESPIRO protocol palette (from the original instrument) */
+  --acc-jade: #7fa98e;
+  --acc-moon: #9db4d6;
+  --acc-brass: #c89b4b;
+  --acc-coral: #e58a6b;
+
   /* shape + type */
-  --radius: 16px;
-  --radius-sm: 10px;
+  --radius: 12px;
+  --radius-sm: 8px;
   --font-display: 'Fraunces', Georgia, serif;
   --font-ui: 'Archivo', system-ui, -apple-system, sans-serif;
 
   /* layout */
   --col: 560px;
   --tabbar-h: 62px;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f3f1ea;
+  --surface: #fbfaf6;
+  --raised: #eae7df;
+  --line: #d3cec2;
+  --line-soft: #dfdbd1;
+
+  --ink: #17191e;
+  --dim: #6b6659;
+  --faint: #9d978a;
+
+  --ember: #d9531e;
+  --ember-soft: rgba(217, 83, 30, 0.12);
+  --danger: #b23a31;
+  --btn-ink: #fdfcf9;
+
+  --m-ghisa: #d9531e;
+  --m-respiro: #47795d;
+  --m-caliber: #96702a;
+  --m-cadence: #4e6c99;
+
+  --acc-jade: #47795d;
+  --acc-moon: #5677a3;
+  --acc-brass: #96702a;
+  --acc-coral: #c2593a;
 }

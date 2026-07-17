@@ -1,15 +1,23 @@
 import { useRef, useState } from 'react'
 import { useStore } from '../core/hooks'
 import { eventsStore } from '../core/events'
+import { settingsStore, setTheme, type Theme } from '../core/settings'
 import { exportAll, importAll, clearAll } from '../core/storage'
 import { todayKey } from '../core/dates'
 import { toast } from '../core/toast'
-import { ConfirmSheet } from '../app/ui'
+import { ConfirmSheet, Seg } from '../app/ui'
 
-const APP_VERSION = '0.1.0'
+const APP_VERSION = '0.2.0'
+
+const THEME_OPTIONS = [
+  { id: 'system', label: 'System' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'light', label: 'Light' },
+] as const
 
 export default function Settings() {
   const events = useStore(eventsStore)
+  const settings = useStore(settingsStore)
   const fileRef = useRef<HTMLInputElement>(null)
   const [confirmErase, setConfirmErase] = useState(false)
   const [pendingImport, setPendingImport] = useState<string | null>(null)
@@ -59,6 +67,14 @@ export default function Settings() {
           <span className="k">Data</span>
           <span>On this device only</span>
         </div>
+      </div>
+
+      <div className="section-label">Appearance</div>
+      <div className="card">
+        <Seg<Theme> options={THEME_OPTIONS} value={settings.theme} onChange={setTheme} />
+        <p style={{ marginTop: 10, fontSize: 12.5, color: 'var(--faint)' }}>
+          System follows your device. Dark is the instrument's home finish.
+        </p>
       </div>
 
       <div className="section-label">Backup</div>

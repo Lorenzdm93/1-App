@@ -1,6 +1,7 @@
 import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
 import { logEvent, eventsStore } from '../../core/events'
+import { toast } from '../../core/toast'
 import { dayKey, todayKey, shiftDay } from '../../core/dates'
 
 export interface Habit {
@@ -70,6 +71,8 @@ export function toggleCheck(habitId: string): void {
 
   if (!done) {
     logEvent({ module: 'cadence', kind: 'check', meta: { habitId, habit: habit.name } })
+    const streak = habitStreak(cadenceStore.get(), habitId, day)
+    if (isMilestone(streak)) toast(`${habit.name}: ${streak}-day streak`)
   } else {
     eventsStore.set((events) => {
       const idx = events.findIndex(
@@ -96,4 +99,10 @@ export function habitStreak(st: CadenceState, habitId: string, today = todayKey(
     cursor = shiftDay(cursor, -1)
   }
   return streak
+}
+
+export const MILESTONES: readonly number[] = [7, 30, 100]
+
+export function isMilestone(streak: number): boolean {
+  return MILESTONES.includes(streak)
 }

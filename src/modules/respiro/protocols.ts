@@ -9,6 +9,8 @@ export interface Protocol {
   id: string
   name: string
   sub: string
+  /** Each pattern keeps its own accent, as in the original instrument. */
+  accentVar: string
   phases: Phase[]
 }
 
@@ -17,6 +19,7 @@ export const PROTOCOLS: readonly Protocol[] = [
     id: 'box',
     name: 'Box',
     sub: '4 · 4 · 4 · 4 — steady focus',
+    accentVar: 'var(--acc-jade)',
     phases: [
       { label: 'Inhale', seconds: 4, scale: 1 },
       { label: 'Hold', seconds: 4, scale: 1 },
@@ -28,6 +31,7 @@ export const PROTOCOLS: readonly Protocol[] = [
     id: 'relax478',
     name: '4-7-8',
     sub: 'Long exhale — downshift to rest',
+    accentVar: 'var(--acc-moon)',
     phases: [
       { label: 'Inhale', seconds: 4, scale: 1 },
       { label: 'Hold', seconds: 7, scale: 1 },
@@ -38,6 +42,7 @@ export const PROTOCOLS: readonly Protocol[] = [
     id: 'coherence',
     name: 'Coherence',
     sub: '5.5 in · 5.5 out — heart-rate balance',
+    accentVar: 'var(--acc-brass)',
     phases: [
       { label: 'Inhale', seconds: 5.5, scale: 1 },
       { label: 'Exhale', seconds: 5.5, scale: 0.62 },
@@ -47,6 +52,7 @@ export const PROTOCOLS: readonly Protocol[] = [
     id: 'sigh',
     name: 'Sigh',
     sub: 'Double inhale, long exhale — fast reset',
+    accentVar: 'var(--acc-coral)',
     phases: [
       { label: 'Inhale', seconds: 2, scale: 0.88 },
       { label: 'Top up', seconds: 1, scale: 1 },

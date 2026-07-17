@@ -13,6 +13,75 @@ const SEX_OPTIONS = [
 
 const ZONE_SHORT = ['UNT', 'BEG', 'NOV', 'INT', 'ADV', 'ELI']
 
+
+/** Semicircular instrument gauge: 6 graduated zones, needle at the lifter's position. */
+function Gauge({ position, lit }: { position: number; lit: number }) {
+  const cx = 120
+  const cy = 118
+  const r = 92
+  const zoneSweep = 180 / LEVELS.length
+  const gapDeg = 2
+
+  function point(deg: number, radius: number): [number, number] {
+    const rad = (deg * Math.PI) / 180
+    return [cx - Math.cos(rad) * radius, cy - Math.sin(rad) * radius]
+  }
+
+  function arc(fromDeg: number, toDeg: number, radius: number): string {
+    const [x1, y1] = point(fromDeg, radius)
+    const [x2, y2] = point(toDeg, radius)
+    return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${radius} ${radius} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`
+  }
+
+  const needleDeg = Math.min(180, Math.max(0, position * 180))
+  const [nx, ny] = point(needleDeg, 66)
+
+  return (
+    <div className="cb-dial">
+      <svg viewBox="0 0 240 138" aria-hidden="true">
+        {LEVELS.map((name, i) => {
+          const from = i * zoneSweep + (i === 0 ? 0 : gapDeg / 2)
+          const to = (i + 1) * zoneSweep - (i === LEVELS.length - 1 ? 0 : gapDeg / 2)
+          const isLit = i <= lit
+          return (
+            <path
+              key={name}
+              d={arc(from, to, r)}
+              fill="none"
+              stroke={isLit ? 'var(--m-caliber)' : 'var(--line)'}
+              strokeOpacity={isLit ? 0.35 + (i / (LEVELS.length - 1)) * 0.65 : 1}
+              strokeWidth="13"
+              strokeLinecap="butt"
+            />
+          )
+        })}
+        {LEVELS.map((_, i) =>
+          i === 0 ? null : (
+            (() => {
+              const [tx1, ty1] = point(i * zoneSweep, r + 9)
+              const [tx2, ty2] = point(i * zoneSweep, r + 15)
+              return (
+                <line
+                  key={'t' + i}
+                  x1={tx1}
+                  y1={ty1}
+                  x2={tx2}
+                  y2={ty2}
+                  stroke="var(--faint)"
+                  strokeWidth="1.4"
+                />
+              )
+            })()
+          ),
+        )}
+        <line x1={cx} y1={cy} x2={nx} y2={ny} stroke="var(--ink)" strokeWidth="2.6" strokeLinecap="round" />
+        <circle cx={cx} cy={cy} r="5.5" fill="var(--ink)" />
+        <circle cx={cx} cy={cy} r="2.2" fill="var(--m-caliber)" />
+      </svg>
+    </div>
+  )
+}
+
 export default function CaliberScreen() {
   const st = useStore(caliberStore)
   const [bw, setBw] = useState(String(st.bodyweight))
@@ -27,7 +96,6 @@ export default function CaliberScreen() {
   const estimate = valid ? e1rm(weightN, Math.round(repsN)) : null
   const ratio = valid && estimate !== null ? estimate / bwN : null
   const level = ratio !== null ? levelFor(st.liftId, st.sex, ratio) : null
-  const needlePct = level ? ((level.index + level.frac) / LEVELS.length) * 100 : 0
 
   function commitNumbers() {
     patchCaliber({
@@ -100,15 +168,8 @@ export default function CaliberScreen() {
               Epley {epley(weightN as number, Math.round(repsN as number)).toFixed(1)} · Brzycki{' '}
               {brzycki(weightN as number, Math.round(repsN as number)).toFixed(1)} · {ratio.toFixed(2)}× BW
             </div>
+            <Gauge position={(level.index + level.frac) / LEVELS.length} lit={level.index} />
             <div className="cb-level">{level.name}</div>
-            <div className="cb-gauge">
-              <div className="zones">
-                {LEVELS.map((name, i) => (
-                  <div key={name} className={'zone' + (i <= level.index ? ' lit' : '')} />
-                ))}
-              </div>
-              <div className="needle" style={{ left: `${needlePct}%` }} />
-            </div>
             <div className="cb-zone-labels">
               {ZONE_SHORT.map((z) => (
                 <span key={z}>{z}</span>

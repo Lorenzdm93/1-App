@@ -43,7 +43,7 @@ input {
 }
 
 :focus-visible {
-  outline: 2px solid var(--ember);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -180,6 +180,15 @@ input {
   color: var(--ember);
 }
 
+.tab.on::after {
+  content: '';
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ember);
+  margin-top: 1px;
+}
+
 /* ---------- cards ---------- */
 
 .card {
@@ -267,8 +276,8 @@ input {
 }
 
 .btn-primary {
-  background: var(--ember);
-  color: #14100c;
+  background: var(--accent);
+  color: var(--btn-ink);
 }
 
 .btn-ghost {
@@ -1213,4 +1222,269 @@ button.card-head {
 
 .cd-emoji.on {
   border-color: var(--m-cadence);
+}
+
+/* ============================================================
+   v0.2 — module scope wash, onboarding, GHISA rest/PR,
+   RESPIRO protocol accents, CALIBER gauge, CADENCE heatmap,
+   sharpened chrome.
+   ============================================================ */
+
+/* sharpened chrome */
+.screen-title {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.eyebrow {
+  letter-spacing: 0.18em;
+}
+
+.ring-center .big {
+  font-size: 52px;
+  font-weight: 700;
+}
+
+.tabbar {
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+}
+
+/* ---------- module scope: entering a module recolors its world ---------- */
+
+.mod-scope {
+  background: radial-gradient(
+    560px 240px at 50% -90px,
+    color-mix(in srgb, var(--accent) 15%, transparent),
+    transparent 72%
+  );
+  margin: -18px -16px 0;
+  padding: 18px 16px 0;
+  min-height: 40vh;
+}
+
+.mod-scope .mod-head .mod-mark {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+/* ---------- onboarding ---------- */
+
+.ob {
+  min-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+.ob-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 26px 0 8px;
+}
+
+.ob-mark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 58px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-top: 14px;
+}
+
+.ob-mark .pct {
+  color: var(--ember);
+}
+
+.ob-line {
+  margin-top: 8px;
+  color: var(--dim);
+  font-size: 14.5px;
+}
+
+.ob-cta {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 0 calc(14px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(transparent, var(--bg) 34%);
+  margin-top: auto;
+}
+
+/* ---------- GHISA: rest timer + prev + PR ---------- */
+
+.gh-rest {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--m-ghisa) 10%, var(--raised));
+  border: 1px solid color-mix(in srgb, var(--m-ghisa) 40%, var(--line));
+}
+
+.gh-rest-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.gh-rest-top .t {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.gh-rest-top .v {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gh-rest-bar {
+  height: 4px;
+  border-radius: 3px;
+  background: var(--line-soft);
+  margin: 8px 0 10px;
+  overflow: hidden;
+}
+
+.gh-rest-bar i {
+  display: block;
+  height: 100%;
+  background: var(--m-ghisa);
+  border-radius: 3px;
+  transition: width 1s linear;
+}
+
+.gh-rest-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.gh-rest-actions button {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.gh-prev {
+  font-size: 11.5px;
+  color: var(--faint);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gh-pr {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--ember-soft);
+  color: var(--m-ghisa);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  vertical-align: 2px;
+}
+
+/* ---------- RESPIRO: protocol accents, glow, cycle, dots ---------- */
+
+.rs-orb {
+  background: radial-gradient(
+    circle at 50% 42%,
+    color-mix(in srgb, var(--rs-acc, var(--m-respiro)) 34%, var(--surface)),
+    color-mix(in srgb, var(--rs-acc, var(--m-respiro)) 10%, var(--bg)) 70%
+  );
+  border: 1px solid color-mix(in srgb, var(--rs-acc, var(--m-respiro)) 45%, var(--line));
+  box-shadow: 0 0 46px color-mix(in srgb, var(--rs-acc, var(--m-respiro)) 18%, transparent);
+}
+
+.rs-stage.running .rs-orb {
+  box-shadow: 0 0 74px color-mix(in srgb, var(--rs-acc, var(--m-respiro)) 32%, transparent);
+}
+
+.rs-dots {
+  display: flex;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.rs-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.rs-dot.on {
+  background: var(--rs-acc, var(--m-respiro));
+  transform: scale(1.25);
+}
+
+.rs-cycle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-top: 10px;
+}
+
+body.rs-running .mod-head,
+body.rs-running .tabbar {
+  opacity: 0.28;
+  transition: opacity 0.4s ease;
+}
+
+/* ---------- CALIBER: needle gauge ---------- */
+
+.cb-dial {
+  margin: 6px auto 0;
+  max-width: 300px;
+}
+
+.cb-dial svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ---------- CADENCE: heatmap + milestones ---------- */
+
+.cd-heat {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin: 10px 0 4px;
+}
+
+.cd-heat-cell {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--raised);
+  border: 1px solid var(--line-soft);
+}
+
+.cd-heat-cell.on {
+  background: color-mix(in srgb, var(--m-cadence) 60%, var(--raised));
+  border-color: transparent;
+}
+
+.cd-heat-cell.today {
+  outline: 2px solid var(--m-cadence);
+  outline-offset: -1px;
+}
+
+.cd-heat-label {
+  font-size: 11px;
+  color: var(--faint);
+  margin-bottom: 12px;
 }

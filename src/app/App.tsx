@@ -1,8 +1,13 @@
+import type { CSSProperties } from 'react'
 import { useRoute, navigate } from '../core/router'
 import { moduleById } from '../core/registry'
+import { useStore } from '../core/hooks'
+import { settingsStore } from '../core/settings'
+import { useTheme } from './theme'
 import Today from '../screens/Today'
 import Modules from '../screens/Modules'
 import Settings from '../screens/Settings'
+import Onboarding from '../screens/Onboarding'
 import TabBar from './TabBar'
 import { ToastHost } from './ui'
 
@@ -21,7 +26,7 @@ function ModuleScreen({ id }: { id: string }) {
     return null
   }
   return (
-    <>
+    <div className="mod-scope" style={{ ['--accent' as string]: mod.accentVar } as CSSProperties}>
       <div className="mod-head">
         <button className="back" onClick={() => navigate('/')} aria-label="Back to Today">
           <BackIcon />
@@ -37,12 +42,24 @@ function ModuleScreen({ id }: { id: string }) {
         </div>
       </div>
       <mod.Screen />
-    </>
+    </div>
   )
 }
 
 export default function App() {
   const route = useRoute()
+  const settings = useStore(settingsStore)
+  useTheme(settings.theme)
+
+  if (!settings.onboarded) {
+    return (
+      <main className="frame">
+        <Onboarding />
+        <ToastHost />
+      </main>
+    )
+  }
+
   return (
     <>
       <main className="frame">

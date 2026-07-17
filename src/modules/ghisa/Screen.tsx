@@ -12,10 +12,15 @@ import {
   removeSet,
   finishSession,
   discardSession,
+  skipRest,
+  adjustRest,
   sessionVolume,
   sessionSets,
+  previousSets,
+  historicalMaxWeight,
   type ExerciseEntry,
   type Session,
+  type SetEntry,
 } from './model'
 
 /** Timestamp-based ticker — immune to background-tab throttling. */
@@ -29,10 +34,12 @@ function useNow(activeWhile: boolean): number {
   return now
 }
 
-function SetForm({ exercise }: { exercise: ExerciseEntry }) {
+function SetForm({ exercise, prev }: { exercise: ExerciseEntry; prev: SetEntry[] }) {
   const last = exercise.sets[exercise.sets.length - 1]
-  const [weight, setWeight] = useState(last ? String(last.weight) : '')
-  const [reps, setReps] = useState(last ? String(last.reps) : '')
+  const prevSame = prev[Math.min(exercise.sets.length, prev.length - 1)]
+  const seed = last ?? prevSame
+  const [weight, setWeight] = useState(seed ? String(seed.weight) : '')
+  const [reps, setReps] = useState(seed ? String(seed.reps) : '')
 
   function commit() {
     const w = parseNum(weight)
@@ -72,7 +79,36 @@ function SetForm({ exercise }: { exercise: ExerciseEntry }) {
   )
 }
 
-function LiveSession({ session }: { session: Session }) {
+function RestBar({ now }: { now: number }) {
+  const st = useStore(ghisaStore)
+  useEffect(() => {
+    if (st.restUntil !== null && st.restUntil <= now) {
+      skipRest()
+      toast('Rest over — back to the bar')
+    }
+  }, [st.restUntil, now])
+  if (st.restUntil === null || st.restUntil <= now) return null
+  const remaining = Math.ceil((st.restUntil - now) / 1000)
+  const frac = Math.min(1, (st.restUntil - now) / (st.restSeconds * 1000))
+  return (
+    <div className="gh-rest">
+      <div className="gh-rest-top">
+        <span className="t">Rest</span>
+        <span className="v num">{remaining}s</span>
+      </div>
+      <div className="gh-rest-bar">
+        <i style={{ width: `${frac * 100}%` }} />
+      </div>
+      <div className="gh-rest-actions">
+        <button onClick={() => adjustRest(-15)}>−15</button>
+        <button onClick={() => adjustRest(15)}>+15</button>
+        <button onClick={skipRest}>Skip</button>
+      </div>
+    </div>
+  )
+}
+
+function LiveSession({ session, history }: { session: Session; history: Session[] }) {
   const now = useNow(true)
   const [picker, setPicker] = useState(false)
   const [query, setQuery] = useState('')
@@ -100,27 +136,40 @@ function LiveSession({ session }: { session: Session }) {
           </span>
         </div>
         <div className="gh-live-sub">Session in progress</div>
+        <RestBar now={now} />
       </div>
 
-      {session.exercises.map((ex) => (
-        <div className="card gh-ex" key={ex.id}>
-          <div className="gh-ex-name">
-            {ex.name}
-            <span className="n num">{ex.sets.length} sets</span>
-          </div>
-          {ex.sets.map((s, i) => (
-            <div className="gh-set" key={s.id}>
-              <span className="idx">{i + 1}</span>
-              <span className="val num">{s.weight} kg</span>
-              <span className="val num">{s.reps} reps</span>
-              <button className="del" onClick={() => removeSet(ex.id, s.id)} aria-label="Remove set">
-                ×
-              </button>
+      {session.exercises.map((ex) => {
+        const prev = previousSets(history, ex.name)
+        const prevMax = historicalMaxWeight(history, ex.name)
+        return (
+          <div className="card gh-ex" key={ex.id}>
+            <div className="gh-ex-name">
+              {ex.name}
+              <span className="n num">{ex.sets.length} sets</span>
             </div>
-          ))}
-          <SetForm exercise={ex} key={'form-' + ex.id + '-' + ex.sets.length} />
-        </div>
-      ))}
+            {prev.length > 0 && (
+              <div className="gh-prev">
+                Last time: {prev.map((s) => `${s.weight}×${s.reps}`).join(' · ')}
+              </div>
+            )}
+            {ex.sets.map((s, i) => (
+              <div className="gh-set" key={s.id}>
+                <span className="idx">{i + 1}</span>
+                <span className="val num">
+                  {s.weight} kg
+                  {prevMax > 0 && s.weight > prevMax && <span className="gh-pr">PR</span>}
+                </span>
+                <span className="val num">{s.reps} reps</span>
+                <button className="del" onClick={() => removeSet(ex.id, s.id)} aria-label="Remove set">
+                  ×
+                </button>
+              </div>
+            ))}
+            <SetForm exercise={ex} prev={prev} key={'form-' + ex.id + '-' + ex.sets.length} />
+          </div>
+        )
+      })}
 
       <div style={{ marginTop: 12 }}>
         <button className="btn btn-ghost" onClick={() => setPicker(true)}>
@@ -213,7 +262,7 @@ function History({ history }: { history: Session[] }) {
 
 export default function GhisaScreen() {
   const st = useStore(ghisaStore)
-  if (st.active) return <LiveSession session={st.active} />
+  if (st.active) return <LiveSession session={st.active} history={st.history} />
   return (
     <>
       <button className="btn btn-primary" onClick={startSession}>

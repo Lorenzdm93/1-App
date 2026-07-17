@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../../core/hooks'
-import { lastNDayKeys } from '../../core/dates'
+import { lastNDayKeys, todayKey } from '../../core/dates'
 import { toast } from '../../core/toast'
 import { Sheet, ConfirmSheet, Empty } from '../../app/ui'
 import {
@@ -112,6 +112,19 @@ export default function CadenceScreen() {
       >
         {managing && (
           <>
+            <div className="cd-heat" aria-label="Last eight weeks">
+              {lastNDayKeys(56).map((day) => (
+                <span
+                  key={day}
+                  className={
+                    'cd-heat-cell' +
+                    (isChecked(st, managing.id, day) ? ' on' : '') +
+                    (day === todayKey() ? ' today' : '')
+                  }
+                />
+              ))}
+            </div>
+            <div className="cd-heat-label">Last 8 weeks — today outlined</div>
             <div className="kv">
               <span className="k">Current streak</span>
               <span className="num">{habitStreak(st, managing.id)} days</span>

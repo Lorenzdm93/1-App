@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0-e8622c?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.2.0-e8622c?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -24,6 +24,8 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **CADENCE** | Daily habits with streaks and 7-day strips | Check habits off directly on the dashboard |
 | **RESPIRO** | Breathwork — Box, 4-7-8, Coherence, Physiological Sigh | Begin a session in one tap |
 | **CALIBER** | Strength gauge — e1RM (Epley + Brzycki) and standards per lift | — |
+
+**New in v0.2** — dark/light/system theme; a first-run intro where you pick modules (goal chips like *Strength & Gym* pre-select bundles, everything changeable later); per-module accent theming when inside a module; GHISA rest timer, previous-session values and live PR flags; RESPIRO per-protocol accents, glow, cycle counter and focus dim; CALIBER needle gauge; CADENCE 8-week heatmaps and milestone streak toasts.
 
 The **Today** screen carries the signature *1% ring*: a hairline day-track with a literal 1%-of-circumference ember notch, and one inner segment per enabled module that lights up once the module has contributed to the day. Any logged action anywhere claims the day and feeds the streak.
 
@@ -74,9 +76,9 @@ Everything lives on-device. **Settings → Export** produces one JSON backup cov
 
 ## Roadmap
 
-- **v0.2** — full GHISA port: templates, rest timer, per-exercise history and PR detection wired into CALIBER
-- **v0.3** — Ora (fasting) and Minim (mood) as modules; insights v1 on the event stream
-- **v0.4** — optional Firebase sync (the event log and namespaced docs are already sync-shaped)
+- **v0.3** — full GHISA depth: templates, per-exercise progression charts, e1RM handoff to CALIBER
+- **v0.4** — Ora (fasting) and Minim (mood) as modules; insights v1 on the event stream
+- **v0.5** — optional Firebase sync (the event log and namespaced docs are already sync-shaped)
 - **later** — Capacitor wrap for App Store distribution, module marketplace layout
 
 ## License
