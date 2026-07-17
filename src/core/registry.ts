@@ -1,0 +1,19 @@
+/**
+ * The single place modules are wired into the platform.
+ * Adding a future module = one folder + one line here.
+ */
+import type { ModuleDefinition } from './types'
+import ghisa from '../modules/ghisa'
+import respiro from '../modules/respiro'
+import caliber from '../modules/caliber'
+import cadence from '../modules/cadence'
+
+export const MODULES: readonly ModuleDefinition[] = [ghisa, cadence, respiro, caliber]
+
+export function moduleById(id: string): ModuleDefinition | undefined {
+  return MODULES.find((m) => m.id === id)
+}
+
+export function enabledModules(enabledIds: readonly string[]): ModuleDefinition[] {
+  return MODULES.filter((m) => enabledIds.includes(m.id))
+}

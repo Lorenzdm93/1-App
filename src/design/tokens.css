@@ -1,0 +1,39 @@
+/* ============================================================
+   1% — design tokens
+   Graphite instrument base, ember core accent, one accent per
+   module carried over from its original standalone identity.
+   ============================================================ */
+:root {
+  /* surfaces */
+  --bg: #0c0d10;
+  --surface: #14161b;
+  --raised: #1b1e24;
+  --line: #262a32;
+  --line-soft: #1f232a;
+
+  /* ink */
+  --ink: #eae6dd;
+  --dim: #918d85;
+  --faint: #5c5952;
+
+  /* accents */
+  --ember: #e8622c;
+  --ember-soft: rgba(232, 98, 44, 0.14);
+  --danger: #c4453b;
+
+  /* module accents */
+  --m-ghisa: #e8622c;   /* forged iron ember   */
+  --m-respiro: #7fa98e; /* jade breath         */
+  --m-caliber: #c89b4b; /* brass gauge         */
+  --m-cadence: #8fa7c9; /* moon rhythm         */
+
+  /* shape + type */
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-ui: 'Archivo', system-ui, -apple-system, sans-serif;
+
+  /* layout */
+  --col: 560px;
+  --tabbar-h: 62px;
+}
