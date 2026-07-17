@@ -1,5 +1,5 @@
-/* 1% service worker — HTML always revalidates with the server;
-   hashed assets are cache-first (immutable by construction). */
+/* 1% service worker — network-first for navigation, cache-first for assets.
+   Hashed Vite filenames make stale-asset bugs structurally impossible. */
 var CACHE = 'onepercent-v2'
 
 self.addEventListener('install', function () {
@@ -8,12 +8,22 @@ self.addEventListener('install', function () {
 
 self.addEventListener('activate', function (event) {
   event.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(
-        keys.filter(function (k) { return k !== CACHE })
-            .map(function (k) { return caches.delete(k) })
-      )
-    }).then(function () { return self.clients.claim() })
+    caches
+      .keys()
+      .then(function (keys) {
+        return Promise.all(
+          keys
+            .filter(function (k) {
+              return k !== CACHE
+            })
+            .map(function (k) {
+              return caches.delete(k)
+            }),
+        )
+      })
+      .then(function () {
+        return self.clients.claim()
+      }),
   )
 })
 
@@ -28,14 +38,16 @@ self.addEventListener('fetch', function (event) {
       fetch(req, { cache: 'no-cache' })
         .then(function (res) {
           var copy = res.clone()
-          caches.open(CACHE).then(function (c) { c.put(req, copy) })
+          caches.open(CACHE).then(function (c) {
+            c.put(req, copy)
+          })
           return res
         })
         .catch(function () {
           return caches.match(req).then(function (hit) {
             return hit || Response.error()
           })
-        })
+        }),
     )
     return
   }
@@ -46,10 +58,12 @@ self.addEventListener('fetch', function (event) {
       return fetch(req).then(function (res) {
         if (res.ok) {
           var copy = res.clone()
-          caches.open(CACHE).then(function (c) { c.put(req, copy) })
+          caches.open(CACHE).then(function (c) {
+            c.put(req, copy)
+          })
         }
         return res
       })
-    })
+    }),
   )
 })

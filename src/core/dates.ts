@@ -42,3 +42,12 @@ export function formatDuration(ms: number): string {
   const s = total % 60
   return `${m}:${pad(s)}`
 }
+
+/** Whole days from `fromKey` to `toKey` (noon-anchored, DST-safe). */
+export function dayDiff(fromKey: string, toKey: string): number {
+  const [fy, fm, fd] = fromKey.split('-').map(Number)
+  const [ty, tm, td] = toKey.split('-').map(Number)
+  const a = new Date(fy, fm - 1, fd, 12).getTime()
+  const b = new Date(ty, tm - 1, td, 12).getTime()
+  return Math.round((b - a) / 86_400_000)
+}

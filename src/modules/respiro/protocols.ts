@@ -84,3 +84,29 @@ export function phaseAt(
   const lastIndex = p.phases.length - 1
   return { phase: p.phases[lastIndex], index: lastIndex, remaining: 0 }
 }
+
+export interface CustomPattern {
+  inS: number
+  hold1: number
+  outS: number
+  hold2: number
+}
+
+/** Builds a runnable protocol from the custom pattern. Holds of 0 are skipped. */
+export function buildCustomProtocol(c: CustomPattern): Protocol {
+  const inS = Math.min(20, Math.max(1, c.inS))
+  const outS = Math.min(20, Math.max(1, c.outS))
+  const h1 = Math.min(20, Math.max(0, c.hold1))
+  const h2 = Math.min(20, Math.max(0, c.hold2))
+  const phases: Phase[] = [{ label: 'Inhale', seconds: inS, scale: 1 }]
+  if (h1 > 0) phases.push({ label: 'Hold', seconds: h1, scale: 1 })
+  phases.push({ label: 'Exhale', seconds: outS, scale: 0.62 })
+  if (h2 > 0) phases.push({ label: 'Hold', seconds: h2, scale: 0.62 })
+  return {
+    id: 'custom',
+    name: 'Custom',
+    sub: [inS, h1, outS, h2].filter((v, i) => v > 0 || i === 0 || i === 2).join(' · '),
+    accentVar: 'var(--m-respiro)',
+    phases,
+  }
+}

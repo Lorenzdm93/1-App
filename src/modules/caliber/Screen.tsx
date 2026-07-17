@@ -3,8 +3,22 @@ import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { toast } from '../../core/toast'
 import { Seg, Field, parseNum } from '../../app/ui'
-import { LIFTS, LEVELS, epley, brzycki, e1rm, levelFor, type Sex } from './formulas'
+import {
+  LIFTS,
+  LEVELS,
+  STANDARDS,
+  epley,
+  brzycki,
+  e1rm,
+  levelFor,
+  percentileFor,
+  repsForTarget,
+  weightForTarget,
+  liftById,
+  type Sex,
+} from './formulas'
 import { caliberStore, patchCaliber, logTest } from './model'
+import { Line } from '../../app/charts'
 
 const SEX_OPTIONS = [
   { id: 'm', label: 'Male' },
@@ -170,6 +184,9 @@ export default function CaliberScreen() {
             </div>
             <Gauge position={(level.index + level.frac) / LEVELS.length} lit={level.index} />
             <div className="cb-level">{level.name}</div>
+            <div className="cb-pct num">
+              Stronger than ~{percentileFor(level)}% — top {Math.max(1, 100 - percentileFor(level))}%
+            </div>
             <div className="cb-zone-labels">
               {ZONE_SHORT.map((z) => (
                 <span key={z}>{z}</span>
@@ -199,6 +216,78 @@ export default function CaliberScreen() {
         )}
         <div className="cb-note">Standards are approximations calibrated per sex — a compass, not a scale.</div>
       </div>
+
+      {bwN !== null && bwN > 0 && (
+        <div className="card">
+          <div className="card-head">
+            <span className="label" style={{ color: 'var(--m-caliber)' }}>Target</span>
+          </div>
+          <div className="chips">
+            {LEVELS.map((name, i) =>
+              i === 0 ? null : (
+                <button
+                  key={name}
+                  className={'chip' + (i === st.targetLevel ? ' on' : '')}
+                  style={{ ['--chip-accent' as string]: 'var(--m-caliber)' } as CSSProperties}
+                  onClick={() => patchCaliber({ targetLevel: i })}
+                >
+                  {name}
+                </button>
+              ),
+            )}
+          </div>
+          {(() => {
+            const ratio = STANDARDS[st.liftId][st.sex][st.targetLevel - 1]
+            const targetKg = Math.round(ratio * bwN * 2) / 2
+            const lift = liftById(st.liftId).name
+            const reached = estimate !== null && estimate >= targetKg
+            return (
+              <>
+                <div className="kv">
+                  <span className="k">{LEVELS[st.targetLevel]} {lift}</span>
+                  <span className="num">{targetKg} kg e1RM · {ratio}× BW</span>
+                </div>
+                {reached ? (
+                  <div className="cb-target-line">Already there — this bracket is yours.</div>
+                ) : (
+                  <>
+                    {weightN !== null && weightN > 0 && (
+                      <div className="kv">
+                        <span className="k">At {weightN} kg</span>
+                        <span className="num">
+                          {repsForTarget(weightN, targetKg) > 15
+                            ? 'add weight first'
+                            : `${repsForTarget(weightN, targetKg)} reps`}
+                        </span>
+                      </div>
+                    )}
+                    {repsN !== null && repsN >= 1 && (
+                      <div className="kv">
+                        <span className="k">At {Math.round(repsN)} reps</span>
+                        <span className="num">{Math.round(weightForTarget(Math.round(repsN), targetKg) * 2) / 2} kg</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )
+          })()}
+        </div>
+      )}
+
+      {(st.tests[st.liftId] ?? []).length >= 2 && (
+        <div className="card">
+          <div className="card-head">
+            <span className="label" style={{ color: 'var(--m-caliber)' }}>
+              {liftById(st.liftId).name} · test history
+            </span>
+          </div>
+          <Line values={(st.tests[st.liftId] ?? []).map((t) => t.e1rm)} accentVar="var(--m-caliber)" />
+          <div className="cd-heat-label num">
+            {(st.tests[st.liftId] ?? []).length} tests · best {Math.max(...(st.tests[st.liftId] ?? []).map((t) => t.e1rm))} kg
+          </div>
+        </div>
+      )}
     </>
   )
 }

@@ -22,20 +22,7 @@ export function liftById(id: string): Lift {
   return LIFTS.find((l) => l.id === id) ?? LIFTS[0]
 }
 
-export function epley(weight: number, reps: number): number {
-  return reps <= 1 ? weight : weight * (1 + reps / 30)
-}
-
-export function brzycki(weight: number, reps: number): number {
-  if (reps <= 1) return weight
-  const r = Math.min(reps, 36) // formula degenerates at 37
-  return (weight * 36) / (37 - r)
-}
-
-/** Averaged estimate — the two formulas bracket most lifters. */
-export function e1rm(weight: number, reps: number): number {
-  return (epley(weight, reps) + brzycki(weight, reps)) / 2
-}
+export { epley, brzycki, e1rm, repsForTarget, weightForTarget } from '../../core/strength'
 
 export const LEVELS: readonly string[] = [
   'Untrained',
@@ -76,4 +63,14 @@ export function levelFor(liftId: string, sex: Sex, ratio: number): LevelResult {
     frac = upper > lower ? Math.min(Math.max((ratio - lower) / (upper - lower), 0), 1) : 0
   }
   return { index, name: LEVELS[index], frac }
+}
+
+/** Approximate population percentile at each threshold entry (Beginner … Elite). */
+export const PERCENTILES: readonly number[] = [5, 20, 50, 80, 95]
+
+/** "Stronger than ~X% of lifters in your weight class" — interpolated within the bucket. */
+export function percentileFor(level: LevelResult): number {
+  const lower = level.index === 0 ? 0 : PERCENTILES[level.index - 1]
+  const upper = level.index >= PERCENTILES.length ? 99 : PERCENTILES[level.index]
+  return Math.round(lower + level.frac * (upper - lower))
 }

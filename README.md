@@ -16,16 +16,23 @@
 
 One app, many instruments. Enable only the modules you want; everything feeds one dashboard, one streak, one metric stream. Offline-first, no account, your data never leaves the device.
 
-## Modules — v0.1
+## Modules
 
 | Module | What it does | Quick action from Today |
 |---|---|---|
-| **GHISA** | Workout log — live sessions, sets × reps, volume, history | Start / resume a workout |
-| **CADENCE** | Daily habits with streaks and 7-day strips | Check habits off directly on the dashboard |
-| **RESPIRO** | Breathwork — Box, 4-7-8, Coherence, Physiological Sigh | Begin a session in one tap |
-| **CALIBER** | Strength gauge — e1RM (Epley + Brzycki) and standards per lift | — |
+| **GHISA** | Workout tracker — templates, live sessions, tappable set types, per-exercise analytics and weekly stats | Start / resume a workout |
+| **CADENCE** | Habits done right — build *and* quit habits, Today / Month / Year views, tap-to-backfill, per-habit colours | Check habits off directly on the dashboard |
+| **RESPIRO** | Breathwork — geometric tracers, Box · 4-7-8 · Coherence · Sigh · Custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
+| **CALIBER** | Strength gauge — e1RM, population percentile, target-level planner, per-lift test history | — |
 
-**New in v0.2** — dark/light/system theme; a first-run intro where you pick modules (goal chips like *Strength & Gym* pre-select bundles, everything changeable later); per-module accent theming when inside a module; GHISA rest timer, previous-session values and live PR flags; RESPIRO per-protocol accents, glow, cycle counter and focus dim; CALIBER needle gauge; CADENCE 8-week heatmaps and milestone streak toasts.
+**New in v0.3 — the modules at full power**
+
+- **GHISA** — reusable **templates** (seeded Push / Pull / Legs, plus your own) you start a workout from in one tap; **tap any set to change its type** — Normal · Warmup · Drop · Failure — with warmups correctly excluded from volume, working-set counts and PRs; a three-tab module (**Train / History / Stats**) with an 8-week volume chart, most-trained ranking, and a **per-exercise overview** showing best set, an e1RM sparkline and recent sessions.
+- **CADENCE** — **Today / Month / Year**. The month is a completion heatmap where **tapping any past day fills in what you did**; the year is a GitHub-style grid per habit, auto-scrolled to today. Habits are now **Build or Quit** — quit habits count *days clean* with a no-judgment slip log — each with its own colour and an optional cue.
+- **CALIBER** — a **percentile** read ("stronger than ~X%"), and a **target planner**: pick a level and it tells you *the reps you need at your current weight*, or the weight at your current reps, to get there. Every test feeds a **history chart** per lift.
+- **RESPIRO** — the **geometric tracer** is back: a square for Box, a triangle for three-phase patterns, a proportional ring for the rest, with the dot travelling the edges as you breathe. Plus a **Custom** pattern, a **breath-hold test** with personal best, and **Spotify** — paste any track or playlist and it plays inline.
+
+**From v0.2** — dark/light/system theme; a first-run intro where you pick modules (goal chips like *Strength & Gym* pre-select bundles, everything changeable later); per-module accent theming inside a module.
 
 The **Today** screen carries the signature *1% ring*: a hairline day-track with a literal 1%-of-circumference ember notch, and one inner segment per enabled module that lights up once the module has contributed to the day. Any logged action anywhere claims the day and feeds the streak.
 
@@ -75,6 +82,12 @@ src/
 Everything lives on-device. **Settings → Export** produces one JSON backup covering every module; **Import** restores it. No telemetry, no network calls beyond Google Fonts.
 
 ## Roadmap
+
+- **v0.4** — Ora (fasting) and Minim (mood) modules; first cross-module insights on the shared event stream.
+- **v0.5** — optional end-to-end Firebase sync (the event log is already sync-shaped).
+- **Later** — Capacitor wrap for the App Store; reminders/notifications (needs the native shell).
+
+### Earlier roadmap notes
 
 - **v0.3** — full GHISA depth: templates, per-exercise progression charts, e1RM handoff to CALIBER
 - **v0.4** — Ora (fasting) and Minim (mood) as modules; insights v1 on the event stream

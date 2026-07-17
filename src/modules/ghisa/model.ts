@@ -1,11 +1,18 @@
 import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
 import { logEvent } from '../../core/events'
+import { dayKey, todayKey, shiftDay } from '../../core/dates'
+import { e1rm } from '../../core/strength'
+
+export type SetType = 'normal' | 'warmup' | 'drop' | 'fail'
+
+export const SET_TYPE_ORDER: readonly SetType[] = ['normal', 'warmup', 'drop', 'fail']
 
 export interface SetEntry {
   id: string
   weight: number
   reps: number
+  type: SetType
 }
 
 export interface ExerciseEntry {
@@ -18,15 +25,66 @@ export interface Session {
   id: string
   startTs: number
   endTs?: number
+  /** Set when started from a template. */
+  templateName?: string
   exercises: ExerciseEntry[]
+}
+
+export interface TemplateExercise {
+  name: string
+  targetSets: number
+}
+
+export interface Template {
+  id: string
+  name: string
+  exercises: TemplateExercise[]
 }
 
 export interface GhisaState {
   active: Session | null
   history: Session[] // newest first
-  /** Rest timer target (epoch ms) — timestamp-based, throttling-proof. */
   restUntil: number | null
   restSeconds: number
+  templates: Template[]
+}
+
+function seedTemplates(): Template[] {
+  return [
+    {
+      id: uid() + 'p',
+      name: 'Push',
+      exercises: [
+        { name: 'Bench Press', targetSets: 4 },
+        { name: 'Overhead Press', targetSets: 3 },
+        { name: 'Incline Bench Press', targetSets: 3 },
+        { name: 'Lateral Raise', targetSets: 3 },
+        { name: 'Triceps Pushdown', targetSets: 3 },
+      ],
+    },
+    {
+      id: uid() + 'q',
+      name: 'Pull',
+      exercises: [
+        { name: 'Barbell Row', targetSets: 4 },
+        { name: 'Pull-up', targetSets: 3 },
+        { name: 'Seated Cable Row', targetSets: 3 },
+        { name: 'Face Pull', targetSets: 3 },
+        { name: 'Biceps Curl', targetSets: 3 },
+      ],
+    },
+    {
+      id: uid() + 'r',
+      name: 'Legs',
+      exercises: [
+        { name: 'Squat', targetSets: 4 },
+        { name: 'Romanian Deadlift', targetSets: 3 },
+        { name: 'Leg Press', targetSets: 3 },
+        { name: 'Leg Curl', targetSets: 3 },
+        { name: 'Calf Raise', targetSets: 4 },
+      ],
+    },
+  ]
 }
 
 const DEFAULTS: GhisaState = {
@@ -34,22 +92,45 @@ const DEFAULTS: GhisaState = {
   history: [],
   restUntil: null,
   restSeconds: 90,
+  templates: seedTemplates(),
 }
 
-/** v1 predates the rest timer — carry sessions over, fill new fields. */
+function normalizeSet(s: Partial<SetEntry>): SetEntry {
+  return {
+    id: typeof s.id === 'string' ? s.id : uid(),
+    weight: typeof s.weight === 'number' ? s.weight : 0,
+    reps: typeof s.reps === 'number' ? s.reps : 0,
+    type: s.type === 'warmup' || s.type === 'drop' || s.type === 'fail' ? s.type : 'normal',
+  }
+}
+
+function normalizeSession(raw: Session): Session {
+  return {
+    ...raw,
+    exercises: (raw.exercises ?? []).map((ex) => ({
+      ...ex,
+      sets: (ex.sets ?? []).map(normalizeSet),
+    })),
+  }
+}
+
+/** v1: no rest fields. v2: no set types, no templates. */
 export function migrateGhisa(data: unknown, fromVersion: number): GhisaState {
-  if (fromVersion === 1 && data !== null && typeof data === 'object') {
+  if ((fromVersion === 1 || fromVersion === 2) && data !== null && typeof data === 'object') {
     const d = data as Partial<GhisaState>
     return {
-      ...DEFAULTS,
-      active: d.active ?? null,
-      history: Array.isArray(d.history) ? d.history : [],
+      active: d.active ? normalizeSession(d.active) : null,
+      history: Array.isArray(d.history) ? d.history.map(normalizeSession) : [],
+      restUntil: null,
+      restSeconds: typeof d.restSeconds === 'number' ? d.restSeconds : 90,
+      templates:
+        Array.isArray(d.templates) && d.templates.length > 0 ? d.templates : seedTemplates(),
     }
   }
   return DEFAULTS
 }
 
-export const ghisaStore = createPersistedStore<GhisaState>('ghisa', DEFAULTS, 2, migrateGhisa)
+export const ghisaStore = createPersistedStore<GhisaState>('ghisa', DEFAULTS, 3, migrateGhisa)
 
 export const EXERCISES: readonly string[] = [
   'Squat',
@@ -84,9 +165,11 @@ export const EXERCISES: readonly string[] = [
 
 /* ---------- derived ---------- */
 
+/** Working volume — warmups build nothing on the ledger. */
 export function sessionVolume(s: Session): number {
   let v = 0
-  for (const ex of s.exercises) for (const set of ex.sets) v += set.weight * set.reps
+  for (const ex of s.exercises)
+    for (const set of ex.sets) if (set.type !== 'warmup') v += set.weight * set.reps
   return v
 }
 
@@ -96,12 +179,35 @@ export function sessionSets(s: Session): number {
   return n
 }
 
-/* ---------- actions ---------- */
+export function workingSets(s: Session): number {
+  let n = 0
+  for (const ex of s.exercises) for (const set of ex.sets) if (set.type !== 'warmup') n++
+  return n
+}
+
+/* ---------- session actions ---------- */
 
 export function startSession(): void {
   ghisaStore.set((st) =>
     st.active ? st : { ...st, active: { id: uid(), startTs: Date.now(), exercises: [] } },
   )
+}
+
+export function startFromTemplate(templateId: string): void {
+  ghisaStore.set((st) => {
+    if (st.active) return st
+    const tpl = st.templates.find((t) => t.id === templateId)
+    if (!tpl) return st
+    return {
+      ...st,
+      active: {
+        id: uid(),
+        startTs: Date.now(),
+        templateName: tpl.name,
+        exercises: tpl.exercises.map((e) => ({ id: uid(), name: e.name, sets: [] })),
+      },
+    }
+  })
 }
 
 export function addExercise(name: string): void {
@@ -119,7 +225,25 @@ export function addExercise(name: string): void {
   })
 }
 
-export function addSet(exerciseId: string, weight: number, reps: number): void {
+export function removeExercise(exerciseId: string): void {
+  ghisaStore.set((st) => {
+    if (!st.active) return st
+    return {
+      ...st,
+      active: {
+        ...st.active,
+        exercises: st.active.exercises.filter((ex) => ex.id !== exerciseId),
+      },
+    }
+  })
+}
+
+export function addSet(
+  exerciseId: string,
+  weight: number,
+  reps: number,
+  type: SetType = 'normal',
+): void {
   ghisaStore.set((st) => {
     if (!st.active) return st
     return {
@@ -129,7 +253,33 @@ export function addSet(exerciseId: string, weight: number, reps: number): void {
         ...st.active,
         exercises: st.active.exercises.map((ex) =>
           ex.id === exerciseId
-            ? { ...ex, sets: [...ex.sets, { id: uid(), weight, reps }] }
+            ? { ...ex, sets: [...ex.sets, { id: uid(), weight, reps, type }] }
+            : ex,
+        ),
+      },
+    }
+  })
+}
+
+/** Cycle a set through normal → warmup → drop → fail — the Hevy tap. */
+export function cycleSetType(exerciseId: string, setId: string): void {
+  ghisaStore.set((st) => {
+    if (!st.active) return st
+    return {
+      ...st,
+      active: {
+        ...st.active,
+        exercises: st.active.exercises.map((ex) =>
+          ex.id === exerciseId
+            ? {
+                ...ex,
+                sets: ex.sets.map((s) => {
+                  if (s.id !== setId) return s
+                  const next =
+                    SET_TYPE_ORDER[(SET_TYPE_ORDER.indexOf(s.type) + 1) % SET_TYPE_ORDER.length]
+                  return { ...s, type: next }
+                }),
+              }
             : ex,
         ),
       },
@@ -152,7 +302,6 @@ export function removeSet(exerciseId: string, setId: string): void {
   })
 }
 
-/** Finishes the active session. Returns the archived session, or null if it was empty. */
 export function finishSession(): Session | null {
   const st = ghisaStore.get()
   if (!st.active) return null
@@ -166,14 +315,24 @@ export function finishSession(): Session | null {
     ...done,
     exercises: done.exercises.filter((ex) => ex.sets.length > 0),
   }
-  ghisaStore.set((s) => ({ ...s, active: null, restUntil: null, history: [trimmed, ...s.history] }))
+  ghisaStore.set((s) => ({
+    ...s,
+    active: null,
+    restUntil: null,
+    history: [trimmed, ...s.history],
+  }))
   const minutes = Math.round(((trimmed.endTs ?? Date.now()) - trimmed.startTs) / 60000)
   logEvent({
     module: 'ghisa',
     kind: 'workout',
     value: Math.round(sessionVolume(trimmed)),
     unit: 'kg',
-    meta: { sets: sessionSets(trimmed), exercises: trimmed.exercises.length, minutes },
+    meta: {
+      sets: workingSets(trimmed),
+      exercises: trimmed.exercises.length,
+      minutes,
+      ...(trimmed.templateName ? { template: trimmed.templateName } : {}),
+    },
   })
   return trimmed
 }
@@ -194,9 +353,37 @@ export function adjustRest(deltaSeconds: number): void {
   })
 }
 
-/* ---------- prototype soul: previous values + PR detection ---------- */
+/* ---------- templates ---------- */
 
-/** Sets from the most recent past session containing this exercise. */
+export function saveTemplate(template: {
+  id?: string
+  name: string
+  exercises: TemplateExercise[]
+}): void {
+  const clean = template.name.trim()
+  if (!clean || template.exercises.length === 0) return
+  ghisaStore.set((st) => {
+    if (template.id) {
+      return {
+        ...st,
+        templates: st.templates.map((t) =>
+          t.id === template.id ? { ...t, name: clean, exercises: template.exercises } : t,
+        ),
+      }
+    }
+    return {
+      ...st,
+      templates: [...st.templates, { id: uid(), name: clean, exercises: template.exercises }],
+    }
+  })
+}
+
+export function deleteTemplate(templateId: string): void {
+  ghisaStore.set((st) => ({ ...st, templates: st.templates.filter((t) => t.id !== templateId) }))
+}
+
+/* ---------- prototype soul: previous values, PRs, per-exercise analytics ---------- */
+
 export function previousSets(history: readonly Session[], exerciseName: string): SetEntry[] {
   const name = exerciseName.trim().toLowerCase()
   for (const session of history) {
@@ -206,15 +393,118 @@ export function previousSets(history: readonly Session[], exerciseName: string):
   return []
 }
 
-/** Heaviest weight ever logged for this exercise across history. */
+/** Heaviest non-warmup weight ever logged for this exercise. */
 export function historicalMaxWeight(history: readonly Session[], exerciseName: string): number {
   const name = exerciseName.trim().toLowerCase()
   let max = 0
   for (const session of history) {
     for (const ex of session.exercises) {
       if (ex.name.trim().toLowerCase() !== name) continue
-      for (const s of ex.sets) if (s.weight > max) max = s.weight
+      for (const s of ex.sets) if (s.type !== 'warmup' && s.weight > max) max = s.weight
     }
   }
   return max
+}
+
+export interface ExerciseDay {
+  ts: number
+  sets: SetEntry[]
+}
+
+/** Sessions containing the exercise, newest first. */
+export function exerciseHistory(history: readonly Session[], exerciseName: string): ExerciseDay[] {
+  const name = exerciseName.trim().toLowerCase()
+  const out: ExerciseDay[] = []
+  for (const session of history) {
+    const match = session.exercises.find((ex) => ex.name.trim().toLowerCase() === name)
+    if (match && match.sets.length > 0) out.push({ ts: session.startTs, sets: match.sets })
+  }
+  return out
+}
+
+/** Best e1RM per session for the exercise, oldest → newest (sparkline-ready). */
+export function e1rmSeries(history: readonly Session[], exerciseName: string): number[] {
+  return exerciseHistory(history, exerciseName)
+    .map((d) => {
+      let best = 0
+      for (const s of d.sets) {
+        if (s.type === 'warmup' || s.reps < 1) continue
+        const est = e1rm(s.weight, s.reps)
+        if (est > best) best = est
+      }
+      return Math.round(best * 2) / 2
+    })
+    .filter((v) => v > 0)
+    .reverse()
+}
+
+/** Best (heaviest non-warmup) set for the exercise across history. */
+export function bestSet(history: readonly Session[], exerciseName: string): SetEntry | null {
+  const name = exerciseName.trim().toLowerCase()
+  let best: SetEntry | null = null
+  for (const session of history) {
+    for (const ex of session.exercises) {
+      if (ex.name.trim().toLowerCase() !== name) continue
+      for (const s of ex.sets) {
+        if (s.type === 'warmup') continue
+        if (!best || s.weight > best.weight || (s.weight === best.weight && s.reps > best.reps)) {
+          best = s
+        }
+      }
+    }
+  }
+  return best
+}
+
+export function allExerciseNames(history: readonly Session[]): string[] {
+  const seen = new Map<string, string>()
+  for (const session of history) {
+    for (const ex of session.exercises) {
+      const key = ex.name.trim().toLowerCase()
+      if (!seen.has(key)) seen.set(key, ex.name.trim())
+    }
+  }
+  return [...seen.values()].sort()
+}
+
+/* ---------- stats ---------- */
+
+export interface WeekBucket {
+  label: string
+  value: number
+}
+
+/** Working volume per 7-day bucket, oldest → newest, `weeks` buckets ending today. */
+export function weeklyVolume(history: readonly Session[], weeks = 8): WeekBucket[] {
+  const today = todayKey()
+  const buckets: WeekBucket[] = []
+  for (let i = weeks - 1; i >= 0; i--) {
+    const start = shiftDay(today, -(i * 7 + 6))
+    const end = shiftDay(today, -(i * 7))
+    let value = 0
+    for (const s of history) {
+      const k = dayKey(s.startTs)
+      if (k >= start && k <= end) value += sessionVolume(s)
+    }
+    const [, , d] = start.split('-')
+    const [, m] = start.split('-')
+    buckets.push({ label: `${Number(d)}/${Number(m)}`, value: Math.round(value) })
+  }
+  return buckets
+}
+
+export function topExercises(
+  history: readonly Session[],
+  n = 5,
+): { name: string; sets: number }[] {
+  const counts = new Map<string, { name: string; sets: number }>()
+  for (const session of history) {
+    for (const ex of session.exercises) {
+      const key = ex.name.trim().toLowerCase()
+      const entry = counts.get(key) ?? { name: ex.name.trim(), sets: 0 }
+      entry.sets += ex.sets.filter((s) => s.type !== 'warmup').length
+      counts.set(key, entry)
+    }
+  }
+  return [...counts.values()].sort((a, b) => b.sets - a.sets).slice(0, n)
 }
