@@ -132,3 +132,12 @@ export function importAll(json: string): number {
 export function clearAll(): void {
   for (const key of ownKeys()) remove(key)
 }
+
+/** Removes a module's namespaced payload entirely. */
+export function eraseNS(ns: string): void {
+  try {
+    localStorage.removeItem(`op:v1:${ns}`)
+  } catch {
+    /* in-memory fallback has nothing to erase */
+  }
+}

@@ -24,8 +24,15 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **CADENCE** | Habits done right — build *and* quit habits, weekly frequency targets (3×/week…), Month backfill, Year grids | Check habits off directly on the dashboard |
 | **GROVE** | Deep-focus timer — finish a session and a tree grows; your forest is your history | Focus 25 min in one tap |
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
-| **SANA** | Supplement & medicine cabinet — slot-grouped Today list, stock countdown, adherence insights | Doses left today |
+| **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.6 — SANA to the prototype, percentile CALIBER, module Settings everywhere**
+
+- **SANA, the real one.** Rebuilt to the recovered prototype architecture. **Stacks** are regimens (Daily Foundation, Sport, Sleep…) with emoji + colour, each carrying **compounds** (name, chemical name, dose, form glyph, time slot, the italic advice line). Follow any combination per day; shared compounds appear **once** on Today with membership dots. The Today tab: day pager, tick-ringed **dial** (X/13 · % complete), per-stack progress rows with one-tap take-all, per-slot TAKE ALL, ⓘ info sheets. **History**: day streak, best run, 30-day rate, week grid, month calendar, 26-week consistency heatmap. **Library**: a 14-entry reference shelf (what it is, usual slot, cautions) that adds straight into a stack. v1 data migrates automatically.
+- **CALIBER, percentile-native.** The prototype's model: profile with **height (BMI)** and **"aim for top X%"**; lifts are now Bench · Squat · Deadlift · **Pull-up** (weighted — math on system load, reported as added kg). Big Epley estimate with **Brzycki cross-check** and the confidence dot; a percentile axis with **YOU** and a dashed **AIM** marker; progress-to-goal bar with kg-to-go; reverse math ("at your weight → N reps"); a Goals 2×2 card; Standards as a percentile table (5th/25th/50th/**aim**/95th) with your cleared cells lit. Old level-targets migrate to the matching percentile.
+- **GHISA, prototype train & live.** Train: big "Start empty workout", template cards with exercise preview line, wide **Start**, pencil edit, and a ⋯ menu with **Duplicate**/Delete. Live: header shows elapsed + sets · volume, completed rows keep a warm tint with the wide orange check pill, and the rest bar gained **−15 / +15 / Skip**.
+- **Settings, everywhere.** Every module's tab bar now ends in a gear — a platform tab with the module's about info and a scoped **Erase [module] data** (storage + its events, nothing else). Modules can add their own sections on top.
 
 **New in v0.5 — insight everywhere, premium everywhere**
 
@@ -101,8 +108,8 @@ Everything lives on-device. **Settings → Export** produces one JSON backup cov
 
 ## Roadmap
 
-- **v0.6** — Ora (fasting) and Minim (mood) modules; the full-app premium reskin pass (deep polish beyond the shared system); cross-module insights on the event stream.
-- **v0.7** — optional end-to-end Firebase sync (the event log is already sync-shaped).
+- **v0.7** — Ora (fasting) and Minim (mood) modules; the full-app premium reskin pass; cross-module insights on the event stream.
+- **v0.8** — optional end-to-end Firebase sync (the event log is already sync-shaped).
 - **Later** — Capacitor wrap for the App Store; reminders/notifications (needs the native shell).
 
 ### Earlier roadmap notes

@@ -6,13 +6,15 @@ import { Seg, Field, parseNum, StatBox } from '../../app/ui'
 import { Line } from '../../app/charts'
 import {
   LIFTS,
-  LEVELS,
   STANDARDS,
+  PERCENTILES,
   epley,
   brzycki,
-  e1rm,
   levelFor,
-  percentileFor,
+  pctForRatio,
+  ratioForPercentile,
+  goalTotalKg,
+  roundTo,
   confidenceFor,
   repsForTarget,
   weightForTarget,
@@ -21,39 +23,42 @@ import {
 } from './formulas'
 import { caliberStore, patchCaliber, logTest } from './model'
 
-const ELITE_HEADROOM = 1.12 // bar extends a little past Elite so the marker never pins
+/* ---------- percentile axis (YOU vs AIM) ---------- */
 
-/* ---------- the level bar (replaces the gauge) ---------- */
+const AXIS = [5, 25, 50, 75, 95] as const
 
-function LevelBar({
-  ratio,
-  thresholds,
-  targetRatio,
-}: {
-  ratio: number
-  thresholds: readonly number[]
-  targetRatio: number
-}) {
-  const max = thresholds[thresholds.length - 1] * ELITE_HEADROOM
-  const pct = (v: number) => Math.min(100, Math.max(0, (v / max) * 100))
+function PercentileAxis({ you, aim }: { you: number; aim: number }) {
+  const x = (p: number) => `${p}%`
   return (
-    <div className="cb-bar-wrap">
-      <div className="cb-bar">
-        <div className="cb-bar-fill" style={{ width: `${pct(ratio)}%` }} />
-        {thresholds.map((t, i) => (
-          <span key={i} className="cb-bar-tick" style={{ left: `${pct(t)}%` }} />
-        ))}
-        <span className="cb-bar-target" style={{ left: `${pct(targetRatio)}%` }} aria-label="Target" />
+    <div className="cb-axis-wrap">
+      <div className="cb-axis-you" style={{ left: x(you) }}>
+        <span className="num">{ordinal(you)}</span>
+        <i />
       </div>
-      <div className="cb-bar-labels num" aria-hidden="true">
-        {thresholds.map((t, i) => (
-          <span key={i} style={{ left: `${pct(t)}%` }}>
-            {LEVELS[i + 1][0]}
-          </span>
+      <div className="cb-axis-aim" style={{ left: x(aim) }}>
+        <span>AIM</span>
+        <i />
+      </div>
+      <div className="cb-axis">
+        {AXIS.map((p) => (
+          <span key={p} className="cb-axis-tick" style={{ left: x(p) }} />
+        ))}
+        <span className="cb-axis-fill" style={{ width: x(you) }} />
+      </div>
+      <div className="cb-axis-labels num">
+        {AXIS.map((p) => (
+          <span key={p} style={{ left: x(p) }}>{p}</span>
         ))}
       </div>
     </div>
   )
+}
+
+function ordinal(n: number): string {
+  const s = n % 10
+  const t = n % 100
+  const suf = t >= 11 && t <= 13 ? 'th' : s === 1 ? 'st' : s === 2 ? 'nd' : s === 3 ? 'rd' : 'th'
+  return `${n}${suf}`
 }
 
 /* ---------- test tab ---------- */
@@ -61,184 +66,204 @@ function LevelBar({
 function TestTab() {
   const st = useStore(caliberStore)
   const [bw, setBw] = useState(String(st.bodyweight))
+  const [height, setHeight] = useState(st.height !== null ? String(st.height) : '')
+  const [aim, setAim] = useState(String(st.aimTop))
   const [weight, setWeight] = useState(String(st.weight))
   const [reps, setReps] = useState(String(st.reps))
 
+  const lift = liftById(st.liftId)
+  const isBW = lift.bw === true
+
   const bwN = parseNum(bw)
-  const weightN = parseNum(weight)
+  const weightN = parseNum(weight) // for pull-up this is ADDED kg (0 allowed)
   const repsRaw = parseNum(reps)
   const repsN = repsRaw !== null ? Math.round(repsRaw) : null
-  const valid = bwN !== null && bwN > 0 && weightN !== null && weightN > 0 && repsN !== null && repsN >= 1
+  const heightN = parseNum(height)
+  const aimN = parseNum(aim)
+  const aimTop = aimN !== null ? Math.min(50, Math.max(5, Math.round(aimN))) : st.aimTop
 
-  const estimate = valid ? Math.round(e1rm(weightN, repsN) * 2) / 2 : null
-  const ratio = valid && estimate !== null ? estimate / bwN : null
+  const valid =
+    bwN !== null && bwN > 0 && weightN !== null && (isBW ? weightN >= 0 : weightN > 0) &&
+    repsN !== null && repsN >= 1
+
+  const load = valid ? (isBW ? (bwN as number) + (weightN as number) : (weightN as number)) : null
+  const eTotal = load !== null && repsN !== null ? roundTo(epley(load, repsN), 0.5) : null
+  const bTotal = load !== null && repsN !== null ? roundTo(brzycki(load, repsN), 0.1) : null
+  const shown = eTotal !== null ? (isBW ? roundTo(eTotal - (bwN as number), 0.5) : eTotal) : null
+  const bShown = bTotal !== null ? (isBW ? roundTo(bTotal - (bwN as number), 0.1) : bTotal) : null
+
+  const ratio = eTotal !== null && bwN !== null ? eTotal / bwN : null
+  const youPct = ratio !== null ? pctForRatio(st.liftId, st.sex, ratio) : null
   const level = ratio !== null ? levelFor(st.liftId, st.sex, ratio) : null
-  const thresholds = STANDARDS[st.liftId][st.sex]
-  const targetRatio = thresholds[st.targetLevel - 1]
   const conf = repsN !== null && repsN >= 1 ? confidenceFor(repsN) : null
 
-  function commit(patch: Partial<{ bodyweight: number; weight: number; reps: number }>) {
-    patchCaliber(patch)
-  }
+  const goalTotal = bwN !== null ? goalTotalKg(st.liftId, st.sex, bwN, aimTop) : null
+  const goalShown = goalTotal !== null ? (isBW ? Math.max(0, roundTo(goalTotal - (bwN as number), 0.5)) : goalTotal) : null
+  const toGo = eTotal !== null && goalTotal !== null ? Math.max(0, roundTo(goalTotal - eTotal, 0.5)) : null
+  const goalPct = eTotal !== null && goalTotal !== null ? Math.min(100, Math.round((eTotal / goalTotal) * 100)) : null
+
+  const bmi = bwN !== null && heightN !== null && heightN > 0 ? Math.round((bwN / Math.pow(heightN / 100, 2)) * 10) / 10 : null
 
   return (
     <>
       <div className="card">
-        <Seg<Sex>
-          options={[
-            { id: 'm', label: 'Male' },
-            { id: 'f', label: 'Female' },
-          ]}
-          value={st.sex}
-          onChange={(sex) => patchCaliber({ sex })}
-        />
-        <div className="chips" style={{ marginTop: 12 }}>
+        <div className="cb-profile-head">
+          <span className="label" style={{ color: 'var(--m-caliber)' }}>Profile</span>
+          <Seg<Sex>
+            options={[
+              { id: 'm', label: 'M' },
+              { id: 'f', label: 'W' },
+            ]}
+            value={st.sex}
+            onChange={(sex) => patchCaliber({ sex })}
+          />
+        </div>
+        <div className="cb-fields">
+          <Field label="Height cm">
+            <input className="tinput" inputMode="numeric" value={height} placeholder="—"
+              onChange={(e) => {
+                setHeight(e.target.value)
+                const n = parseNum(e.target.value)
+                patchCaliber({ height: n !== null && n > 0 ? Math.round(n) : null })
+              }} />
+          </Field>
+          <Field label="Bodyweight kg">
+            <input className="tinput" inputMode="decimal" value={bw}
+              onChange={(e) => {
+                setBw(e.target.value)
+                const n = parseNum(e.target.value)
+                if (n !== null && n > 0) patchCaliber({ bodyweight: n })
+              }} />
+          </Field>
+          <Field label="Aim for top %">
+            <input className="tinput" inputMode="numeric" value={aim}
+              onChange={(e) => {
+                setAim(e.target.value)
+                const n = parseNum(e.target.value)
+                if (n !== null) patchCaliber({ aimTop: Math.min(50, Math.max(5, Math.round(n))) })
+              }} />
+          </Field>
+        </div>
+        <div className="cb-profile-line num">
+          {bmi !== null && <>BMI <b>{bmi}</b> · </>}
+          goals set for top <b>{aimTop}%</b> of adult {st.sex === 'm' ? 'men' : 'women'} at <b>{bwN ?? st.bodyweight} kg</b>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="cb-lifts">
           {LIFTS.map((l) => (
-            <button
-              key={l.id}
-              className={'chip' + (l.id === st.liftId ? ' on' : '')}
-              style={{ ['--chip-accent' as string]: 'var(--m-caliber)' } as CSSProperties}
-              onClick={() => patchCaliber({ liftId: l.id })}
-            >
+            <button key={l.id}
+              className={'cb-lift' + (l.id === st.liftId ? ' on' : '')}
+              onClick={() => patchCaliber({ liftId: l.id })}>
               {l.name}
             </button>
           ))}
         </div>
-        <div className="cb-fields">
-          <Field label="Bodyweight kg">
-            <input
-              className="tinput"
-              inputMode="decimal"
-              value={bw}
-              onChange={(e) => {
-                setBw(e.target.value)
-                const n = parseNum(e.target.value)
-                if (n !== null && n > 0) commit({ bodyweight: n })
-              }}
-            />
-          </Field>
-          <Field label="Weight kg">
-            <input
-              className="tinput"
-              inputMode="decimal"
-              value={weight}
-              onChange={(e) => {
-                setWeight(e.target.value)
-                const n = parseNum(e.target.value)
-                if (n !== null && n > 0) commit({ weight: n })
-              }}
-            />
-          </Field>
+        <div className="cb-fields two">
           <Field label="Reps">
-            <input
-              className="tinput"
-              inputMode="numeric"
-              value={reps}
+            <input className="tinput" inputMode="numeric" value={reps}
               onChange={(e) => {
                 setReps(e.target.value)
                 const n = parseNum(e.target.value)
-                if (n !== null && n >= 1) commit({ reps: Math.round(n) })
-              }}
-            />
+                if (n !== null && n >= 1) patchCaliber({ reps: Math.round(n) })
+              }} />
+          </Field>
+          <Field label={isBW ? 'Added kg (belt)' : 'Weight kg'}>
+            <input className="tinput" inputMode="decimal" value={weight}
+              onChange={(e) => {
+                setWeight(e.target.value)
+                const n = parseNum(e.target.value)
+                if (n !== null && (isBW ? n >= 0 : n > 0)) patchCaliber({ weight: n })
+              }} />
           </Field>
         </div>
-      </div>
 
-      {valid && estimate !== null && ratio !== null && level !== null && (
-        <div className="card cb-result">
-          <div className="cb-e1rm">
-            <span className="v num">{estimate}</span>
-            <span className="u">kg · e1RM</span>
-          </div>
-          <div className="cb-level">{level.name}</div>
-          <div className="cb-pct num">
-            Stronger than ~{percentileFor(level)}% — top {Math.max(1, 100 - percentileFor(level))}%
-          </div>
-          <LevelBar ratio={ratio} thresholds={thresholds} targetRatio={targetRatio} />
-          {conf && (
-            <div className="cb-conf">
-              <span className={'dot g' + conf.grade} aria-hidden="true" />
-              <span>
-                <b>{conf.label} confidence</b> at {repsN} reps — {conf.note}
-              </span>
-            </div>
-          )}
-          <button
-            className="btn btn-primary"
-            style={{ marginTop: 14 }}
-            onClick={() => {
-              const pr = logTest(st.liftId, estimate)
-              toast(pr ? `New ${liftById(st.liftId).name} PR — ${estimate} kg` : 'Test logged')
-            }}
-          >
-            Log this test
-          </button>
-        </div>
-      )}
-
-      {valid && (
-        <div className="card">
-          <div className="card-head">
-            <span className="label" style={{ color: 'var(--m-caliber)' }}>Target</span>
-          </div>
-          <div className="chips">
-            {LEVELS.map((name, i) =>
-              i === 0 ? null : (
-                <button
-                  key={name}
-                  className={'chip' + (i === st.targetLevel ? ' on' : '')}
-                  style={{ ['--chip-accent' as string]: 'var(--m-caliber)' } as CSSProperties}
-                  onClick={() => patchCaliber({ targetLevel: i })}
-                >
-                  {name}
-                </button>
-              ),
-            )}
-          </div>
-          {(() => {
-            const tRatio = thresholds[st.targetLevel - 1]
-            const targetKg = Math.round(tRatio * (bwN as number) * 2) / 2
-            const lift = liftById(st.liftId).name
-            const tLevel = levelFor(st.liftId, st.sex, tRatio)
-            const topPct = Math.max(1, 100 - percentileFor(tLevel))
-            const reached = estimate !== null && estimate >= targetKg
-            return (
-              <>
-                <div className="kv">
-                  <span className="k">
-                    {LEVELS[st.targetLevel]} {lift} · top {topPct}%
-                  </span>
-                  <span className="num">
-                    {targetKg} kg e1RM · {tRatio}× BW
-                  </span>
-                </div>
-                {reached ? (
-                  <div className="cb-target-line">Already there — the marker on the bar is behind you.</div>
-                ) : (
+        {valid && shown !== null && youPct !== null && level !== null && (
+          <>
+            <div className="cb-est">
+              <div className="cb-est-k">Estimated 1RM{isBW ? ' · added' : ''}</div>
+              <div className="cb-est-v">
+                <span className="num">{isBW && shown >= 0 ? '+' : ''}{shown}</span>
+                <span className="u">kg</span>
+              </div>
+              <div className="cb-est-sub">
+                Brzycki {isBW && (bShown as number) >= 0 ? '+' : ''}{bShown}
+                {conf && (
                   <>
-                    {weightN !== null && weightN > 0 && (
-                      <div className="kv">
-                        <span className="k">At {weightN} kg</span>
-                        <span className="num">
-                          {repsForTarget(weightN, targetKg) > 15
-                            ? 'add weight first'
-                            : `${repsForTarget(weightN, targetKg)} reps`}
-                        </span>
-                      </div>
-                    )}
-                    {repsN !== null && repsN >= 1 && (
-                      <div className="kv">
-                        <span className="k">At {repsN} reps</span>
-                        <span className="num">
-                          {Math.round(weightForTarget(repsN, targetKg) * 2) / 2} kg
-                        </span>
-                      </div>
-                    )}
+                    {' '}· <span className={'dot g' + conf.grade} /> {conf.label} confidence
                   </>
                 )}
-              </>
-            )
-          })()}
+                <span className="cb-lvl"> · {level.name}</span>
+              </div>
+            </div>
+
+            <div className="cb-you">You</div>
+            <PercentileAxis you={youPct} aim={100 - aimTop} />
+
+            {goalTotal !== null && goalShown !== null && goalPct !== null && (
+              <div className="cb-goalbar-wrap">
+                <div className="cb-goalbar-head">
+                  <span>Progress to goal</span>
+                  <span className="num">{goalPct}%</span>
+                </div>
+                <div className="cb-goalbar"><i style={{ width: `${goalPct}%` }} /></div>
+                <div className="cb-goalbar-sub num">
+                  {toGo !== null && toGo > 0
+                    ? `${toGo} kg to go (goal ${isBW ? '+' : ''}${goalShown} kg)`
+                    : `goal met — ${isBW ? '+' : ''}${goalShown} kg is behind you`}
+                </div>
+              </div>
+            )}
+
+            {toGo !== null && toGo > 0 && goalTotal !== null && (
+              <div className="cb-reach">
+                <div className="cb-reach-k">To reach your goal</div>
+                <div className="kv">
+                  <span className="k">at {isBW ? `+${weightN}` : weightN} kg</span>
+                  <span className="num">
+                    {repsForTarget(load as number, goalTotal) > 15 ? 'add weight first' : `${repsForTarget(load as number, goalTotal)} reps`}
+                  </span>
+                </div>
+                <div className="kv">
+                  <span className="k">at {repsN} reps</span>
+                  <span className="num">
+                    {isBW
+                      ? `+${Math.max(0, roundTo(weightForTarget(repsN as number, goalTotal) - (bwN as number), 0.5))} kg`
+                      : `${roundTo(weightForTarget(repsN as number, goalTotal), 0.5)} kg`}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }}
+              onClick={() => {
+                const pr = logTest(st.liftId, eTotal as number)
+                toast(pr ? `New ${lift.name} PR — ${isBW ? '+' + shown : shown} kg` : 'Set saved')
+              }}>
+              Save this set
+            </button>
+          </>
+        )}
+      </div>
+
+      {bwN !== null && (
+        <div className="card">
+          <div className="card-head">
+            <span className="label" style={{ color: 'var(--m-caliber)' }}>Goals · top {aimTop}% · {bwN} kg</span>
+          </div>
+          <div className="cb-goals">
+            {LIFTS.map((l) => {
+              const total = goalTotalKg(l.id, st.sex, bwN, aimTop)
+              const v = l.bw ? Math.max(0, roundTo(total - bwN, 0.5)) : total
+              return (
+                <div key={l.id} className="cb-goal">
+                  <div className="k">{l.name}{l.bw ? ' added' : ''}</div>
+                  <div className="v num">{l.bw ? '+' : ''}{String(v).replace('.', ',')}<span className="u"> kg</span></div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </>
@@ -251,49 +276,64 @@ function ProgressTab() {
   const st = useStore(caliberStore)
   const [lift, setLift] = useState(st.liftId)
   const series = (st.tests[lift] ?? []).map((t) => t.e1rm)
+  const disp = (l: { bw?: boolean }, total: number) => (l.bw ? `+${Math.max(0, roundTo(total - st.bodyweight, 0.5))}` : String(total))
+  const recent = LIFTS.flatMap((l) => (st.tests[l.id] ?? []).map((t) => ({ lift: l, ...t })))
+    .sort((a, b) => b.ts - a.ts)
+    .slice(0, 8)
   return (
     <>
       <div className="ins-grid">
-        {LIFTS.slice(0, 4).map((l) => (
-          <StatBox
-            key={l.id}
-            label={l.name}
-            value={st.prs[l.id] ? `${st.prs[l.id].e1rm}` : '—'}
-            sub={st.prs[l.id] ? 'kg best e1RM' : 'not tested'}
-          />
-        ))}
+        {LIFTS.map((l) => {
+          const s = (st.tests[l.id] ?? []).map((t) => t.e1rm)
+          return (
+            <button key={l.id} className={'cb-mini' + (l.id === lift ? ' on' : '')} onClick={() => setLift(l.id)}>
+              <div className="k">{l.name}</div>
+              {s.length >= 2 ? (
+                <div className="cb-mini-chart"><Line values={s} accentVar="var(--m-caliber)" /></div>
+              ) : (
+                <div className="cb-mini-empty">no sets yet</div>
+              )}
+              {s.length > 0 && <div className="v num">{disp(l, Math.max(...s))} kg</div>}
+            </button>
+          )
+        })}
       </div>
       <div className="card">
-        <div className="chips" style={{ marginBottom: 12 }}>
-          {LIFTS.map((l) => (
-            <button
-              key={l.id}
-              className={'chip' + (l.id === lift ? ' on' : '')}
-              style={{ ['--chip-accent' as string]: 'var(--m-caliber)' } as CSSProperties}
-              onClick={() => setLift(l.id)}
-            >
-              {l.name}
-            </button>
-          ))}
+        <div className="card-head">
+          <span className="label" style={{ color: 'var(--m-caliber)' }}>{liftById(lift).name} · estimated 1RM over time</span>
         </div>
         {series.length >= 2 ? (
           <>
             <Line values={series} accentVar="var(--m-caliber)" />
             <div className="cd-heat-label num">
-              {series.length} tests · best {Math.max(...series)} kg · last {series[series.length - 1]} kg
+              {series.length} sets · best {disp(liftById(lift), Math.max(...series))} kg · last {disp(liftById(lift), series[series.length - 1])} kg
             </div>
           </>
         ) : (
-          <div className="rs-foot">
-            Log at least two tests of {liftById(lift).name} on the Test tab and the trend draws itself
-            here.
-          </div>
+          <div className="rs-foot">Save at least two sets of {liftById(lift).name} and the trend draws itself here.</div>
+        )}
+      </div>
+      <div className="card">
+        <div className="card-head">
+          <span className="label" style={{ color: 'var(--m-caliber)' }}>History</span>
+        </div>
+        {recent.length === 0 ? (
+          <div className="rs-foot">No saved sets yet. Log one on Test and it lands here.</div>
+        ) : (
+          recent.map((r, i) => (
+            <div className="kv" key={i}>
+              <span className="k">{r.lift.name}</span>
+              <span className="num">
+                {disp(r.lift, r.e1rm)} kg · {new Date(r.ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+              </span>
+            </div>
+          ))
         )}
       </div>
       <div className="card guide">
         <p>
           <b>Test rarely, train mostly.</b> An e1RM check every two to four weeks per lift is plenty —
-          the chart should climb in stairs, not wobble daily. Same lift, same rep range, similar
+          the chart should climb in stairs, not wobble daily. Same lift, similar rep range, similar
           fatigue: that's what makes two points comparable.
         </p>
       </div>
@@ -306,60 +346,71 @@ function ProgressTab() {
 function StandardsTab() {
   const st = useStore(caliberStore)
   const bw = st.bodyweight
+  const aimPct = 100 - st.aimTop
+  const cols = [...new Set([5, 25, 50, aimPct, 95])].sort((a, b) => a - b)
   return (
     <>
       <div className="card">
         <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-caliber)' }}>
-            Standards for your bodyweight · {bw} kg {st.sex === 'm' ? 'male' : 'female'}
-          </span>
+          <span className="label" style={{ color: 'var(--m-caliber)' }}>Standards for your bodyweight</span>
         </div>
-        {LIFTS.map((l) => {
-          const ths = STANDARDS[l.id][st.sex]
-          const pr = st.prs[l.id]?.e1rm
-          return (
-            <div className="cb-std" key={l.id}>
-              <div className="cb-std-name">
-                {l.name}
-                {pr !== undefined && <span className="num pr"> · yours {pr} kg</span>}
-              </div>
-              <div className="cb-std-row num">
-                {ths.map((t, i) => {
-                  const kg = Math.round(t * bw * 2) / 2
-                  const hit = pr !== undefined && pr >= kg
+        <p className="guide-p">
+          Where each 1RM lands on the percentile scale, at <b>{bw} kg</b> bodyweight for the selected
+          sex. Your aim of top <b>{st.aimTop}%</b> is highlighted.
+        </p>
+        <div className="cb-tbl num" style={{ ['--cols' as string]: String(cols.length) } as CSSProperties}>
+          <div className="cb-tbl-row head">
+            <span className="lift">Lift</span>
+            {cols.map((p) => (
+              <span key={p} className={p === aimPct ? 'aim' : ''}>{p}th{p === aimPct ? ' · aim' : ''}</span>
+            ))}
+          </div>
+          {LIFTS.map((l) => {
+            const pr = st.prs[l.id]?.e1rm
+            return (
+              <div className="cb-tbl-row" key={l.id}>
+                <span className="lift">{l.name}</span>
+                {cols.map((p) => {
+                  const total = roundTo(ratioForPercentile(l.id, st.sex, p) * bw, 2.5)
+                  const v = l.bw ? Math.max(0, roundTo(total - bw, 2.5)) : total
+                  const hit = pr !== undefined && pr >= total
                   return (
-                    <span key={i} className={'cb-std-cell' + (hit ? ' hit' : '')}>
-                      <i>{LEVELS[i + 1].slice(0, 3)}</i>
-                      {kg}
+                    <span key={p} className={(p === aimPct ? 'aim' : '') + (hit ? ' hit' : '')}>
+                      {l.bw ? '+' : ''}{String(v).replace('.', ',')}
                     </span>
                   )
                 })}
               </div>
-            </div>
-          )
-        })}
-        <p className="rs-foot" style={{ marginTop: 10 }}>
-          Entries are the e1RM that <i>enters</i> each level, as bodyweight multiples. They're
-          calibrated approximations for orientation — a compass, not a scale. Filled cells are levels
-          your logged PRs already clear.
-        </p>
+            )
+          })}
+        </div>
       </div>
 
       <div className="card guide">
         <p>
-          <b>How the numbers work.</b> Your one-rep max is estimated from any hard set:{' '}
-          <b>Epley</b> says 1RM = w × (1 + r/30); <b>Brzycki</b> says 1RM = w × 36/(37 − r). They
-          bracket most lifters, so CALIBER averages them — e.g. 100 kg × 5 →{' '}
-          <span className="num">{Math.round(epley(100, 5) * 2) / 2}</span> and{' '}
-          <span className="num">{Math.round(brzycki(100, 5) * 2) / 2}</span>, logged as{' '}
-          <span className="num">{Math.round(e1rm(100, 5) * 2) / 2} kg</span>.
+          <b>1RM estimate.</b> Uses the Epley formula (weight × (1 + reps ÷ 30)), with Brzycki shown
+          as a cross-check. Both are most accurate at <b>5 reps or fewer</b>; past ~10 they drift and
+          tend to overestimate — the confidence dot warns you. For sporadic testing this matters: a
+          heavy triple tells you far more than a light set of fifteen.
         </p>
         <p>
-          <b>Why the confidence dot.</b> The two formulas agree tightly at low reps and drift apart as
-          reps rise — past ten, the estimate reflects endurance more than maximal strength. Test in
-          the 3–6 range when you want a number you can plan around.
+          <b>Percentiles and goals.</b> Standards are approximate, drawn from aggregated public lifter
+          data, keyed to <b>bodyweight</b> and the M/W switch. Height is recorded for context (BMI)
+          but isn't a percentile axis — leverages vary, and no reliable dataset segments lifts by
+          height. Your goal for each lift is the weight that would place you at your chosen
+          percentile, rounded to the nearest 2.5.
+        </p>
+        <p>
+          <b>Weighted pull-ups.</b> Computed on the full system load (bodyweight + added), then
+          reported as the <b>added</b> weight. Enter only the weight you hang from the belt.
+        </p>
+        <p>
+          <b>Reverse math.</b> "At your weight → N reps" is the reps you'd need at the weight you just
+          entered to prove your goal 1RM. "At your reps → W kg" is the weight that would prove it at
+          the rep count you entered.
         </p>
       </div>
+      <p className="rs-foot">Percentile anchors sit at the {PERCENTILES.join(' / ')}th marks; everything between is interpolated.</p>
     </>
   )
 }

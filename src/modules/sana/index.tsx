@@ -12,13 +12,21 @@ function PillIcon({ size = 18 }: { size?: number }) {
   )
 }
 
-function ListIcon({ size = 18 }: { size?: number }) {
+function LayersIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M8.5 6.5H20M8.5 12H20M8.5 17.5H20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="4.6" cy="6.5" r="1.4" fill="currentColor" />
-      <circle cx="4.6" cy="12" r="1.4" fill="currentColor" />
-      <circle cx="4.6" cy="17.5" r="1.4" fill="currentColor" />
+      <path d="m12 3 9 5-9 5-9-5z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="m4.5 12.5 7.5 4.2 7.5-4.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="m4.5 16.5 7.5 4.2 7.5-4.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
+    </svg>
+  )
+}
+
+function BookIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 6c-2-1.6-4.6-2-8-2v14c3.4 0 6 .4 8 2 2-1.6 4.6-2 8-2V4c-3.4 0-6 .4-8 2z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M12 6v14" stroke="currentColor" strokeWidth="1.4" opacity="0.6" />
     </svg>
   )
 }
@@ -38,14 +46,15 @@ function SanaIcon({ size = 22 }: { size?: number }) {
 const sana: ModuleDefinition = {
   id: 'sana',
   name: 'SANA',
-  tagline: 'Supplements & medicine, on rails',
+  tagline: 'Your stacks, on rails',
   accentVar: 'var(--m-sana)',
   schemaVersion: 1,
   Icon: SanaIcon,
   tabs: [
     { id: 'today', label: 'Today', Icon: PillIcon },
-    { id: 'stack', label: 'Stack', Icon: ListIcon },
-    { id: 'insights', label: 'Insights', Icon: ChartIcon },
+    { id: 'stacks', label: 'Stacks', Icon: LayersIcon },
+    { id: 'history', label: 'History', Icon: ChartIcon },
+    { id: 'library', label: 'Library', Icon: BookIcon },
   ],
   Screen: SanaScreen,
   Widget: SanaWidget,

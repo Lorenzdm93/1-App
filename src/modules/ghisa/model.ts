@@ -779,3 +779,18 @@ export const TRAINING_ADVICE: readonly { title: string; body: string }[] = [
     body: "That's why W-sets are excluded from volume and PRs everywhere in GHISA — inflating the numbers would only blur the signal you're training for.",
   },
 ]
+
+/** Copy a template — same exercises, fresh ids, ' copy' suffix. */
+export function duplicateTemplate(templateId: string): void {
+  ghisaStore.set((s) => {
+    const t = s.templates.find((x) => x.id === templateId)
+    if (!t) return s
+    const copy: Template = {
+      ...t,
+      id: uid(),
+      name: `${t.name} copy`,
+      exercises: t.exercises.map((e) => ({ ...e, id: uid() })),
+    }
+    return { ...s, templates: [...s.templates, copy] }
+  })
+}

@@ -15,51 +15,75 @@ export interface TestEntry {
 export interface CaliberState {
   sex: Sex
   bodyweight: number
+  /** cm; context only (BMI line) — never a percentile axis. */
+  height: number | null
   liftId: string
   weight: number
   reps: number
   prs: Record<string, PR>
   /** Every logged test per lift, oldest → newest — chart fuel. */
   tests: Record<string, TestEntry[]>
-  /** LEVELS index the lifter is aiming for (1 = Beginner … 5 = Elite). */
-  targetLevel: number
+  /** The aim: "top X%". 30 = stronger than 70% of the population. */
+  aimTop: number
 }
 
 const DEFAULTS: CaliberState = {
   sex: 'm',
   bodyweight: 80,
+  height: null,
   liftId: 'bench',
   weight: 80,
   reps: 5,
   prs: {},
   tests: {},
-  targetLevel: 3,
+  aimTop: 30,
 }
 
-/** v1 had no test history and no target. Seed test series from existing PRs. */
+import { PERCENTILES } from './formulas'
+
+interface V2Extras {
+  targetLevel?: number
+}
+
+/**
+ * v1 had no test history and no target. v2 aimed at a LEVEL; v3 aims at a
+ * percentile — the old target maps to the percentile its threshold sat on.
+ */
 export function migrateCaliber(data: unknown, fromVersion: number): CaliberState {
-  if (fromVersion === 1 && data !== null && typeof data === 'object') {
-    const d = data as Partial<CaliberState>
+  if ((fromVersion === 1 || fromVersion === 2) && data !== null && typeof data === 'object') {
+    const d = data as Partial<CaliberState> & V2Extras
     const prs = d.prs && typeof d.prs === 'object' ? d.prs : {}
-    const tests: Record<string, TestEntry[]> = {}
-    for (const [lift, pr] of Object.entries(prs)) {
-      if (pr && typeof pr.e1rm === 'number') tests[lift] = [{ e1rm: pr.e1rm, ts: pr.ts }]
+    let tests: Record<string, TestEntry[]> = d.tests && typeof d.tests === 'object' ? d.tests : {}
+    if (fromVersion === 1) {
+      tests = {}
+      for (const [lift, pr] of Object.entries(prs)) {
+        if (pr && typeof pr.e1rm === 'number') tests[lift] = [{ e1rm: pr.e1rm, ts: pr.ts }]
+      }
+    }
+    let aimTop = 30
+    if (typeof d.targetLevel === 'number' && d.targetLevel >= 1 && d.targetLevel <= 5) {
+      const pct = PERCENTILES[d.targetLevel - 1]
+      aimTop = Math.min(50, Math.max(5, Math.round((100 - pct) / 5) * 5))
+    } else if (typeof (d as { aimTop?: number }).aimTop === 'number') {
+      aimTop = (d as { aimTop: number }).aimTop
     }
     return {
       ...DEFAULTS,
       sex: d.sex === 'f' ? 'f' : 'm',
       bodyweight: typeof d.bodyweight === 'number' ? d.bodyweight : 80,
+      height: typeof (d as { height?: number }).height === 'number' ? (d as { height: number }).height : null,
       liftId: typeof d.liftId === 'string' ? d.liftId : 'bench',
       weight: typeof d.weight === 'number' ? d.weight : 80,
       reps: typeof d.reps === 'number' ? d.reps : 5,
       prs,
       tests,
+      aimTop,
     }
   }
   return DEFAULTS
 }
 
-export const caliberStore = createPersistedStore<CaliberState>('caliber', DEFAULTS, 2, migrateCaliber)
+export const caliberStore = createPersistedStore<CaliberState>('caliber', DEFAULTS, 3, migrateCaliber)
 
 export function patchCaliber(patch: Partial<CaliberState>): void {
   caliberStore.set((s) => ({ ...s, ...patch }))

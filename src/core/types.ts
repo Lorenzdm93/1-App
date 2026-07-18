@@ -36,6 +36,8 @@ export interface ModuleDefinition {
   Widget: ComponentType
   /** Optional chip row rendered under the widget — one-tap actions from Today. */
   QuickActions?: ComponentType
+  /** Optional module-specific section rendered above the shared Settings tab chrome. */
+  SettingsExtra?: ComponentType
 }
 
 /**

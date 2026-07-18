@@ -7,10 +7,10 @@ import { sanaStore, dueOn, isTaken } from './model'
 export default function SanaQuickActions() {
   const st = useStore(sanaStore)
   const today = todayKey()
-  const remaining = dueOn(st, today).filter(({ item, slot }) => !isTaken(st, item.id, slot, today)).length
+  const remaining = dueOn(st, today).filter(({ compound }) => !isTaken(st, compound.id, today)).length
   if (remaining === 0) return null
   return (
-    <button className="qa" style={{ ["--qa-accent" as string]: "var(--m-sana)" } as CSSProperties} onClick={() => navigate('/m/sana/today')}>
+    <button className="qa" style={{ ['--qa-accent' as string]: 'var(--m-sana)' } as CSSProperties} onClick={() => navigate('/m/sana/today')}>
       <span className="qa-dot" />
       {remaining} dose{remaining === 1 ? '' : 's'} left today
     </button>

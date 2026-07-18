@@ -11,6 +11,7 @@ import {
   EXERCISES,
   startSession,
   startFromTemplate,
+  duplicateTemplate,
   addExercise,
   removeExercise,
   addPlannedSet,
@@ -514,41 +515,77 @@ function TemplateEditor({
 
 function Train({ templates }: { templates: Template[] }) {
   const [editing, setEditing] = useState<Template | 'new' | null>(null)
+  const [menu, setMenu] = useState<Template | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Template | null>(null)
   return (
     <>
-      <button className="btn btn-primary" onClick={startSession}>
-        Start empty workout
+      <button className="btn btn-primary gh-start-hero" onClick={startSession}>
+        ▶&nbsp; Start empty workout
       </button>
-      <div className="section-label">Templates</div>
+      <div className="gh-tpl-bar">
+        <span className="section-label" style={{ margin: 0 }}>Templates</span>
+        <button className="linklike" onClick={() => setEditing('new')}>+ New template</button>
+      </div>
       {templates.map((t) => (
-        <div className="card" key={t.id}>
+        <div className="card gh-tpl" key={t.id}>
           <div className="gh-tpl-head">
-            <div>
-              <div className="gh-hist-date">{t.name}</div>
-              <div className="gh-hist-sub">
-                {t.exercises.map((e) => e.name).join(' · ')}
-              </div>
-            </div>
-            <button className="gh-tpl-edit" onClick={() => setEditing(t)} aria-label={`Edit ${t.name}`}>
-              Edit
+            <div className="gh-tpl-name">{t.name}</div>
+            <button className="gh-dots" onClick={() => setMenu(t)} aria-label={`More for ${t.name}`}>⋯</button>
+          </div>
+          <div className="gh-tpl-preview">{t.exercises.map((e) => e.name).join(' · ')}</div>
+          <div className="gh-tpl-actions">
+            <button className="btn btn-primary gh-tpl-start" onClick={() => startFromTemplate(t.id)}>
+              ▶&nbsp; Start
+            </button>
+            <button className="gh-pencil" onClick={() => setEditing(t)} aria-label={`Edit ${t.name}`}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="m13.5 6.5 3 3" stroke="currentColor" strokeWidth="1.8" />
+              </svg>
             </button>
           </div>
-          <button
-            className="btn btn-ghost btn-sm"
-            style={{ marginTop: 10, width: '100%' }}
-            onClick={() => startFromTemplate(t.id)}
-          >
-            Start {t.name}
-          </button>
         </div>
       ))}
-      <button className="btn btn-ghost" style={{ marginTop: 12 }} onClick={() => setEditing('new')}>
-        New template
-      </button>
       <TemplateEditor
         key={editing === null ? 'none' : editing === 'new' ? 'new' : editing.id}
         editing={editing}
         onClose={() => setEditing(null)}
+      />
+      <Sheet open={menu !== null} title={menu?.name ?? ''} onClose={() => setMenu(null)}>
+        <button
+          className="btn btn-ghost"
+          style={{ width: '100%' }}
+          onClick={() => {
+            if (menu) {
+              duplicateTemplate(menu.id)
+              toast(`${menu.name} duplicated`)
+            }
+            setMenu(null)
+          }}
+        >
+          Duplicate template
+        </button>
+        <button
+          className="btn btn-danger"
+          style={{ width: '100%', marginTop: 10 }}
+          onClick={() => {
+            setConfirmDelete(menu)
+            setMenu(null)
+          }}
+        >
+          Delete template
+        </button>
+      </Sheet>
+      <ConfirmSheet
+        open={confirmDelete !== null}
+        title={`Delete ${confirmDelete?.name ?? ''}?`}
+        body="Logged workouts started from it stay in History — only the template goes."
+        actionLabel="Delete"
+        danger
+        onConfirm={() => {
+          if (confirmDelete) deleteTemplate(confirmDelete.id)
+        }}
+        onClose={() => setConfirmDelete(null)}
       />
     </>
   )

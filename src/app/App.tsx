@@ -10,7 +10,22 @@ import Settings from '../screens/Settings'
 import Onboarding from '../screens/Onboarding'
 import TabBar from './TabBar'
 import ModuleTabBar from './ModuleTabBar'
+import ModuleSettingsScreen from './ModuleSettingsScreen'
 import { ToastHost } from './ui'
+
+function GearIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.9 1.9M7.4 16.6l-1.9 1.9M18.5 18.5l-1.9-1.9M7.4 7.4 5.5 5.5"
+        stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+export const SETTINGS_TAB = { id: 'settings', label: 'Settings', Icon: GearIcon } as const
 
 function Wordmark({ name, accent }: { name: string; accent: string }) {
   const chars = [...name]
@@ -40,8 +55,9 @@ function ModuleScreen({ id, tab }: { id: string; tab?: string }) {
     navigate('/')
     return null
   }
-  const tabs = mod.tabs
-  const active = tabs ? (tabs.some((t) => t.id === tab) ? (tab as string) : tabs[0].id) : undefined
+  // Every module gets the gear — Settings is a platform tab, not a module chore.
+  const tabs = [...(mod.tabs ?? []), SETTINGS_TAB]
+  const active = tabs.some((t) => t.id === tab) ? (tab as string) : tabs[0].id
   return (
     <div className="mod-scope" style={{ ['--accent' as string]: mod.accentVar } as CSSProperties}>
       <div className="mod-head">
@@ -56,8 +72,8 @@ function ModuleScreen({ id, tab }: { id: string; tab?: string }) {
           <div className="sub eyebrow-sub">{mod.tagline}</div>
         </div>
       </div>
-      <mod.Screen tab={active} />
-      {tabs && <ModuleTabBar moduleId={mod.id} tabs={tabs} active={active as string} />}
+      {active === 'settings' ? <ModuleSettingsScreen mod={mod} /> : <mod.Screen tab={active} />}
+      <ModuleTabBar moduleId={mod.id} tabs={tabs} active={active} />
     </div>
   )
 }

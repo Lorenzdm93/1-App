@@ -94,3 +94,8 @@ export function countEvents(
   }
   return n
 }
+
+/** Drops every event a module produced — pairs with erasing its storage. */
+export function removeModuleEvents(moduleId: string): void {
+  eventsStore.set(eventsStore.get().filter((e) => e.module !== moduleId))
+}
