@@ -22,7 +22,7 @@ const caliber: ModuleDefinition = {
   name: 'CALIBER',
   tagline: 'Strength gauge — e1RM and standards per lift.',
   accentVar: 'var(--m-caliber)',
-  schemaVersion: 1,
+  schemaVersion: 2,
   Icon,
   Screen,
   Widget,

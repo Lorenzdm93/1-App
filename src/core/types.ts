@@ -1,5 +1,10 @@
 import type { ComponentType } from 'react'
 
+export interface ModuleTab {
+  id: string
+  label: string
+}
+
 /**
  * The contract every module implements. Modules never import each other;
  * they talk to the platform through storage namespaces and metric events.
@@ -17,8 +22,14 @@ export interface ModuleDefinition {
   schemaVersion: number
   /** Small inline SVG mark. */
   Icon: ComponentType<{ size?: number }>
-  /** Full-screen module UI. */
-  Screen: ComponentType
+  /**
+   * Optional internal bottom tabs. When present, the shell replaces the
+   * global tab bar with these while inside the module — each module can be
+   * a small app of its own; leaving restores the 1% bar.
+   */
+  tabs?: readonly ModuleTab[]
+  /** Full-screen module UI. Receives the active internal tab when `tabs` is set. */
+  Screen: ComponentType<{ tab?: string }>
   /** Compact card content for the Today dashboard. May be interactive. */
   Widget: ComponentType
   /** Optional chip row rendered under the widget — one-tap actions from Today. */

@@ -9,6 +9,7 @@ import {
   activeHabits,
   isChecked,
   addHabit,
+  editHabit,
   archiveHabit,
   toggleCheck,
   setCheck,
@@ -20,6 +21,10 @@ import {
   monthGrid,
   monthDayKey,
   dayCompletion,
+  weekStartKey,
+  weekDayKeys,
+  countInWeek,
+  weekStreak,
   EMOJI_PRESETS,
   PALETTE,
   type Habit,
@@ -30,46 +35,112 @@ function accent(h: Habit): CSSProperties {
   return { ['--h-acc' as string]: h.color } as CSSProperties
 }
 
-/* ---------- today ---------- */
+/* ---------- weekly ring ---------- */
+
+function WeekRing({ count, target }: { count: number; target: number }) {
+  const r = 14
+  const C = 2 * Math.PI * r
+  const frac = Math.min(1, count / target)
+  return (
+    <span className="cdh-ring" aria-label={`${count} of ${target} this week`}>
+      <svg viewBox="0 0 36 36" aria-hidden="true">
+        <circle cx="18" cy="18" r={r} fill="none" stroke="var(--line)" strokeWidth="3" />
+        <circle
+          cx="18"
+          cy="18"
+          r={r}
+          fill="none"
+          stroke="var(--h-acc, var(--m-cadence))"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={`${frac * C} ${C - frac * C}`}
+          transform="rotate(-90 18 18)"
+        />
+      </svg>
+      <span className="n num">{count}</span>
+    </span>
+  )
+}
+
+/* ---------- today rows ---------- */
+
+function WeekDots({ habitId }: { habitId: string }) {
+  const st = useStore(cadenceStore)
+  const today = todayKey()
+  const days = weekDayKeys(weekStartKey(today))
+  return (
+    <span className="cdh-week" aria-hidden="true">
+      {days.map((day) => (
+        <span
+          key={day}
+          className={
+            'cdh-wdot' +
+            (isChecked(st, habitId, day) ? ' on' : '') +
+            (day === today ? ' today' : '') +
+            (day > today ? ' future' : '')
+          }
+        />
+      ))}
+    </span>
+  )
+}
 
 function BuildRow({ habit, onManage }: { habit: Habit; onManage: () => void }) {
   const st = useStore(cadenceStore)
   const done = isChecked(st, habit.id)
-  const streak = habitStreak(st, habit.id)
-  const week = lastNDayKeys(7)
+  const daily = habit.targetPerWeek === 7
+  const count = countInWeek(st, habit.id, weekStartKey(todayKey()))
+  const streakLabel = daily
+    ? `${habitStreak(st, habit.id)}d`
+    : `${weekStreak(st, habit.id)}w`
   return (
-    <div className="cd-row" style={accent(habit)}>
+    <div className="cdh-row" style={accent(habit)}>
       <button
-        className={'cd-check' + (done ? ' done' : '')}
+        className={'cdh-tile' + (done ? ' done' : '')}
         onClick={() => toggleCheck(habit.id)}
         aria-label={(done ? 'Uncheck ' : 'Check ') + habit.name}
+        aria-pressed={done}
       >
-        {habit.emoji}
+        <span className="em" aria-hidden="true">{habit.emoji}</span>
+        <span className="tick" aria-hidden="true">✓</span>
       </button>
-      <button className="cd-info" onClick={onManage} style={{ textAlign: 'left' }}>
-        <div className="cd-name">{habit.name}</div>
-        {habit.cue && <div className="cd-cue">{habit.cue}</div>}
-        <div className="cd-strip" aria-hidden="true">
-          {week.map((day) => (
-            <span key={day} className={'cd-cell' + (isChecked(st, habit.id, day) ? ' on' : '')} />
-          ))}
-        </div>
+      <button className="cdh-info" onClick={onManage}>
+        <span className="cdh-name">{habit.name}</span>
+        <span className="cdh-sub">
+          {streakLabel} streak
+          {!daily && ` · ${count}/${habit.targetPerWeek} this week`}
+          {habit.cue ? ` · ${habit.cue}` : ''}
+        </span>
+        <WeekDots habitId={habit.id} />
       </button>
-      <span className="cd-streak num">{streak > 0 ? `${streak}d` : '—'}</span>
+      <WeekRing count={count} target={habit.targetPerWeek} />
     </div>
   )
 }
 
-function QuitRow({ habit, onManage, onSlip }: { habit: Habit; onManage: () => void; onSlip: () => void }) {
+function QuitRow({
+  habit,
+  onManage,
+  onSlip,
+}: {
+  habit: Habit
+  onManage: () => void
+  onSlip: () => void
+}) {
   const st = useStore(cadenceStore)
   const clean = daysClean(st, habit.id)
   const slippedToday = slipDays(st, habit.id).includes(todayKey())
   return (
-    <div className="cd-row" style={accent(habit)}>
-      <span className="cd-check quit" aria-hidden="true">{habit.emoji}</span>
-      <button className="cd-info" onClick={onManage} style={{ textAlign: 'left' }}>
-        <div className="cd-name">{habit.name}</div>
-        <div className="cd-cue">{clean === 1 ? '1 day clean' : `${clean} days clean`}{habit.cue ? ` · ${habit.cue}` : ''}</div>
+    <div className="cdh-row" style={accent(habit)}>
+      <span className="cdh-tile quit" aria-hidden="true">
+        <span className="em">{habit.emoji}</span>
+      </span>
+      <button className="cdh-info" onClick={onManage}>
+        <span className="cdh-name">{habit.name}</span>
+        <span className="cdh-sub">{habit.cue ?? 'clean days'}</span>
+        <span className="cdh-clean num">
+          {clean} <i>{clean === 1 ? 'day clean' : 'days clean'}</i>
+        </span>
       </button>
       {slippedToday ? (
         <button className="cd-slip undone" onClick={() => undoTodaySlip(habit.id)}>
@@ -202,7 +273,9 @@ function YearGrid({ habit }: { habit: Habit }) {
         </span>
         <span className="cd-streak num">
           {habit.type === 'build'
-            ? `${habitStreak(st, habit.id)}d streak`
+            ? habit.targetPerWeek === 7
+              ? `${habitStreak(st, habit.id)}d streak`
+              : `${weekStreak(st, habit.id)}w streak`
             : `${daysClean(st, habit.id)}d clean`}
         </span>
       </div>
@@ -226,40 +299,53 @@ function YearGrid({ habit }: { habit: Habit }) {
   )
 }
 
-/* ---------- editor + manage ---------- */
+/* ---------- habit form (add + edit) ---------- */
 
-function AddHabitSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [name, setName] = useState('')
-  const [emoji, setEmoji] = useState<string>(EMOJI_PRESETS[0])
-  const [color, setColor] = useState<string>(PALETTE[0])
-  const [type, setType] = useState<HabitType>('build')
-  const [cue, setCue] = useState('')
+function HabitForm({
+  mode,
+  habit,
+  open,
+  onClose,
+}: {
+  mode: 'add' | 'edit'
+  habit?: Habit
+  open: boolean
+  onClose: () => void
+}) {
+  const [name, setName] = useState(habit?.name ?? '')
+  const [emoji, setEmoji] = useState<string>(habit?.emoji ?? EMOJI_PRESETS[0])
+  const [color, setColor] = useState<string>(habit?.color ?? PALETTE[0])
+  const [type, setType] = useState<HabitType>(habit?.type ?? 'build')
+  const [cue, setCue] = useState(habit?.cue ?? '')
+  const [target, setTarget] = useState<number>(habit?.targetPerWeek ?? 7)
 
   function commit() {
     if (!name.trim()) {
       toast('Give the habit a name')
       return
     }
-    addHabit({ name, emoji, color, type, cue })
-    setName('')
-    setCue('')
-    setEmoji(EMOJI_PRESETS[0])
-    setColor(PALETTE[0])
-    setType('build')
+    if (mode === 'add') {
+      addHabit({ name, emoji, color, type, cue, targetPerWeek: target })
+      toast('Habit added')
+    } else if (habit) {
+      editHabit(habit.id, { name, emoji, color, cue, targetPerWeek: target })
+      toast('Habit updated')
+    }
     onClose()
-    toast('Habit added')
   }
 
   return (
-    <Sheet open={open} title="New habit" onClose={onClose}>
-      <Seg<HabitType>
-        options={[
-          { id: 'build', label: 'Build' },
-          { id: 'quit', label: 'Quit' },
-        ]}
-        value={type}
-        onChange={setType}
-      />
+    <Sheet open={open} title={mode === 'add' ? 'New habit' : 'Edit habit'} onClose={onClose}>
+      {mode === 'add' ? (
+        <Seg<HabitType>
+          options={[
+            { id: 'build', label: 'Build' },
+            { id: 'quit', label: 'Quit' },
+          ]}
+          value={type}
+          onChange={setType}
+        />
+      ) : null}
       <input
         className="tinput"
         placeholder={type === 'build' ? 'e.g. Read 10 pages' : 'e.g. No cigarettes'}
@@ -274,6 +360,25 @@ function AddHabitSheet({ open, onClose }: { open: boolean; onClose: () => void }
         onChange={(e) => setCue(e.target.value)}
         style={{ marginTop: 10 }}
       />
+      {type === 'build' && (
+        <>
+          <div className="section-label" style={{ marginTop: 14 }}>
+            Days per week
+          </div>
+          <div className="cd-target-row">
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <button
+                key={n}
+                className={'cd-target' + (n === target ? ' on' : '')}
+                onClick={() => setTarget(n)}
+                aria-pressed={n === target}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
       <div className="cd-emoji-grid">
         {EMOJI_PRESETS.map((em) => (
           <button key={em} className={'cd-emoji' + (em === emoji ? ' on' : '')} onClick={() => setEmoji(em)}>
@@ -293,27 +398,29 @@ function AddHabitSheet({ open, onClose }: { open: boolean; onClose: () => void }
         ))}
       </div>
       <button className="btn btn-primary" onClick={commit}>
-        Add habit
+        {mode === 'add' ? 'Add habit' : 'Save changes'}
       </button>
     </Sheet>
   )
 }
 
+/* ---------- manage ---------- */
+
 function ManageSheet({ habit, onClose }: { habit: Habit | null; onClose: () => void }) {
   const st = useStore(cadenceStore)
   const [confirmArchive, setConfirmArchive] = useState(false)
+  const [editing, setEditing] = useState(false)
   if (habit === null) return null
   const isBuild = habit.type === 'build'
+  const live = st.habits.find((h) => h.id === habit.id) ?? habit
   return (
     <>
-      <Sheet open title={`${habit.emoji} ${habit.name}`} onClose={onClose}>
-        <div style={accent(habit)}>
+      <Sheet open={!editing} title={`${live.emoji} ${live.name}`} onClose={onClose}>
+        <div style={accent(live)}>
           <div className="cd-heat" aria-label="Last eight weeks">
             {lastNDayKeys(56).map((day) => {
-              const on = isBuild
-                ? isChecked(st, habit.id, day)
-                : false
-              const slip = !isBuild && slipDays(st, habit.id).includes(day)
+              const on = isBuild ? isChecked(st, live.id, day) : false
+              const slip = !isBuild && slipDays(st, live.id).includes(day)
               return (
                 <span
                   key={day}
@@ -328,34 +435,60 @@ function ManageSheet({ habit, onClose }: { habit: Habit | null; onClose: () => v
             Last 8 weeks — {isBuild ? 'checked days' : 'slips'} · today outlined
           </div>
           <div className="kv">
-            <span className="k">{isBuild ? 'Current streak' : 'Days clean'}</span>
+            <span className="k">{isBuild ? (live.targetPerWeek === 7 ? 'Current streak' : 'Week streak') : 'Days clean'}</span>
             <span className="num">
-              {isBuild ? `${habitStreak(st, habit.id)} days` : `${daysClean(st, habit.id)} days`}
+              {isBuild
+                ? live.targetPerWeek === 7
+                  ? `${habitStreak(st, live.id)} days`
+                  : `${weekStreak(st, live.id)} weeks`
+                : `${daysClean(st, live.id)} days`}
             </span>
           </div>
-          {habit.cue && (
+          {isBuild && (
+            <div className="kv">
+              <span className="k">Weekly target</span>
+              <span className="num">
+                {countInWeek(st, live.id, weekStartKey(todayKey()))}/{live.targetPerWeek}
+              </span>
+            </div>
+          )}
+          {live.cue && (
             <div className="kv">
               <span className="k">Cue</span>
-              <span>{habit.cue}</span>
+              <span>{live.cue}</span>
             </div>
           )}
           <div className="kv">
             <span className="k">Started</span>
             <span>
-              {new Date(habit.createdTs).toLocaleDateString(undefined, {
+              {new Date(live.createdTs).toLocaleDateString(undefined, {
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric',
               })}
             </span>
           </div>
-          <div style={{ marginTop: 14 }}>
+          <div className="btn-row" style={{ marginTop: 14 }}>
             <button className="btn btn-danger" onClick={() => setConfirmArchive(true)}>
-              Archive habit
+              Archive
+            </button>
+            <button className="btn btn-ghost" onClick={() => setEditing(true)}>
+              Edit
             </button>
           </div>
         </div>
       </Sheet>
+      {editing && (
+        <HabitForm
+          mode="edit"
+          habit={live}
+          open
+          onClose={() => {
+            setEditing(false)
+            onClose()
+          }}
+        />
+      )}
       <ConfirmSheet
         open={confirmArchive}
         title="Archive this habit?"
@@ -375,47 +508,32 @@ function ManageSheet({ habit, onClose }: { habit: Habit | null; onClose: () => v
 
 /* ---------- screen ---------- */
 
-const VIEWS = [
-  { id: 'today', label: 'Today' },
-  { id: 'month', label: 'Month' },
-  { id: 'year', label: 'Year' },
-] as const
-
-type View = (typeof VIEWS)[number]['id']
-
-export default function CadenceScreen() {
+export default function CadenceScreen({ tab = 'today' }: { tab?: string }) {
   const st = useStore(cadenceStore)
   const habits = activeHabits(st)
-  const [view, setView] = useState<View>('today')
   const [adding, setAdding] = useState(false)
   const [managing, setManaging] = useState<Habit | null>(null)
   const [slipping, setSlipping] = useState<Habit | null>(null)
 
   return (
     <>
-      <div style={{ marginBottom: 14 }}>
-        <Seg<View> options={VIEWS} value={view} onChange={setView} />
-      </div>
-
-      {view === 'today' && (
+      {tab === 'today' && (
         <>
           {habits.length === 0 ? (
             <Empty title="No habits yet" sub="Small, daily, repeatable — that's where the 1% lives." />
           ) : (
-            <div className="card">
-              {habits.map((h) =>
-                h.type === 'build' ? (
-                  <BuildRow key={h.id} habit={h} onManage={() => setManaging(h)} />
-                ) : (
-                  <QuitRow
-                    key={h.id}
-                    habit={h}
-                    onManage={() => setManaging(h)}
-                    onSlip={() => setSlipping(h)}
-                  />
-                ),
-              )}
-            </div>
+            habits.map((h) =>
+              h.type === 'build' ? (
+                <BuildRow key={h.id} habit={h} onManage={() => setManaging(h)} />
+              ) : (
+                <QuitRow
+                  key={h.id}
+                  habit={h}
+                  onManage={() => setManaging(h)}
+                  onSlip={() => setSlipping(h)}
+                />
+              ),
+            )
           )}
           <div style={{ marginTop: 12 }}>
             <button className="btn btn-ghost" onClick={() => setAdding(true)}>
@@ -425,17 +543,21 @@ export default function CadenceScreen() {
         </>
       )}
 
-      {view === 'month' && <MonthView />}
+      {tab === 'month' && <MonthView />}
 
-      {view === 'year' &&
+      {tab === 'year' &&
         (habits.length === 0 ? (
           <Empty title="Nothing to map yet" sub="The year view fills as you do." />
         ) : (
           habits.map((h) => <YearGrid key={h.id} habit={h} />)
         ))}
 
-      <AddHabitSheet open={adding} onClose={() => setAdding(false)} />
-      <ManageSheet habit={managing} onClose={() => setManaging(null)} />
+      {adding && <HabitForm mode="add" open onClose={() => setAdding(false)} />}
+      <ManageSheet
+        habit={managing}
+        onClose={() => setManaging(null)}
+        key={managing ? managing.id : 'none'}
+      />
       <ConfirmSheet
         open={slipping !== null}
         title={slipping ? `Log a slip — ${slipping.name}?` : ''}

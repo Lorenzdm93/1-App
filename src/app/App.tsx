@@ -9,6 +9,7 @@ import Modules from '../screens/Modules'
 import Settings from '../screens/Settings'
 import Onboarding from '../screens/Onboarding'
 import TabBar from './TabBar'
+import ModuleTabBar from './ModuleTabBar'
 import { ToastHost } from './ui'
 
 function BackIcon() {
@@ -19,12 +20,14 @@ function BackIcon() {
   )
 }
 
-function ModuleScreen({ id }: { id: string }) {
+function ModuleScreen({ id, tab }: { id: string; tab?: string }) {
   const mod = moduleById(id)
   if (!mod) {
     navigate('/')
     return null
   }
+  const tabs = mod.tabs
+  const active = tabs ? (tabs.some((t) => t.id === tab) ? (tab as string) : tabs[0].id) : undefined
   return (
     <div className="mod-scope" style={{ ['--accent' as string]: mod.accentVar } as CSSProperties}>
       <div className="mod-head">
@@ -41,7 +44,8 @@ function ModuleScreen({ id }: { id: string }) {
           <div className="sub">{mod.tagline}</div>
         </div>
       </div>
-      <mod.Screen />
+      <mod.Screen tab={active} />
+      {tabs && <ModuleTabBar moduleId={mod.id} tabs={tabs} active={active as string} />}
     </div>
   )
 }
@@ -66,9 +70,11 @@ export default function App() {
         {route.name === 'today' && <Today />}
         {route.name === 'modules' && <Modules />}
         {route.name === 'settings' && <Settings />}
-        {route.name === 'module' && <ModuleScreen id={route.id} key={route.id} />}
+        {route.name === 'module' && (
+          <ModuleScreen id={route.id} tab={route.tab} key={route.id} />
+        )}
       </main>
-      <TabBar route={route} />
+      {!(route.name === 'module' && moduleById(route.id)?.tabs) && <TabBar route={route} />}
       <ToastHost />
     </>
   )

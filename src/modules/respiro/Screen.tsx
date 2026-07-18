@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { useStore } from '../../core/hooks'
+import { navigate } from '../../core/router'
 import { logEvent } from '../../core/events'
 import { formatDuration } from '../../core/dates'
 import { toast } from '../../core/toast'
@@ -286,7 +287,7 @@ function SoundCard() {
 
 /* ---------- screen ---------- */
 
-export default function RespiroScreen() {
+export default function RespiroScreen({ tab = 'breathe' }: { tab?: string }) {
   const st = useStore(respiroStore)
   const protocol: Protocol =
     st.protocolId === 'custom' ? buildCustomProtocol(st.custom) : protocolById(st.protocolId)
@@ -348,6 +349,21 @@ export default function RespiroScreen() {
     { key: 'outS', label: 'Out' },
     { key: 'hold2', label: 'Hold' },
   ] as const
+
+  if (tab === 'tools') {
+    return (
+      <>
+        {running && (
+          <button className="gh-running" onClick={() => navigate('/m/respiro/breathe')}>
+            <span className="pulse" aria-hidden="true" />
+            {protocol.name} running · {formatDuration(now - (startTs as number))} — return
+          </button>
+        )}
+        <HoldTest now={now} onTick={setHoldActive} />
+        <SoundCard />
+      </>
+    )
+  }
 
   return (
     <>
@@ -431,9 +447,6 @@ export default function RespiroScreen() {
         )}
       </div>
 
-      <div className="section-label">Tools</div>
-      <HoldTest now={now} onTick={setHoldActive} />
-      <SoundCard />
     </>
   )
 }

@@ -1,7 +1,16 @@
 import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
-import { cadenceStore, activeHabits, isChecked, toggleCheck, daysClean } from './model'
+import {
+  cadenceStore,
+  activeHabits,
+  isChecked,
+  toggleCheck,
+  daysClean,
+  countInWeek,
+  weekStartKey,
+} from './model'
+import { todayKey } from '../../core/dates'
 
 /** Interactive widget: build habits check off right here; quit habits show days clean. */
 export default function CadenceWidget() {
@@ -29,6 +38,10 @@ export default function CadenceWidget() {
             )
           }
           const checked = isChecked(st, h.id)
+          const weekly =
+            h.targetPerWeek < 7
+              ? ` ${countInWeek(st, h.id, weekStartKey(todayKey()))}/${h.targetPerWeek}`
+              : ''
           return (
             <button
               key={h.id}
@@ -39,6 +52,7 @@ export default function CadenceWidget() {
             >
               <span aria-hidden="true">{h.emoji}</span>
               {h.name}
+              {weekly && <span className="num">{weekly}</span>}
             </button>
           )
         })}

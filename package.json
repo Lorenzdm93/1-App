@@ -1,7 +1,7 @@
 {
   "name": "one-percent",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "1% — the operating system for getting one percent better every day.",
   "scripts": {

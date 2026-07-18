@@ -13,6 +13,8 @@ export interface SetEntry {
   weight: number
   reps: number
   type: SetType
+  /** Planned rows start undone; only done sets count and get saved. */
+  done: boolean
 }
 
 export interface ExerciseEntry {
@@ -101,7 +103,12 @@ function normalizeSet(s: Partial<SetEntry>): SetEntry {
     weight: typeof s.weight === 'number' ? s.weight : 0,
     reps: typeof s.reps === 'number' ? s.reps : 0,
     type: s.type === 'warmup' || s.type === 'drop' || s.type === 'fail' ? s.type : 'normal',
+    done: typeof s.done === 'boolean' ? s.done : true,
   }
+}
+
+function plannedSet(weight = 0, reps = 0): SetEntry {
+  return { id: uid(), weight, reps, type: 'normal', done: false }
 }
 
 function normalizeSession(raw: Session): Session {
@@ -114,9 +121,9 @@ function normalizeSession(raw: Session): Session {
   }
 }
 
-/** v1: no rest fields. v2: no set types, no templates. */
+/** v1: no rest fields. v2: no set types, no templates. v3: no done flag. */
 export function migrateGhisa(data: unknown, fromVersion: number): GhisaState {
-  if ((fromVersion === 1 || fromVersion === 2) && data !== null && typeof data === 'object') {
+  if (fromVersion >= 1 && fromVersion <= 3 && data !== null && typeof data === 'object') {
     const d = data as Partial<GhisaState>
     return {
       active: d.active ? normalizeSession(d.active) : null,
@@ -130,7 +137,7 @@ export function migrateGhisa(data: unknown, fromVersion: number): GhisaState {
   return DEFAULTS
 }
 
-export const ghisaStore = createPersistedStore<GhisaState>('ghisa', DEFAULTS, 3, migrateGhisa)
+export const ghisaStore = createPersistedStore<GhisaState>('ghisa', DEFAULTS, 4, migrateGhisa)
 
 export const EXERCISES: readonly string[] = [
   'Squat',
@@ -165,11 +172,11 @@ export const EXERCISES: readonly string[] = [
 
 /* ---------- derived ---------- */
 
-/** Working volume — warmups build nothing on the ledger. */
+/** Working volume — completed, non-warmup sets only. */
 export function sessionVolume(s: Session): number {
   let v = 0
   for (const ex of s.exercises)
-    for (const set of ex.sets) if (set.type !== 'warmup') v += set.weight * set.reps
+    for (const set of ex.sets) if (set.done && set.type !== 'warmup') v += set.weight * set.reps
   return v
 }
 
@@ -181,7 +188,14 @@ export function sessionSets(s: Session): number {
 
 export function workingSets(s: Session): number {
   let n = 0
-  for (const ex of s.exercises) for (const set of ex.sets) if (set.type !== 'warmup') n++
+  for (const ex of s.exercises)
+    for (const set of ex.sets) if (set.done && set.type !== 'warmup') n++
+  return n
+}
+
+export function doneSets(s: Session): number {
+  let n = 0
+  for (const ex of s.exercises) for (const set of ex.sets) if (set.done) n++
   return n
 }
 
@@ -204,7 +218,11 @@ export function startFromTemplate(templateId: string): void {
         id: uid(),
         startTs: Date.now(),
         templateName: tpl.name,
-        exercises: tpl.exercises.map((e) => ({ id: uid(), name: e.name, sets: [] })),
+        exercises: tpl.exercises.map((e) => ({
+          id: uid(),
+          name: e.name,
+          sets: Array.from({ length: Math.max(1, e.targetSets) }, () => plannedSet()),
+        })),
       },
     }
   })
@@ -219,7 +237,7 @@ export function addExercise(name: string): void {
       ...st,
       active: {
         ...st.active,
-        exercises: [...st.active.exercises, { id: uid(), name: clean, sets: [] }],
+        exercises: [...st.active.exercises, { id: uid(), name: clean, sets: [plannedSet()] }],
       },
     }
   })
@@ -253,7 +271,7 @@ export function addSet(
         ...st.active,
         exercises: st.active.exercises.map((ex) =>
           ex.id === exerciseId
-            ? { ...ex, sets: [...ex.sets, { id: uid(), weight, reps, type }] }
+            ? { ...ex, sets: [...ex.sets, { id: uid(), weight, reps, type, done: true }] }
             : ex,
         ),
       },
@@ -287,6 +305,102 @@ export function cycleSetType(exerciseId: string, setId: string): void {
   })
 }
 
+/** Appends a planned row, copying the previous row's numbers as a starting point. */
+export function addPlannedSet(exerciseId: string): void {
+  ghisaStore.set((st) => {
+    if (!st.active) return st
+    return {
+      ...st,
+      active: {
+        ...st.active,
+        exercises: st.active.exercises.map((ex) => {
+          if (ex.id !== exerciseId) return ex
+          const last = ex.sets[ex.sets.length - 1]
+          return { ...ex, sets: [...ex.sets, plannedSet(last?.weight ?? 0, last?.reps ?? 0)] }
+        }),
+      },
+    }
+  })
+}
+
+export function updateSet(
+  exerciseId: string,
+  setId: string,
+  patch: { weight?: number; reps?: number },
+): void {
+  ghisaStore.set((st) => {
+    if (!st.active) return st
+    return {
+      ...st,
+      active: {
+        ...st.active,
+        exercises: st.active.exercises.map((ex) =>
+          ex.id === exerciseId
+            ? { ...ex, sets: ex.sets.map((s) => (s.id === setId ? { ...s, ...patch } : s)) }
+            : ex,
+        ),
+      },
+    }
+  })
+}
+
+/**
+ * Marks a set done and starts the rest timer. Empty rows adopt the fallback
+ * (previous session's numbers) so a bare checkmark repeats last time.
+ * Returns false when there's nothing usable to log.
+ */
+export function completeSet(
+  exerciseId: string,
+  setId: string,
+  fallback?: { weight: number; reps: number },
+): boolean {
+  const st = ghisaStore.get()
+  if (!st.active) return false
+  const ex = st.active.exercises.find((e) => e.id === exerciseId)
+  const set = ex?.sets.find((s) => s.id === setId)
+  if (!ex || !set) return false
+  let weight = set.weight
+  let reps = set.reps
+  if (reps < 1 && fallback && fallback.reps >= 1) {
+    weight = fallback.weight
+    reps = fallback.reps
+  }
+  if (reps < 1) return false
+  ghisaStore.set((s) => ({
+    ...s,
+    restUntil: Date.now() + s.restSeconds * 1000,
+    active: {
+      ...s.active!,
+      exercises: s.active!.exercises.map((e) =>
+        e.id === exerciseId
+          ? {
+              ...e,
+              sets: e.sets.map((x) => (x.id === setId ? { ...x, weight, reps, done: true } : x)),
+            }
+          : e,
+      ),
+    },
+  }))
+  return true
+}
+
+export function uncompleteSet(exerciseId: string, setId: string): void {
+  ghisaStore.set((st) => {
+    if (!st.active) return st
+    return {
+      ...st,
+      active: {
+        ...st.active,
+        exercises: st.active.exercises.map((ex) =>
+          ex.id === exerciseId
+            ? { ...ex, sets: ex.sets.map((s) => (s.id === setId ? { ...s, done: false } : s)) }
+            : ex,
+        ),
+      },
+    }
+  })
+}
+
 export function removeSet(exerciseId: string, setId: string): void {
   ghisaStore.set((st) => {
     if (!st.active) return st
@@ -305,16 +419,18 @@ export function removeSet(exerciseId: string, setId: string): void {
 export function finishSession(): Session | null {
   const st = ghisaStore.get()
   if (!st.active) return null
-  const done: Session = { ...st.active, endTs: Date.now() }
-  const hasWork = done.exercises.some((ex) => ex.sets.length > 0)
-  if (!hasWork) {
+  const closed: Session = {
+    ...st.active,
+    endTs: Date.now(),
+    exercises: st.active.exercises
+      .map((ex) => ({ ...ex, sets: ex.sets.filter((s) => s.done) }))
+      .filter((ex) => ex.sets.length > 0),
+  }
+  if (closed.exercises.length === 0) {
     ghisaStore.set((s) => ({ ...s, active: null, restUntil: null }))
     return null
   }
-  const trimmed: Session = {
-    ...done,
-    exercises: done.exercises.filter((ex) => ex.sets.length > 0),
-  }
+  const trimmed = closed
   ghisaStore.set((s) => ({
     ...s,
     active: null,

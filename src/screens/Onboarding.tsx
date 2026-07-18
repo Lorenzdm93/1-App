@@ -12,7 +12,7 @@ interface Goal {
 const GOALS: Goal[] = [
   { id: 'gym', label: 'Strength & Gym', modules: ['ghisa', 'caliber'] },
   { id: 'calm', label: 'Breath & Calm', modules: ['respiro'] },
-  { id: 'habits', label: 'Daily consistency', modules: ['cadence'] },
+  { id: 'habits', label: 'Daily consistency', modules: ['cadence', 'grove'] },
   { id: 'all', label: 'All of it', modules: MODULES.map((m) => m.id) },
 ]
 

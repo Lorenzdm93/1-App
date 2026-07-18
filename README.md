@@ -20,10 +20,18 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 
 | Module | What it does | Quick action from Today |
 |---|---|---|
-| **GHISA** | Workout tracker — templates, live sessions, tappable set types, per-exercise analytics and weekly stats | Start / resume a workout |
-| **CADENCE** | Habits done right — build *and* quit habits, Today / Month / Year views, tap-to-backfill, per-habit colours | Check habits off directly on the dashboard |
-| **RESPIRO** | Breathwork — geometric tracers, Box · 4-7-8 · Coherence · Sigh · Custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
+| **GHISA** | Workout tracker — Hevy-style planned sets you check off, templates, set types, per-exercise analytics, weekly stats | Start / resume a workout |
+| **CADENCE** | Habits done right — build *and* quit habits, weekly frequency targets (3×/week…), Month backfill, Year grids | Check habits off directly on the dashboard |
+| **GROVE** | Deep-focus timer — finish a session and a tree grows; your forest is your history | Focus 25 min in one tap |
+| **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **CALIBER** | Strength gauge — e1RM, population percentile, target-level planner, per-lift test history | — |
+
+**New in v0.4 — modules become small apps**
+
+- **Module tab bars.** Inside a module, the bottom bar becomes *that module's* — GHISA gets **Train / History / Stats**, CADENCE **Today / Month / Year**, RESPIRO **Breathe / Tools**, GROVE **Focus / Forest**. Leave the module and the 1% bar returns. This is now a platform contract: any module can declare tabs and grow to full depth.
+- **GHISA, the real workflow.** Starting a template now creates the planned set rows (target sets finally *do* something). Each row is editable in place — previous session shown alongside, tap the number to cycle Normal/Warmup/Drop/Failure, tap ✓ to complete (an empty row adopts last time's numbers). Only completed sets count and get saved. Editing a template opens *that template* — the blank-editor bug is fixed.
+- **CADENCE with intent.** Every build habit has a **days-per-week target** (1–7). Rows got a full redesign: coloured tile with a tick, this-week dot strip, a weekly progress ring, streaks in days (daily habits) or weeks (frequency habits). Habits are **editable** now — name, cue, colour, emoji, target.
+- **GROVE.** Pick 25/50/90 minutes (or ±5 anywhere from 5–180), a tree grows while you focus and joins your forest when the timer completes — even if the app was closed when it finished (timestamp math). Give up and it withers: nothing logged. Birch under 30 min, pine to an hour, oak beyond.
 
 **New in v0.3 — the modules at full power**
 
@@ -83,8 +91,8 @@ Everything lives on-device. **Settings → Export** produces one JSON backup cov
 
 ## Roadmap
 
-- **v0.4** — Ora (fasting) and Minim (mood) modules; first cross-module insights on the shared event stream.
-- **v0.5** — optional end-to-end Firebase sync (the event log is already sync-shaped).
+- **v0.5** — SANA (pending its spec) plus Ora (fasting) / Minim (mood); first cross-module insights on the shared event stream.
+- **v0.6** — optional end-to-end Firebase sync (the event log is already sync-shaped).
 - **Later** — Capacitor wrap for the App Store; reminders/notifications (needs the native shell).
 
 ### Earlier roadmap notes

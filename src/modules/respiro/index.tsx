@@ -18,7 +18,11 @@ const respiro: ModuleDefinition = {
   name: 'RESPIRO',
   tagline: 'Breathwork — box, 4-7-8, coherence, sigh.',
   accentVar: 'var(--m-respiro)',
-  schemaVersion: 1,
+  schemaVersion: 2,
+  tabs: [
+    { id: 'breathe', label: 'Breathe' },
+    { id: 'tools', label: 'Tools' },
+  ],
   Icon,
   Screen,
   Widget,

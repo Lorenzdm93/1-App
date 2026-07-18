@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../../core/hooks'
 import { formatDuration } from '../../core/dates'
+import { navigate } from '../../core/router'
 import { toast } from '../../core/toast'
-import { Sheet, ConfirmSheet, Empty, Seg, parseNum } from '../../app/ui'
+import { Sheet, ConfirmSheet, Empty, parseNum } from '../../app/ui'
 import { Bars, Line } from '../../app/charts'
 import {
   ghisaStore,
@@ -11,7 +12,10 @@ import {
   startFromTemplate,
   addExercise,
   removeExercise,
-  addSet,
+  addPlannedSet,
+  updateSet,
+  completeSet,
+  uncompleteSet,
   removeSet,
   cycleSetType,
   finishSession,
@@ -22,6 +26,7 @@ import {
   deleteTemplate,
   sessionVolume,
   sessionSets,
+  doneSets,
   workingSets,
   previousSets,
   historicalMaxWeight,
@@ -191,46 +196,106 @@ function RestBar({ now }: { now: number }) {
 
 /* ---------- live session ---------- */
 
-function SetForm({ exercise, prev }: { exercise: ExerciseEntry; prev: SetEntry[] }) {
-  const last = exercise.sets[exercise.sets.length - 1]
-  const prevSame = prev[Math.min(exercise.sets.length, prev.length - 1)]
-  const seed = last ?? prevSame
-  const [weight, setWeight] = useState(seed ? String(seed.weight) : '')
-  const [reps, setReps] = useState(seed ? String(seed.reps) : '')
+function SetRow({
+  exercise,
+  set,
+  index,
+  prev,
+  prevMax,
+}: {
+  exercise: ExerciseEntry
+  set: SetEntry
+  index: number
+  prev: SetEntry[]
+  prevMax: number
+}) {
+  const [weight, setWeight] = useState(set.weight > 0 ? String(set.weight) : '')
+  const [reps, setReps] = useState(set.reps > 0 ? String(set.reps) : '')
+  const prevAt = prev[index]
+  const empty = set.weight === 0 && set.reps === 0 && !set.done
 
-  function commit() {
-    const w = parseNum(weight)
-    const r = parseNum(reps)
-    if (w === null || r === null || r < 1) {
-      toast('Enter weight and reps')
+  function commitField(field: 'weight' | 'reps', raw: string) {
+    const n = parseNum(raw)
+    updateSet(exercise.id, set.id, { [field]: n === null ? 0 : field === 'reps' ? Math.round(n) : n })
+  }
+
+  function toggleDone() {
+    if (set.done) {
+      uncompleteSet(exercise.id, set.id)
       return
     }
-    addSet(exercise.id, w, Math.round(r))
+    const ok = completeSet(
+      exercise.id,
+      set.id,
+      prevAt ? { weight: prevAt.weight, reps: prevAt.reps } : undefined,
+    )
+    if (!ok) {
+      toast('Enter reps first')
+      return
+    }
+    // Reflect adopted previous values in the inputs
+    const after = ghisaStore
+      .get()
+      .active?.exercises.find((e) => e.id === exercise.id)
+      ?.sets.find((s) => s.id === set.id)
+    if (after) {
+      setWeight(after.weight > 0 ? String(after.weight) : '')
+      setReps(after.reps > 0 ? String(after.reps) : '')
+    }
   }
 
   return (
-    <div className="gh-set-form">
-      <span style={{ color: 'var(--faint)', fontSize: 12, fontWeight: 700, textAlign: 'center' }}>
-        {exercise.sets.length + 1}
+    <div className={'gh-row' + (set.done ? ' done' : '')}>
+      <button
+        className={'gh-type gh-type-' + set.type}
+        onClick={() => cycleSetType(exercise.id, set.id)}
+        aria-label="Change set type"
+      >
+        {TYPE_BADGE[set.type] || index + 1}
+      </button>
+      <span className="gh-prevcol num">
+        {prevAt ? `${prevAt.weight}×${prevAt.reps}` : '—'}
+        {set.done && set.type !== 'warmup' && prevMax > 0 && set.weight > prevMax && (
+          <span className="gh-pr">PR</span>
+        )}
       </span>
       <input
-        className="tinput"
+        className="tinput gh-in"
         inputMode="decimal"
-        placeholder="kg"
+        placeholder={prevAt ? String(prevAt.weight) : 'kg'}
         value={weight}
-        onChange={(e) => setWeight(e.target.value)}
+        onChange={(e) => {
+          setWeight(e.target.value)
+          commitField('weight', e.target.value)
+        }}
         aria-label="Weight in kilograms"
       />
       <input
-        className="tinput"
+        className="tinput gh-in"
         inputMode="numeric"
-        placeholder="reps"
+        placeholder={prevAt ? String(prevAt.reps) : 'reps'}
         value={reps}
-        onChange={(e) => setReps(e.target.value)}
+        onChange={(e) => {
+          setReps(e.target.value)
+          commitField('reps', e.target.value)
+        }}
         aria-label="Repetitions"
       />
-      <button className="plus" onClick={commit} aria-label="Log set">
-        +
+      <button
+        className={'gh-check' + (set.done ? ' on' : '')}
+        onClick={toggleDone}
+        aria-label={set.done ? 'Mark set not done' : 'Complete set'}
+        aria-pressed={set.done}
+      >
+        ✓
+      </button>
+      <button
+        className="gh-x"
+        onClick={() => removeSet(exercise.id, set.id)}
+        aria-label="Remove set"
+        style={{ visibility: empty || !set.done ? 'visible' : 'hidden' }}
+      >
+        ×
       </button>
     </div>
   )
@@ -248,7 +313,8 @@ function LiveSession({ session, history }: { session: Session; history: Session[
         <div className="gh-live-head">
           <span className="gh-elapsed">{formatDuration(now - session.startTs)}</span>
           <span className="gh-live-sub num">
-            {sessionSets(session)} sets · {Math.round(sessionVolume(session)).toLocaleString()} kg
+            {doneSets(session)}/{sessionSets(session)} sets ·{' '}
+            {Math.round(sessionVolume(session)).toLocaleString()} kg
           </span>
         </div>
         <div className="gh-live-sub">
@@ -279,31 +345,20 @@ function LiveSession({ session, history }: { session: Session; history: Session[
                 )}
               </span>
             </div>
-            {prev.length > 0 && (
-              <div className="gh-prev">Last time: {setLine(prev)}</div>
-            )}
+            <div className="gh-cols" aria-hidden="true">
+              <span>set</span>
+              <span>prev</span>
+              <span>kg</span>
+              <span>reps</span>
+              <span />
+              <span />
+            </div>
             {ex.sets.map((s, i) => (
-              <div className="gh-set" key={s.id}>
-                <button
-                  className={'gh-type gh-type-' + s.type}
-                  onClick={() => cycleSetType(ex.id, s.id)}
-                  aria-label="Change set type"
-                >
-                  {TYPE_BADGE[s.type] || i + 1}
-                </button>
-                <span className="val num">
-                  {s.weight} kg
-                  {s.type !== 'warmup' && prevMax > 0 && s.weight > prevMax && (
-                    <span className="gh-pr">PR</span>
-                  )}
-                </span>
-                <span className="val num">{s.reps} reps</span>
-                <button className="del" onClick={() => removeSet(ex.id, s.id)} aria-label="Remove set">
-                  ×
-                </button>
-              </div>
+              <SetRow key={s.id} exercise={ex} set={s} index={i} prev={prev} prevMax={prevMax} />
             ))}
-            <SetForm exercise={ex} prev={prev} key={'form-' + ex.id + '-' + ex.sets.length} />
+            <button className="gh-addset" onClick={() => addPlannedSet(ex.id)}>
+              + Add set
+            </button>
           </div>
         )
       })}
@@ -484,7 +539,11 @@ function Train({ templates }: { templates: Template[] }) {
       <button className="btn btn-ghost" style={{ marginTop: 12 }} onClick={() => setEditing('new')}>
         New template
       </button>
-      <TemplateEditor editing={editing} onClose={() => setEditing(null)} />
+      <TemplateEditor
+        key={editing === null ? 'none' : editing === 'new' ? 'new' : editing.id}
+        editing={editing}
+        onClose={() => setEditing(null)}
+      />
     </>
   )
 }
@@ -585,23 +644,24 @@ function StatsTab({ history }: { history: Session[] }) {
   )
 }
 
-const TABS = [
-  { id: 'train', label: 'Train' },
-  { id: 'history', label: 'History' },
-  { id: 'stats', label: 'Stats' },
-] as const
+function RunningBanner({ session }: { session: Session }) {
+  const now = useNow(true)
+  return (
+    <button className="gh-running" onClick={() => navigate('/m/ghisa/train')}>
+      <span className="pulse" aria-hidden="true" />
+      Workout running · {formatDuration(now - session.startTs)} — return
+    </button>
+  )
+}
 
-type Tab = (typeof TABS)[number]['id']
-
-export default function GhisaScreen() {
+export default function GhisaScreen({ tab = 'train' }: { tab?: string }) {
   const st = useStore(ghisaStore)
-  const [tab, setTab] = useState<Tab>('train')
-  if (st.active) return <LiveSession session={st.active} history={st.history} />
+  if (st.active && tab === 'train') {
+    return <LiveSession session={st.active} history={st.history} />
+  }
   return (
     <>
-      <div style={{ marginBottom: 14 }}>
-        <Seg<Tab> options={TABS} value={tab} onChange={setTab} />
-      </div>
+      {st.active && <RunningBanner session={st.active} />}
       {tab === 'train' && <Train templates={st.templates} />}
       {tab === 'history' && <HistoryTab history={st.history} />}
       {tab === 'stats' && <StatsTab history={st.history} />}

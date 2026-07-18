@@ -8,14 +8,14 @@ export type Route =
   | { name: 'today' }
   | { name: 'modules' }
   | { name: 'settings' }
-  | { name: 'module'; id: string }
+  | { name: 'module'; id: string; tab?: string }
 
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#\/?/, '')
   if (path === 'modules') return { name: 'modules' }
   if (path === 'settings') return { name: 'settings' }
-  const m = path.match(/^m\/([a-z0-9-]+)$/)
-  if (m) return { name: 'module', id: m[1] }
+  const m = path.match(/^m\/([a-z0-9-]+)(?:\/([a-z0-9-]+))?$/)
+  if (m) return m[2] ? { name: 'module', id: m[1], tab: m[2] } : { name: 'module', id: m[1] }
   return { name: 'today' }
 }
 

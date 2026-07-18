@@ -14,6 +14,8 @@ export interface Habit {
   type: HabitType
   /** Implementation intention — "after coffee", "before bed". */
   cue?: string
+  /** How many days per week this habit is meant to happen (1–7). */
+  targetPerWeek: number
   createdTs: number
   archived?: boolean
 }
@@ -39,27 +41,31 @@ export const PALETTE: readonly string[] = [
 
 const DEFAULTS: CadenceState = { habits: [], checks: {}, slips: {} }
 
-/** v1 habits had no type/color/cue and no slips map. */
+/** v1: no type/color/cue/slips. v2: no weekly target. */
 export function migrateCadence(data: unknown, fromVersion: number): CadenceState {
-  if (fromVersion === 1 && data !== null && typeof data === 'object') {
+  if ((fromVersion === 1 || fromVersion === 2) && data !== null && typeof data === 'object') {
     const d = data as Partial<CadenceState>
     const habits = Array.isArray(d.habits)
       ? d.habits.map((h, i) => ({
           ...h,
           type: (h.type === 'quit' ? 'quit' : 'build') as HabitType,
           color: typeof h.color === 'string' ? h.color : PALETTE[i % PALETTE.length],
+          targetPerWeek:
+            typeof h.targetPerWeek === 'number' && h.targetPerWeek >= 1 && h.targetPerWeek <= 7
+              ? h.targetPerWeek
+              : 7,
         }))
       : []
     return {
       habits,
       checks: d.checks && typeof d.checks === 'object' ? d.checks : {},
-      slips: {},
+      slips: d.slips && typeof d.slips === 'object' ? d.slips : {},
     }
   }
   return DEFAULTS
 }
 
-export const cadenceStore = createPersistedStore<CadenceState>('cadence', DEFAULTS, 2, migrateCadence)
+export const cadenceStore = createPersistedStore<CadenceState>('cadence', DEFAULTS, 3, migrateCadence)
 
 export const EMOJI_PRESETS: readonly string[] = [
   '💪', '📖', '🧘', '💧', '🥗', '😴',
@@ -89,9 +95,11 @@ export function addHabit(input: {
   color: string
   type: HabitType
   cue?: string
+  targetPerWeek?: number
 }): void {
   const clean = input.name.trim()
   if (!clean) return
+  const target = Math.min(7, Math.max(1, input.targetPerWeek ?? 7))
   cadenceStore.set((st) => ({
     ...st,
     habits: [
@@ -102,10 +110,29 @@ export function addHabit(input: {
         emoji: input.emoji,
         color: input.color,
         type: input.type,
+        targetPerWeek: input.type === 'quit' ? 7 : target,
         ...(input.cue && input.cue.trim() ? { cue: input.cue.trim() } : {}),
         createdTs: Date.now(),
       },
     ],
+  }))
+}
+
+export function editHabit(
+  habitId: string,
+  patch: Partial<Pick<Habit, 'name' | 'emoji' | 'color' | 'cue' | 'targetPerWeek'>>,
+): void {
+  cadenceStore.set((st) => ({
+    ...st,
+    habits: st.habits.map((h) => {
+      if (h.id !== habitId) return h
+      const next = { ...h, ...patch }
+      if (patch.name !== undefined) next.name = patch.name.trim() || h.name
+      if (patch.cue !== undefined && patch.cue.trim() === '') delete next.cue
+      if (patch.targetPerWeek !== undefined)
+        next.targetPerWeek = Math.min(7, Math.max(1, patch.targetPerWeek))
+      return next
+    }),
   }))
 }
 
@@ -163,7 +190,7 @@ export function setCheck(habitId: string, day: string, value: boolean): void {
       ts: day === todayKey() ? Date.now() : noonTs(day),
       meta: { habitId, habit: habit.name },
     })
-    if (day === todayKey()) {
+    if (day === todayKey() && habit.targetPerWeek === 7) {
       const streak = habitStreak(cadenceStore.get(), habitId, day)
       if (isMilestone(streak)) toast(`${habit.name}: ${streak}-day streak`)
     }
@@ -254,4 +281,49 @@ export function dayCompletion(st: CadenceState, day: string): number {
   if (builds.length === 0) return 0
   const checked = builds.filter((h) => isChecked(st, h.id, day)).length
   return checked / builds.length
+}
+
+/* ---------- weekly frequency ---------- */
+
+/** Monday key of the week containing `day`. */
+export function weekStartKey(day: string): string {
+  const [y, m, d] = day.split('-').map(Number)
+  const date = new Date(y, m - 1, d, 12)
+  const back = (date.getDay() + 6) % 7
+  return shiftDay(day, -back)
+}
+
+/** The 7 day-keys of the week starting at `start` (a Monday key). */
+export function weekDayKeys(start: string): string[] {
+  return Array.from({ length: 7 }, (_, i) => shiftDay(start, i))
+}
+
+export function countInWeek(st: CadenceState, habitId: string, weekStart: string): number {
+  let n = 0
+  for (const day of weekDayKeys(weekStart)) {
+    if ((st.checks[day] ?? []).includes(habitId)) n++
+  }
+  return n
+}
+
+export function weekSatisfied(st: CadenceState, habit: Habit, weekStart: string): boolean {
+  return countInWeek(st, habit.id, weekStart) >= habit.targetPerWeek
+}
+
+/**
+ * Consecutive satisfied weeks ending now. The current week counts as soon
+ * as it reaches the target; otherwise the streak stands on completed weeks.
+ */
+export function weekStreak(st: CadenceState, habitId: string, today = todayKey()): number {
+  const habit = st.habits.find((h) => h.id === habitId)
+  if (!habit) return 0
+  let cursor = weekStartKey(today)
+  let streak = 0
+  if (weekSatisfied(st, habit, cursor)) streak++
+  cursor = shiftDay(cursor, -7)
+  while (streak < 520 && weekSatisfied(st, habit, cursor)) {
+    streak++
+    cursor = shiftDay(cursor, -7)
+  }
+  return streak
 }

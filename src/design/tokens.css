@@ -34,6 +34,8 @@
   --m-respiro: #7fa98e; /* jade breath         */
   --m-caliber: #c89b4b; /* brass gauge         */
   --m-cadence: #8fa7c9; /* moon rhythm         */
+  --m-grove: #79a86d;   /* living leaf         */
+  --gr-trunk: #7a5a41;
 
   /* RESPIRO protocol palette (from the original instrument) */
   --acc-jade: #7fa98e;
@@ -74,6 +76,8 @@
   --m-respiro: #47795d;
   --m-caliber: #96702a;
   --m-cadence: #4e6c99;
+  --m-grove: #47773c;
+  --gr-trunk: #6e4f37;
 
   --acc-jade: #47795d;
   --acc-moon: #5677a3;

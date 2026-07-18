@@ -18,7 +18,12 @@ const cadence: ModuleDefinition = {
   name: 'CADENCE',
   tagline: 'Daily habits — streaks that compound.',
   accentVar: 'var(--m-cadence)',
-  schemaVersion: 1,
+  schemaVersion: 3,
+  tabs: [
+    { id: 'today', label: 'Today' },
+    { id: 'month', label: 'Month' },
+    { id: 'year', label: 'Year' },
+  ],
   Icon,
   Screen,
   Widget,

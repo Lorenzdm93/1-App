@@ -20,7 +20,12 @@ const ghisa: ModuleDefinition = {
   name: 'GHISA',
   tagline: 'Workout log — sets, volume, iron discipline.',
   accentVar: 'var(--m-ghisa)',
-  schemaVersion: 1,
+  schemaVersion: 4,
+  tabs: [
+    { id: 'train', label: 'Train' },
+    { id: 'history', label: 'History' },
+    { id: 'stats', label: 'Stats' },
+  ],
   Icon,
   Screen,
   Widget,

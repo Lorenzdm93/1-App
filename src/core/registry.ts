@@ -7,8 +7,9 @@ import ghisa from '../modules/ghisa'
 import respiro from '../modules/respiro'
 import caliber from '../modules/caliber'
 import cadence from '../modules/cadence'
+import grove from '../modules/grove'
 
-export const MODULES: readonly ModuleDefinition[] = [ghisa, cadence, respiro, caliber]
+export const MODULES: readonly ModuleDefinition[] = [ghisa, cadence, grove, respiro, caliber]
 
 export function moduleById(id: string): ModuleDefinition | undefined {
   return MODULES.find((m) => m.id === id)
