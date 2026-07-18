@@ -1,3 +1,6 @@
+import { caliberStore } from './model'
+import { oneStore } from '../../core/one'
+import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import Screen from './Screen'
 import Widget from './Widget'
@@ -59,6 +62,43 @@ const caliber: ModuleDefinition = {
   Icon,
   Screen,
   Widget,
+  weekly: {
+    label: 'strength',
+    unit: 'kg',
+    mode: 'event',
+    measure(start, end) {
+      const st = caliberStore.get()
+      const rate = oneStore.get().rate
+      let tested = false
+      let best: 'up' | 'held' | 'down' | 'first' | null = null
+      for (const [, entries] of Object.entries(st.tests)) {
+        const inWeek = entries.filter((t) => {
+          const d = dayKey(t.ts)
+          return d >= start && d <= end
+        })
+        if (inWeek.length === 0) continue
+        tested = true
+        const weekBest = Math.max(...inWeek.map((t) => t.e1rm))
+        const prior = entries.filter((t) => dayKey(t.ts) < start).map((t) => t.e1rm)
+        if (prior.length === 0) {
+          if (best === null) best = 'first'
+          continue
+        }
+        const prevBest = Math.max(...prior)
+        if (weekBest >= prevBest * (1 + rate)) best = 'up'
+        else if (weekBest >= prevBest * 0.99 && best !== 'up') best = best === 'down' ? 'held' : (best ?? 'held')
+        else if (best === null) best = 'down'
+      }
+      if (!tested) return null
+      if (best === 'up' || best === 'first') return 100
+      if (best === 'held') return 70
+      return 40
+    },
+    advice({ value }) {
+      if (value === 70) return 'Tested and held — strength moves in 2–4 week steps; the next PR is loading.'
+      return 'Down on the retest — check sleep and recovery before chasing the number again.'
+    },
+  },
 }
 
 export default caliber

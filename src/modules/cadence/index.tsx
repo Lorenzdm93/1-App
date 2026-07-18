@@ -1,3 +1,5 @@
+import { cadenceStore, weekCompletion, weekAdvice } from './model'
+import { weekStartKey, todayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import Screen from './Screen'
 import Widget from './Widget'
@@ -57,6 +59,17 @@ const cadence: ModuleDefinition = {
   Icon,
   Screen,
   Widget,
+  weekly: {
+    label: 'habits',
+    unit: '%',
+    mode: 'completion',
+    measure(start, _end) {
+      return weekCompletion(cadenceStore.get(), start)
+    },
+    advice() {
+      return weekAdvice(cadenceStore.get(), weekStartKey(todayKey())) ?? 'A little behind — the smallest habit today restarts the pull.'
+    },
+  },
 }
 
 export default cadence

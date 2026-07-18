@@ -1,3 +1,5 @@
+import { eventsStore } from '../../core/events'
+import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import Screen from './Screen'
 import Widget from './Widget'
@@ -58,6 +60,24 @@ const ghisa: ModuleDefinition = {
   Screen,
   Widget,
   QuickActions,
+  weekly: {
+    label: 'volume',
+    unit: 'kg',
+    mode: 'growth',
+    goalKey: 'ghisa',
+    measure(start, end) {
+      let v = 0
+      for (const e of eventsStore.get()) {
+        if (e.module !== 'ghisa' || e.kind !== 'session') continue
+        const d = dayKey(e.ts)
+        if (d >= start && d <= end) v += e.value ?? 0
+      }
+      return Math.round(v)
+    },
+    advice({ gap }) {
+      return `${Math.ceil(gap).toLocaleString()} kg of volume to go — one honest session usually covers it.`
+    },
+  },
 }
 
 export default ghisa

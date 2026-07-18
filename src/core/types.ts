@@ -38,6 +38,26 @@ export interface ModuleDefinition {
   QuickActions?: ComponentType
   /** Optional module-specific section rendered above the shared Settings tab chrome. */
   SettingsExtra?: ComponentType
+  /** Registers the module in the weekly 1% engine. */
+  weekly?: WeeklyScorer
+}
+
+export interface WeeklyScorer {
+  /** Human name of the metric — 'volume', 'focus', 'adherence'. */
+  label: string
+  unit: string
+  /**
+   * growth: raw quantity, engine sets the target.
+   * completion: 0..1, the week scores itself.
+   * event: a 0..100 score, or null to sit the week out.
+   */
+  mode: 'growth' | 'completion' | 'event'
+  /** Links a growth metric to a user goal ceiling in Settings. */
+  goalKey?: 'ghisa' | 'grove' | 'respiro'
+  /** Value for the inclusive dayKey range; null = not participating. */
+  measure(start: string, end: string): number | null
+  /** One concrete move phrased in module language. */
+  advice(ctx: { value: number; target: number; gap: number; unit: string }): string | null
 }
 
 /**

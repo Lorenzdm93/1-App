@@ -356,3 +356,18 @@ function daySpan(a: string, b: string): number {
   const [yb, mb, db] = b.split('-').map(Number)
   return Math.round((new Date(yb, mb - 1, db, 12).getTime() - new Date(ya, ma - 1, da, 12).getTime()) / 86400000) + 1
 }
+
+/** Doses taken / due across the week's elapsed days. Null when nothing was due. */
+export function weekAdherence(st: SanaState, weekStart: string, today = todayKey()): number | null {
+  let taken = 0
+  let due = 0
+  for (let i = 0; i < 7; i++) {
+    const day = shiftDay(weekStart, i)
+    if (day > today) break
+    const c = dayCount(st, day)
+    taken += c.taken
+    due += c.due
+  }
+  if (due === 0) return null
+  return taken / due
+}

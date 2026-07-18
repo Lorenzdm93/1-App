@@ -399,3 +399,36 @@ export function yearInsights(st: CadenceState, today = todayKey()): YearInsights
     bestStreak,
   }
 }
+
+/**
+ * Weekly completion 0..1 for the engine: builds average min(1, checks/target);
+ * quit habits count clean-day progress toward a 7-day run. Null with no habits.
+ */
+export function weekCompletion(st: CadenceState, weekStart: string, today = todayKey()): number | null {
+  const habits = activeHabits(st)
+  if (habits.length === 0) return null
+  let sum = 0
+  for (const h of habits) {
+    if (h.type === 'build') {
+      sum += Math.min(1, countInWeek(st, h.id, weekStart) / h.targetPerWeek)
+    } else {
+      sum += Math.min(1, Math.min(daysClean(st, h.id, today), 7) / 7)
+    }
+  }
+  return sum / habits.length
+}
+
+/** The single most effective remaining move this week, for the Today screen. */
+export function weekAdvice(st: CadenceState, weekStart: string, today = todayKey()): string | null {
+  const habits = activeHabits(st)
+  let worst: { name: string; missing: number } | null = null
+  for (const h of habits) {
+    if (h.type !== 'build') continue
+    const missing = h.targetPerWeek - countInWeek(st, h.id, weekStart)
+    if (missing > 0 && (worst === null || missing > worst.missing)) worst = { name: h.name, missing }
+  }
+  if (worst) return `Check ${worst.name} on ${worst.missing} more day${worst.missing === 1 ? '' : 's'} to complete the week.`
+  const quit = habits.find((h) => h.type === 'quit' && daysClean(st, h.id, today) < 7)
+  if (quit) return `${quit.name}: ${7 - daysClean(st, quit.id, today)} clean days to the 7-day run.`
+  return null
+}

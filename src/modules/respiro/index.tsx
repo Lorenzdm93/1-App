@@ -1,3 +1,5 @@
+import { eventsStore } from '../../core/events'
+import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import Screen from './Screen'
 import Widget from './Widget'
@@ -55,6 +57,24 @@ const respiro: ModuleDefinition = {
   Screen,
   Widget,
   QuickActions,
+  weekly: {
+    label: 'breathwork',
+    unit: 'min',
+    mode: 'growth',
+    goalKey: 'respiro',
+    measure(start, end) {
+      let v = 0
+      for (const e of eventsStore.get()) {
+        if (e.module !== 'respiro' || e.kind !== 'session') continue
+        const d = dayKey(e.ts)
+        if (d >= start && d <= end) v += e.value ?? 0
+      }
+      return Math.round(v * 10) / 10
+    },
+    advice({ gap }) {
+      return `${Math.ceil(gap)} breath minutes to go — one Coherent Breathing sitting clears it.`
+    },
+  },
 }
 
 export default respiro

@@ -1,15 +1,15 @@
 import { useEffect } from 'react'
 import { useStore } from '../../core/hooks'
 import { groveStore, maybeComplete, todayStats } from './model'
-import TreeSVG from './TreeSVG'
+import PlantSVG from './PlantSVG'
 
 export default function GroveWidget() {
   const st = useStore(groveStore)
   useEffect(() => {
     maybeComplete()
   }, [])
-  const today = todayStats(st.trees)
-  if (st.trees.length === 0 && !st.running) {
+  const today = todayStats(st.plants)
+  if (st.plants.length === 0 && !st.running) {
     return <div className="w-line">The forest is empty — one focus session plants the first tree.</div>
   }
   return (
@@ -24,10 +24,10 @@ export default function GroveWidget() {
           <div className="k">trees today</div>
         </div>
       </div>
-      {st.trees.length > 0 && (
+      {st.plants.length > 0 && (
         <div className="gr-widget-row" aria-hidden="true">
-          {st.trees.slice(0, 6).map((t) => (
-            <TreeSVG key={t.id} species={t.species} growth={1} size={26} />
+          {st.plants.slice(0, 6).map((t) => (
+            <PlantSVG key={t.id} kind={t.kind} size={26} />
           ))}
         </div>
       )}

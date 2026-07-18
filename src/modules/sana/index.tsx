@@ -1,3 +1,5 @@
+import { sanaStore, weekAdherence, dueOn, isTaken } from './model'
+import { todayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import SanaScreen from './Screen'
 import SanaWidget from './Widget'
@@ -59,6 +61,21 @@ const sana: ModuleDefinition = {
   Screen: SanaScreen,
   Widget: SanaWidget,
   QuickActions: SanaQuickActions,
+  weekly: {
+    label: 'adherence',
+    unit: '%',
+    mode: 'completion',
+    measure(start, _end) {
+      return weekAdherence(sanaStore.get(), start)
+    },
+    advice() {
+      const st = sanaStore.get()
+      const today = todayKey()
+      const left = dueOn(st, today).filter(({ compound }) => !isTaken(st, compound.id, today)).length
+      if (left > 0) return `${left} dose${left === 1 ? '' : 's'} today keeps the perfect week alive.`
+      return 'A missed dose earlier this week — page back on Today to log it if it was actually taken.'
+    },
+  },
 }
 
 export default sana

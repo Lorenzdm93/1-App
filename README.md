@@ -27,6 +27,13 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.7 — the 1% engine, and GROVE becomes an instrument**
+
+- **"1% better" is now defined.** Every module registers a weekly metric with the engine. Growth metrics (GHISA volume, GROVE focus minutes, RESPIRO breath minutes) chase a target of **your trailing 4-week pace × (1 + your rate)** — the rate is yours to set in Settings (0.5 / 1 / 2% weekly). Completion metrics score the week directly: CADENCE averages each habit against its weekly target (quits count clean days toward a 7-day run), SANA scores doses taken over doses due. CALIBER only participates in weeks you actually test — a PR beats the rate for 100, holding scores 70, regressing 40. **The overall number is one mean across participating modules.**
+- **Plateaus are wins, not failures.** Set an optional goal ceiling (say 2 400 focus min = 40 h): the target never ratchets past it, so holding the ceiling is a 100% week. Hold it three weeks and the app says so out loud — raise the goal if there's genuinely room, or enjoy the plateau.
+- **The new Today.** One score ("This week · 84%"), a bar to the 1%-better mark, the compounding line (weeks won → **+X% since you started**, the whole point of the name), a sparkline of past weeks, per-module score chips, and **Next moves** — up to three concrete actions, phrased in module language, sorted by where the week is leaking, each one tap from its module. Completed weeks freeze into a ledger; the current week is always live.
+- **GROVE v2, the prototype timer.** Focus / short break / long break in a 4-session pomodoro cycle with the dot indicator; preset chips (15–90 m) and tap-the-time-to-type; the big tick-ringed dial with pause/resume (timestamp-shifted — background-proof), reset and skip; **Tasks** with an active task that collects finished sessions (done/planned); breaks plant **flowers** (short) and **ferns** (long) — scenery only, never metrics; the isometric **Forest** with Week/Month/Year/All, shuffle, the species legend (<10 m shrub · 10–19 birch · 20–39 pine · 40+ oak) and **animals** unlocked by lifetime focus hours (Rabbit 10 h → Owl 200 h). v1 trees migrate under the new bands.
+
 **New in v0.6 — SANA to the prototype, percentile CALIBER, module Settings everywhere**
 
 - **SANA, the real one.** Rebuilt to the recovered prototype architecture. **Stacks** are regimens (Daily Foundation, Sport, Sleep…) with emoji + colour, each carrying **compounds** (name, chemical name, dose, form glyph, time slot, the italic advice line). Follow any combination per day; shared compounds appear **once** on Today with membership dots. The Today tab: day pager, tick-ringed **dial** (X/13 · % complete), per-stack progress rows with one-tap take-all, per-slot TAKE ALL, ⓘ info sheets. **History**: day streak, best run, 30-day rate, week grid, month calendar, 26-week consistency heatmap. **Library**: a 14-entry reference shelf (what it is, usual slot, cautions) that adds straight into a stack. v1 data migrates automatically.
@@ -108,8 +115,8 @@ Everything lives on-device. **Settings → Export** produces one JSON backup cov
 
 ## Roadmap
 
-- **v0.7** — Ora (fasting) and Minim (mood) modules; the full-app premium reskin pass; cross-module insights on the event stream.
-- **v0.8** — optional end-to-end Firebase sync (the event log is already sync-shaped).
+- **v0.8** — Ora (fasting) and Minim (mood) modules wired straight into the engine; the full-app premium reskin pass.
+- **v0.9** — optional end-to-end Firebase sync (the event log and week ledger are already sync-shaped).
 - **Later** — Capacitor wrap for the App Store; reminders/notifications (needs the native shell).
 
 ### Earlier roadmap notes
