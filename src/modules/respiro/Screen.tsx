@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
-import { logEvent } from '../../core/events'
-import { formatDuration } from '../../core/dates'
+import { logEvent, eventsStore } from '../../core/events'
+import { formatDuration, dayKey, todayKey, lastNDayKeys } from '../../core/dates'
 import { toast } from '../../core/toast'
-import { Seg } from '../../app/ui'
+import { Toggle, StatBox } from '../../app/ui'
+import { Bars } from '../../app/charts'
 import {
   PROTOCOLS,
+  CATEGORIES,
   protocolById,
   phaseAt,
   cycleSeconds,
@@ -23,11 +25,104 @@ import {
   parseSpotify,
   spotifyEmbedUrl,
   recordHold,
+  setSound,
 } from './model'
 
 const MIN_SESSION_MS = 30_000
 
-/* ---------- geometric tracer ---------- */
+/* ---------- tiny synth for cues (no audio files, ever) ---------- */
+
+let audioCtx: AudioContext | null = null
+function ctx(): AudioContext | null {
+  try {
+    if (!audioCtx) {
+      const AC =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    
+      if (!AC) return null
+      audioCtx = new AC()
+    }
+    if (audioCtx.state === 'suspended') void audioCtx.resume()
+    return audioCtx
+  } catch {
+    return null
+  }
+}
+
+function tone(freq: number, dur: number, gain = 0.05, when = 0): void {
+  const ac = ctx()
+  if (!ac) return
+  const osc = ac.createOscillator()
+  const g = ac.createGain()
+  osc.type = 'sine'
+  osc.frequency.value = freq
+  g.gain.setValueAtTime(0, ac.currentTime + when)
+  g.gain.linearRampToValueAtTime(gain, ac.currentTime + when + 0.015)
+  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + when + dur)
+  osc.connect(g).connect(ac.destination)
+  osc.start(ac.currentTime + when)
+  osc.stop(ac.currentTime + when + dur + 0.05)
+}
+
+const playCue = () => tone(760, 0.09)
+const playBell = () => {
+  tone(392, 0.9, 0.06)
+  tone(523.25, 1.2, 0.05, 0.12)
+}
+
+/* ---------- protocol glyphs ---------- */
+
+function Glyph({ kind }: { kind: Protocol['glyph'] }) {
+  const s = { stroke: 'currentColor', strokeWidth: 1.7, fill: 'none', strokeLinecap: 'round' as const }
+  switch (kind) {
+    case 'sigh':
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
+          <path d="M3 16c2-6 4-6 5-2 .8-3 2-4 3-2.5 1.5 2 4 4.5 10 4.5" strokeLinejoin="round" />
+        </svg>
+      )
+    case 'ring':
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+      )
+    case 'wave':
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
+          <circle cx="12" cy="12" r="8" opacity="0.45" />
+          <path d="M12 4a8 8 0 0 1 8 8" strokeWidth="2.4" />
+        </svg>
+      )
+    case 'tri':
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
+          <path d="M12 4.5 20 19H4z" strokeLinejoin="round" />
+        </svg>
+      )
+    case 'box':
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
+          <rect x="4.5" y="4.5" width="15" height="15" rx="3" />
+        </svg>
+      )
+    case 'nadi':
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
+          <path d="M8 20C8 12 12 10 12 4c0 6 4 8 4 16" strokeLinejoin="round" />
+        </svg>
+      )
+    case 'bellows':
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
+          <path d="M3 12l3-5 3 10 3-12 3 12 3-10 3 5" strokeLinejoin="round" />
+        </svg>
+      )
+  }
+}
+
+/* ---------- geometric tracer (unchanged mechanics, kept premium) ---------- */
 
 const SQUARE: readonly [number, number][] = [
   [40, 40],
@@ -36,9 +131,9 @@ const SQUARE: readonly [number, number][] = [
   [40, 160],
 ]
 const TRIANGLE: readonly [number, number][] = [
-  [100, 36],
-  [168, 158],
-  [32, 158],
+  [100, 34],
+  [172, 166],
+  [28, 166],
 ]
 
 function lerp(a: number, b: number, t: number): number {
@@ -100,7 +195,6 @@ function Figure({
       </>
     )
   } else {
-    // proportional ring: arcs sized by phase duration
     const r = 78
     const C = 2 * Math.PI * r
     const total = cycleSeconds(protocol)
@@ -152,10 +246,7 @@ function Figure({
   }
 
   const wrapStyle: CSSProperties = running
-    ? {
-        transform: `scale(${0.9 + scale * 0.12})`,
-        transitionDuration: `${seconds}s`,
-      }
+    ? { transform: `scale(${0.9 + scale * 0.12})`, transitionDuration: `${seconds}s` }
     : { transform: 'scale(0.96)', transitionDuration: '0.4s' }
 
   return (
@@ -170,7 +261,311 @@ function Figure({
   )
 }
 
-/* ---------- breath hold ---------- */
+/* ---------- practice: library ---------- */
+
+function ProtocolCard({ p, onOpen }: { p: Protocol; onOpen: () => void }) {
+  return (
+    <button
+      className="card card-tap rs-card"
+      style={{ ['--rs-acc' as string]: p.accentVar } as CSSProperties}
+      onClick={onOpen}
+    >
+      <span className="rs-card-glyph">
+        <Glyph kind={p.glyph} />
+      </span>
+      <span className="rs-card-main">
+        <span className="rs-card-name">
+          {p.name}
+          {p.warning && <span className="rs-warn-dot" aria-label="Carries a warning">!</span>}
+        </span>
+        <span className="rs-card-desc">{p.desc}</span>
+      </span>
+      <span className="rs-card-side">
+        <span className="pat num">{p.sub}</span>
+        <span className="tag">{p.tag}</span>
+      </span>
+    </button>
+  )
+}
+
+function Library({ onOpen }: { onOpen: (id: string) => void }) {
+  const st = useStore(respiroStore)
+  const last = st.protocolId === 'custom' ? buildCustomProtocol(st.custom) : protocolById(st.protocolId)
+  return (
+    <>
+      <div
+        className="card rs-hero"
+        style={{ ['--rs-acc' as string]: last.accentVar } as CSSProperties}
+      >
+        <div className="rs-hero-kicker">Continue with</div>
+        <div className="rs-hero-name">{last.name}</div>
+        <div className="rs-hero-desc">{last.desc}</div>
+        <button className="btn btn-primary rs-hero-btn" onClick={() => onOpen(last.id)}>
+          ▷&nbsp; Begin · {last.suggestedMin} min
+        </button>
+      </div>
+      {CATEGORIES.map((c) => (
+        <div key={c.id}>
+          <div className="section-label">{c.label}</div>
+          {PROTOCOLS.filter((p) => p.category === c.id).map((p) => (
+            <ProtocolCard key={p.id} p={p} onOpen={() => onOpen(p.id)} />
+          ))}
+          {c.id === 'steady' && (
+            <ProtocolCard p={buildCustomProtocol(st.custom)} onOpen={() => onOpen('custom')} />
+          )}
+        </div>
+      ))}
+      <p className="rs-foot">
+        Nasal, quiet, unforced — that's ninety percent of every technique. Patterns differ mainly in
+        where they put the emphasis: long exhales calm, balanced sides steady, fast rounds arouse.
+      </p>
+    </>
+  )
+}
+
+/* ---------- practice: stage ---------- */
+
+function Stage({
+  protocolId,
+  onBack,
+}: {
+  protocolId: string
+  onBack: () => void
+}) {
+  const st = useStore(respiroStore)
+  const protocol: Protocol =
+    protocolId === 'custom' ? buildCustomProtocol(st.custom) : protocolById(protocolId)
+
+  const [startTs, setStartTs] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
+  const startedRef = useRef(false)
+  const lastPhaseRef = useRef(-1)
+
+  useEffect(() => {
+    if (!startedRef.current && consumeAutostart()) {
+      startedRef.current = true
+      setStartTs(Date.now())
+    }
+  }, [])
+
+  const running = startTs !== null
+  useEffect(() => {
+    if (!running) return
+    const t = setInterval(() => setNow(Date.now()), 100)
+    return () => clearInterval(t)
+  }, [running])
+
+  const elapsedSec = running ? (now - startTs) / 1000 : 0
+  const pos = phaseAt(protocol, elapsedSec)
+  const progress = pos.phase.seconds > 0 ? 1 - pos.remaining / pos.phase.seconds : 0
+  const cycle = running ? Math.floor(elapsedSec / cycleSeconds(protocol)) + 1 : 0
+
+  useEffect(() => {
+    if (!running) {
+      lastPhaseRef.current = -1
+      return
+    }
+    if (pos.index !== lastPhaseRef.current) {
+      if (lastPhaseRef.current !== -1 && respiroStore.get().cues) playCue()
+      lastPhaseRef.current = pos.index
+    }
+  }, [running, pos.index])
+
+  useEffect(() => {
+    if (running) document.body.classList.add('rs-running')
+    else document.body.classList.remove('rs-running')
+    return () => document.body.classList.remove('rs-running')
+  }, [running])
+
+  function end() {
+    if (startTs === null) return
+    const ms = Date.now() - startTs
+    setStartTs(null)
+    if (ms >= MIN_SESSION_MS) {
+      const minutes = Math.round((ms / 60000) * 10) / 10
+      logEvent({
+        module: 'respiro',
+        kind: 'session',
+        value: minutes,
+        unit: 'min',
+        meta: { protocol: protocol.id },
+      })
+      if (respiroStore.get().bell) playBell()
+      toast(`${minutes} min logged`)
+    } else {
+      toast('Under 30 s — not logged')
+    }
+  }
+
+  const custom = st.custom
+  const customFields = [
+    { key: 'inS', label: 'In' },
+    { key: 'hold1', label: 'Hold' },
+    { key: 'outS', label: 'Out' },
+    { key: 'hold2', label: 'Hold' },
+  ] as const
+
+  return (
+    <>
+      {!running && (
+        <button className="rs-back" onClick={onBack}>
+          ‹ All patterns
+        </button>
+      )}
+      <div
+        className={'card rs-stage' + (running ? ' running' : '')}
+        style={{ ['--rs-acc' as string]: protocol.accentVar } as CSSProperties}
+      >
+        <Figure
+          protocol={protocol}
+          index={pos.index}
+          progress={progress}
+          running={running}
+          scale={pos.phase.scale}
+          seconds={pos.phase.seconds}
+        >
+          <span className="rs-phase">{running ? pos.phase.label : 'Ready'}</span>
+          <span className="rs-count">{running ? Math.ceil(pos.remaining) : '—'}</span>
+        </Figure>
+        <div className="rs-dots" aria-hidden="true">
+          {protocol.phases.map((_, i) => (
+            <span key={i} className={'rs-dot' + (running && i === pos.index ? ' on' : '')} />
+          ))}
+        </div>
+        {running && <div className="rs-cycle num">Cycle {cycle}</div>}
+        <div className="rs-session">
+          {running
+            ? `Session · ${formatDuration(now - startTs)}`
+            : `${protocol.sub} — suggested ${protocol.suggestedMin} min`}
+        </div>
+      </div>
+
+      {protocol.warning && !running && (
+        <div className="rs-warning">
+          <b>Safety first.</b> {protocol.warning}
+        </div>
+      )}
+
+      {protocolId === 'custom' && !running && (
+        <div className="rs-custom">
+          {customFields.map((f) => (
+            <label key={f.key} className="rs-custom-field">
+              <span>{f.label}</span>
+              <input
+                className="tinput"
+                inputMode="numeric"
+                value={custom[f.key]}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  setCustom({ [f.key]: Number.isFinite(v) ? v : 0 })
+                }}
+              />
+            </label>
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginTop: 16 }}>
+        {running ? (
+          <button className="btn btn-ghost" onClick={end}>
+            End session
+          </button>
+        ) : (
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              selectProtocol(protocolId)
+              setStartTs(Date.now())
+            }}
+          >
+            Begin
+          </button>
+        )}
+      </div>
+
+      {!running && (
+        <div className="card guide" style={{ marginTop: 16 }}>
+          <p>{protocol.detail}</p>
+        </div>
+      )}
+    </>
+  )
+}
+
+function PracticeTab() {
+  const st = useStore(respiroStore)
+  const [view, setView] = useState<'library' | 'stage'>(st.autostart ? 'stage' : 'library')
+  const [stageId, setStageId] = useState(st.protocolId)
+  return view === 'stage' ? (
+    <Stage protocolId={stageId} onBack={() => setView('library')} />
+  ) : (
+    <Library
+      onOpen={(id) => {
+        setStageId(id)
+        selectProtocol(id)
+        setView('stage')
+      }}
+    />
+  )
+}
+
+/* ---------- progress ---------- */
+
+function ProgressTab() {
+  const events = useStore(eventsStore)
+  const st = useStore(respiroStore)
+  const sessions = events.filter((e) => e.module === 'respiro' && e.kind === 'session')
+  const totalMin = Math.round(sessions.reduce((s, e) => s + (e.value ?? 0), 0))
+  const days = lastNDayKeys(14)
+  const perDay = days.map((day) => ({
+    label: day.slice(-2),
+    value: Math.round(
+      sessions.filter((e) => dayKey(e.ts) === day).reduce((s, e) => s + (e.value ?? 0), 0),
+    ),
+  }))
+  const today = todayKey()
+  const practicedDays = new Set(sessions.map((e) => dayKey(e.ts)))
+  let streak = 0
+  {
+    let cursor = practicedDays.has(today) ? today : ''
+    if (cursor === '') {
+      // streak may still stand on yesterday
+      const y = days[days.length - 2]
+      cursor = practicedDays.has(y) ? y : ''
+    }
+    while (cursor && practicedDays.has(cursor)) {
+      streak++
+      const d = new Date(cursor + 'T12:00:00')
+      d.setDate(d.getDate() - 1)
+      cursor = dayKey(d.getTime())
+    }
+  }
+  return (
+    <>
+      <div className="ins-grid">
+        <StatBox label="sessions" value={String(sessions.length)} />
+        <StatBox label="total minutes" value={String(totalMin)} />
+        <StatBox label="practice streak" value={`${streak}d`} />
+        <StatBox label="best hold" value={st.bestHold > 0 ? `${st.bestHold}s` : '—'} />
+      </div>
+      <div className="card">
+        <div className="card-head">
+          <span className="label" style={{ color: 'var(--m-respiro)' }}>Minutes · last 14 days</span>
+        </div>
+        <Bars data={perDay} accentVar="var(--m-respiro)" />
+      </div>
+      <div className="card guide">
+        <p>
+          <b>Consistency beats intensity.</b> Five daily minutes of coherent breathing moves resting
+          heart-rate variability more than an occasional half-hour. The streak above counts any
+          logged session — protect it with the smallest one you can do.
+        </p>
+      </div>
+    </>
+  )
+}
+
+/* ---------- sound ---------- */
 
 function HoldTest({ now, onTick }: { now: number; onTick: (active: boolean) => void }) {
   const st = useStore(respiroStore)
@@ -214,239 +609,158 @@ function HoldTest({ now, onTick }: { now: number; onTick: (active: boolean) => v
           </button>
         )}
       </div>
+      <p className="rs-foot" style={{ marginTop: 10 }}>
+        Time your Wim Hof retentions here, or track CO₂ tolerance on its own. Always seated.
+      </p>
     </div>
   )
 }
 
-/* ---------- sound ---------- */
-
-function SoundCard() {
+function ToolsTab() {
   const st = useStore(respiroStore)
-  const [editing, setEditing] = useState(st.spotifyUrl === '')
+  const [now, setNow] = useState(() => Date.now())
+  const [holdActive, setHoldActive] = useState(false)
+  const [localName, setLocalName] = useState<string | null>(null)
+  const [localUrl, setLocalUrl] = useState<string | null>(null)
   const [url, setUrl] = useState(st.spotifyUrl)
+  const [editing, setEditing] = useState(st.spotifyUrl === '')
+
+  useEffect(() => {
+    if (!holdActive) return
+    const t = setInterval(() => setNow(Date.now()), 100)
+    return () => clearInterval(t)
+  }, [holdActive])
+
+  useEffect(() => () => {
+    if (localUrl) URL.revokeObjectURL(localUrl)
+  }, [localUrl])
+
   const ref = st.spotifyUrl ? parseSpotify(st.spotifyUrl) : null
+
   return (
-    <div className="card">
-      <div className="card-head">
-        <span className="label" style={{ color: 'var(--m-respiro)' }}>Sound</span>
+    <>
+      <div className="card">
+        <div className="card-head">
+          <span className="label" style={{ color: 'var(--m-respiro)' }}>Cues</span>
+        </div>
+        <div className="kv">
+          <span className="k">Phase ticks — a soft chime at each transition, eyes closed</span>
+          <Toggle on={st.cues} onChange={() => setSound({ cues: !st.cues })} label="Phase cues" />
+        </div>
+        <div className="kv">
+          <span className="k">Completion bell when a session is logged</span>
+          <Toggle on={st.bell} onChange={() => setSound({ bell: !st.bell })} label="Completion bell" />
+        </div>
+        <p className="rs-foot" style={{ marginTop: 8 }}>
+          All sounds are synthesised on-device — nothing to download, nothing leaves the phone.
+        </p>
       </div>
-      {ref && !editing ? (
-        <>
-          <iframe
-            className="rs-spotify"
-            src={spotifyEmbedUrl(ref)}
-            height={ref.type === 'track' ? 80 : 152}
-            allow="encrypted-media"
-            loading="lazy"
-            title="Spotify"
-          />
-          <div className="btn-row" style={{ marginTop: 10 }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>
-              Change
-            </button>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => {
-                setSpotify('')
-                setUrl('')
-                setEditing(true)
+
+      <div className="card">
+        <div className="card-head">
+          <span className="label" style={{ color: 'var(--m-respiro)' }}>Spotify</span>
+        </div>
+        {ref && !editing ? (
+          <>
+            <iframe
+              className="rs-spotify"
+              src={spotifyEmbedUrl(ref)}
+              height={ref.type === 'track' ? 80 : 152}
+              allow="encrypted-media"
+              loading="lazy"
+              title="Spotify"
+            />
+            <div className="btn-row" style={{ marginTop: 10 }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>
+                Change
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  setSpotify('')
+                  setUrl('')
+                  setEditing(true)
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <input
+              className="tinput"
+              placeholder="Paste a Spotify link — track, playlist, album…"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+            />
+            <div style={{ marginTop: 10 }}>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  if (setSpotify(url)) {
+                    setEditing(false)
+                    if (url.trim()) toast('Sound linked')
+                  } else {
+                    toast("That doesn't look like a Spotify link")
+                  }
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </>
+        )}
+        <p className="rs-foot" style={{ marginTop: 10 }}>
+          The link is saved on this device and survives restarts — your guided track is one tap away
+          before every session.
+        </p>
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <span className="label" style={{ color: 'var(--m-respiro)' }}>Local file</span>
+        </div>
+        {localUrl ? (
+          <>
+            <div className="kv">
+              <span className="k">{localName}</span>
+            </div>
+            <audio className="rs-audio" src={localUrl} controls loop />
+          </>
+        ) : (
+          <label className="btn btn-ghost" style={{ display: 'inline-flex', cursor: 'pointer' }}>
+            Choose an audio file
+            <input
+              type="file"
+              accept="audio/*"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (!f) return
+                if (localUrl) URL.revokeObjectURL(localUrl)
+                setLocalName(f.name)
+                setLocalUrl(URL.createObjectURL(f))
               }}
-            >
-              Remove
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          <input
-            className="tinput"
-            placeholder="Paste a Spotify link — track, playlist, album…"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-          <div style={{ marginTop: 10 }}>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => {
-                if (setSpotify(url)) {
-                  setEditing(false)
-                  if (url.trim()) toast('Sound linked')
-                } else {
-                  toast("That doesn't look like a Spotify link")
-                }
-              }}
-            >
-              Save
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+            />
+          </label>
+        )}
+        <p className="rs-foot" style={{ marginTop: 10 }}>
+          Plays your own recording — a teacher's meditation, a favourite piece. Honest limitation: a
+          browser app can't keep file access between visits, so re-pick it next session. The Spotify
+          link above is the one that persists.
+        </p>
+      </div>
+
+      <HoldTest now={now} onTick={setHoldActive} />
+    </>
   )
 }
 
 /* ---------- screen ---------- */
 
-export default function RespiroScreen({ tab = 'breathe' }: { tab?: string }) {
-  const st = useStore(respiroStore)
-  const protocol: Protocol =
-    st.protocolId === 'custom' ? buildCustomProtocol(st.custom) : protocolById(st.protocolId)
-
-  const [startTs, setStartTs] = useState<number | null>(null)
-  const [now, setNow] = useState(() => Date.now())
-  const [holdActive, setHoldActive] = useState(false)
-  const startedRef = useRef(false)
-
-  useEffect(() => {
-    if (!startedRef.current && consumeAutostart()) {
-      startedRef.current = true
-      setStartTs(Date.now())
-    }
-  }, [])
-
-  const ticking = startTs !== null || holdActive
-  useEffect(() => {
-    if (!ticking) return
-    const t = setInterval(() => setNow(Date.now()), 100)
-    return () => clearInterval(t)
-  }, [ticking])
-
-  const running = startTs !== null
-  const elapsedSec = running ? (now - startTs) / 1000 : 0
-  const pos = phaseAt(protocol, elapsedSec)
-  const progress = pos.phase.seconds > 0 ? 1 - pos.remaining / pos.phase.seconds : 0
-  const cycle = running ? Math.floor(elapsedSec / cycleSeconds(protocol)) + 1 : 0
-
-  useEffect(() => {
-    if (running) document.body.classList.add('rs-running')
-    else document.body.classList.remove('rs-running')
-    return () => document.body.classList.remove('rs-running')
-  }, [running])
-
-  function end() {
-    if (startTs === null) return
-    const ms = Date.now() - startTs
-    setStartTs(null)
-    if (ms >= MIN_SESSION_MS) {
-      const minutes = Math.round((ms / 60000) * 10) / 10
-      logEvent({
-        module: 'respiro',
-        kind: 'session',
-        value: minutes,
-        unit: 'min',
-        meta: { protocol: protocol.id },
-      })
-      toast(`${minutes} min logged`)
-    } else {
-      toast('Under 30 s — not logged')
-    }
-  }
-
-  const custom = st.custom
-  const customFields = [
-    { key: 'inS', label: 'In' },
-    { key: 'hold1', label: 'Hold' },
-    { key: 'outS', label: 'Out' },
-    { key: 'hold2', label: 'Hold' },
-  ] as const
-
-  if (tab === 'tools') {
-    return (
-      <>
-        {running && (
-          <button className="gh-running" onClick={() => navigate('/m/respiro/breathe')}>
-            <span className="pulse" aria-hidden="true" />
-            {protocol.name} running · {formatDuration(now - (startTs as number))} — return
-          </button>
-        )}
-        <HoldTest now={now} onTick={setHoldActive} />
-        <SoundCard />
-      </>
-    )
-  }
-
-  return (
-    <>
-      <div
-        className={'card rs-stage' + (running ? ' running' : '')}
-        style={{ ['--rs-acc' as string]: protocol.accentVar } as CSSProperties}
-      >
-        <Figure
-          protocol={protocol}
-          index={pos.index}
-          progress={progress}
-          running={running}
-          scale={pos.phase.scale}
-          seconds={pos.phase.seconds}
-        >
-          <span className="rs-phase">{running ? pos.phase.label : 'Ready'}</span>
-          <span className="rs-count">{running ? Math.ceil(pos.remaining) : '—'}</span>
-        </Figure>
-        <div className="rs-dots" aria-hidden="true">
-          {protocol.phases.map((_, i) => (
-            <span key={i} className={'rs-dot' + (running && i === pos.index ? ' on' : '')} />
-          ))}
-        </div>
-        {running && <div className="rs-cycle num">Cycle {cycle}</div>}
-        <div className="rs-session">
-          {running ? `Session · ${formatDuration(now - startTs)}` : `${protocol.name} — ${protocol.sub}`}
-        </div>
-      </div>
-
-      <div className="section-label">Protocol</div>
-      <div className="chips">
-        {PROTOCOLS.map((p) => (
-          <button
-            key={p.id}
-            className={'chip' + (p.id === st.protocolId ? ' on' : '')}
-            style={{ ['--chip-accent' as string]: p.accentVar } as CSSProperties}
-            disabled={running}
-            onClick={() => selectProtocol(p.id)}
-          >
-            {p.name}
-          </button>
-        ))}
-        <button
-          className={'chip' + (st.protocolId === 'custom' ? ' on' : '')}
-          style={{ ['--chip-accent' as string]: 'var(--m-respiro)' } as CSSProperties}
-          disabled={running}
-          onClick={() => selectProtocol('custom')}
-        >
-          Custom
-        </button>
-      </div>
-      {st.protocolId === 'custom' && !running && (
-        <div className="rs-custom">
-          {customFields.map((f) => (
-            <label key={f.key} className="rs-custom-field">
-              <span>{f.label}</span>
-              <input
-                className="tinput"
-                inputMode="numeric"
-                value={custom[f.key]}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value, 10)
-                  setCustom({ [f.key]: Number.isFinite(v) ? v : 0 })
-                }}
-              />
-            </label>
-          ))}
-        </div>
-      )}
-      {!running && <div className="rs-proto-sub">{protocol.sub}</div>}
-
-      <div style={{ marginTop: 18 }}>
-        {running ? (
-          <button className="btn btn-ghost" onClick={end}>
-            End session
-          </button>
-        ) : (
-          <button className="btn btn-primary" onClick={() => setStartTs(Date.now())}>
-            Begin
-          </button>
-        )}
-      </div>
-
-    </>
-  )
+export default function RespiroScreen({ tab = 'practice' }: { tab?: string }) {
+  if (tab === 'progress') return <ProgressTab />
+  if (tab === 'sound') return <ToolsTab />
+  return <PracticeTab />
 }

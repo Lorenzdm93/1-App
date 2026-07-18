@@ -24,7 +24,17 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **CADENCE** | Habits done right — build *and* quit habits, weekly frequency targets (3×/week…), Month backfill, Year grids | Check habits off directly on the dashboard |
 | **GROVE** | Deep-focus timer — finish a session and a tree grows; your forest is your history | Focus 25 min in one tap |
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
-| **CALIBER** | Strength gauge — e1RM, population percentile, target-level planner, per-lift test history | — |
+| **SANA** | Supplement & medicine cabinet — slot-grouped Today list, stock countdown, adherence insights | Doses left today |
+| **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.5 — insight everywhere, premium everywhere**
+
+- **SANA.** Rebuilt for the platform: items carry dose label, supplement/medicine type, time-of-day slots, weekdays, with-food tag, optional stock. Today groups by Morning/Midday/Evening/Night with one-tap ticks and an adherence ring; the Stack manages refills (+30/+90) with a days-left countdown and low-stock warnings; Insights shows 7/30-day adherence, perfect-day streak, and per-item bars. Strictly an organisational aid — it never suggests what or how much.
+- **GHISA Insights.** Stats became Insights: Week/Month/Year with the right breakdown for each (sessions → weeks → months), six aggregates (workouts, volume, sets, reps, minutes, avg length) each showing ▲/▼ vs the previous period — the 1%-better logic made visible — plus a verbose coaching card (progressive overload, program patience, core lifts vs accessories). Completing a set now pops an accent tick with a row flash.
+- **RESPIRO, the instrument again.** Practice tab rebuilt to the prototype: "Continue with…" hero, protocol cards with glyph, pattern and category tag, grouped Down-shift / Steady & sharpen / Energise. Seven protocols including Extended Exhale, Nadi Shodhana and Wim Hof rounds — the latter with a hard safety warning. Every protocol has a long-form explanation on its stage. New Progress tab (sessions, minutes, practice streak, best hold, 14-day chart) and Sound tab: phase-cue ticks and completion bell (synthesised, on-device) with real switches, Spotify (persists), plus local-file playback for your own recordings.
+- **CALIBER grown up.** Three tabs. The gauge is now a horizontal level bar with threshold ticks and a marker at your chosen target ("top X %"). A confidence dot grades the estimate by rep count — formulas agree at low reps and drift past ten. Standards tab prints every level's kg for *your* bodyweight (PR-cleared cells fill in) and explains Epley & Brzycki with a live example.
+- **CADENCE.** Page back from Today (‹ ›) to fill missed days honestly — events carry the real date. Month and Year now open with insight boxes: avg completion, check-ins, most consistent habit, active days, best streak, habits tracked.
+- **Every module now has its own icon tab bar**, and the shared design system got the prototype treatment: pill buttons with ink-on-accent, gradient cards with top highlights, true switches, spaced-serif module wordmarks with the accent letter.
 
 **New in v0.4 — modules become small apps**
 
@@ -91,8 +101,8 @@ Everything lives on-device. **Settings → Export** produces one JSON backup cov
 
 ## Roadmap
 
-- **v0.5** — SANA (pending its spec) plus Ora (fasting) / Minim (mood); first cross-module insights on the shared event stream.
-- **v0.6** — optional end-to-end Firebase sync (the event log is already sync-shaped).
+- **v0.6** — Ora (fasting) and Minim (mood) modules; the full-app premium reskin pass (deep polish beyond the shared system); cross-module insights on the event stream.
+- **v0.7** — optional end-to-end Firebase sync (the event log is already sync-shaped).
 - **Later** — Capacitor wrap for the App Store; reminders/notifications (needs the native shell).
 
 ### Earlier roadmap notes

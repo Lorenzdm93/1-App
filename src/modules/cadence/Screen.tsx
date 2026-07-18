@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { lastNDayKeys, todayKey, shiftDay } from '../../core/dates'
+import { StatBox } from '../../app/ui'
 import { toast } from '../../core/toast'
 import { Sheet, ConfirmSheet, Empty, Seg } from '../../app/ui'
 import {
@@ -25,6 +26,8 @@ import {
   weekDayKeys,
   countInWeek,
   weekStreak,
+  monthInsights,
+  yearInsights,
   EMOJI_PRESETS,
   PALETTE,
   type Habit,
@@ -85,9 +88,9 @@ function WeekDots({ habitId }: { habitId: string }) {
   )
 }
 
-function BuildRow({ habit, onManage }: { habit: Habit; onManage: () => void }) {
+function BuildRow({ habit, day, onManage }: { habit: Habit; day: string; onManage: () => void }) {
   const st = useStore(cadenceStore)
-  const done = isChecked(st, habit.id)
+  const done = isChecked(st, habit.id, day)
   const daily = habit.targetPerWeek === 7
   const count = countInWeek(st, habit.id, weekStartKey(todayKey()))
   const streakLabel = daily
@@ -97,7 +100,7 @@ function BuildRow({ habit, onManage }: { habit: Habit; onManage: () => void }) {
     <div className="cdh-row" style={accent(habit)}>
       <button
         className={'cdh-tile' + (done ? ' done' : '')}
-        onClick={() => toggleCheck(habit.id)}
+        onClick={() => setCheck(habit.id, day, !done)}
         aria-label={(done ? 'Uncheck ' : 'Check ') + habit.name}
         aria-pressed={done}
       >
@@ -174,8 +177,19 @@ function MonthView() {
     })
   }
 
+  const ins = monthInsights(st, grid)
   return (
     <>
+      <div className="ins-grid">
+        <StatBox label="avg completion" value={`${ins.avgCompletion}%`} />
+        <StatBox label="check-ins" value={String(ins.checkIns)} />
+        <StatBox label="active habits" value={String(ins.activeBuilds)} />
+        <StatBox
+          label="most consistent"
+          value={ins.mostConsistent ? `${ins.mostConsistent.pct}%` : '—'}
+          sub={ins.mostConsistent ? ins.mostConsistent.name : undefined}
+        />
+      </div>
       <div className="card">
         <div className="cd-month-head">
           <button onClick={() => move(-1)} aria-label="Previous month">‹</button>
@@ -512,6 +526,18 @@ export default function CadenceScreen({ tab = 'today' }: { tab?: string }) {
   const st = useStore(cadenceStore)
   const habits = activeHabits(st)
   const [adding, setAdding] = useState(false)
+  const [dayOffset, setDayOffset] = useState(0)
+  const viewDay = shiftDay(todayKey(), dayOffset)
+  const pagerLabel =
+    dayOffset === 0
+      ? 'Today'
+      : dayOffset === -1
+        ? 'Yesterday'
+        : new Date(viewDay + 'T12:00:00').toLocaleDateString(undefined, {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+          })
   const [managing, setManaging] = useState<Habit | null>(null)
   const [slipping, setSlipping] = useState<Habit | null>(null)
 
@@ -519,21 +545,38 @@ export default function CadenceScreen({ tab = 'today' }: { tab?: string }) {
     <>
       {tab === 'today' && (
         <>
+          <div className="cd-pager">
+            <button onClick={() => setDayOffset((o) => o - 1)} aria-label="Previous day">‹</button>
+            <span className="cd-pager-label">{pagerLabel}</span>
+            <button
+              onClick={() => setDayOffset((o) => Math.min(0, o + 1))}
+              disabled={dayOffset === 0}
+              aria-label="Next day"
+            >
+              ›
+            </button>
+          </div>
           {habits.length === 0 ? (
             <Empty title="No habits yet" sub="Small, daily, repeatable — that's where the 1% lives." />
           ) : (
             habits.map((h) =>
               h.type === 'build' ? (
-                <BuildRow key={h.id} habit={h} onManage={() => setManaging(h)} />
-              ) : (
+                <BuildRow key={h.id} habit={h} day={viewDay} onManage={() => setManaging(h)} />
+              ) : dayOffset === 0 ? (
                 <QuitRow
                   key={h.id}
                   habit={h}
                   onManage={() => setManaging(h)}
                   onSlip={() => setSlipping(h)}
                 />
-              ),
+              ) : null,
             )
+          )}
+          {dayOffset < 0 && (
+            <p className="rs-foot">
+              Filling in {pagerLabel.toLowerCase()} — events carry that day's timestamp, so streaks
+              stay honest. Quit habits log slips only on the day itself.
+            </p>
           )}
           <div style={{ marginTop: 12 }}>
             <button className="btn btn-ghost" onClick={() => setAdding(true)}>
@@ -549,7 +592,22 @@ export default function CadenceScreen({ tab = 'today' }: { tab?: string }) {
         (habits.length === 0 ? (
           <Empty title="Nothing to map yet" sub="The year view fills as you do." />
         ) : (
-          habits.map((h) => <YearGrid key={h.id} habit={h} />)
+          <>
+            {(() => {
+              const yi = yearInsights(st)
+              return (
+                <div className="ins-grid">
+                  <StatBox label="active days" value={String(yi.activeDays)} sub="last 365" />
+                  <StatBox label="check-ins" value={String(yi.checkIns)} />
+                  <StatBox label="best streak" value={`${yi.bestStreak}d`} />
+                  <StatBox label="habits tracked" value={String(yi.habitsTracked)} />
+                </div>
+              )
+            })()}
+            {habits.map((h) => (
+              <YearGrid key={h.id} habit={h} />
+            ))}
+          </>
         ))}
 
       {adding && <HabitForm mode="add" open onClose={() => setAdding(false)} />}

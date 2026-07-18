@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { formatDuration } from '../../core/dates'
 import { navigate } from '../../core/router'
 import { toast } from '../../core/toast'
-import { Sheet, ConfirmSheet, Empty, parseNum } from '../../app/ui'
+import { Sheet, ConfirmSheet, Empty, parseNum, StatBox } from '../../app/ui'
 import { Bars, Line } from '../../app/charts'
 import {
   ghisaStore,
@@ -34,8 +35,13 @@ import {
   e1rmSeries,
   bestSet,
   allExerciseNames,
-  weeklyVolume,
   topExercises,
+  periodRange,
+  aggregatePeriod,
+  pctDelta,
+  periodBuckets,
+  TRAINING_ADVICE,
+  type Period,
   type ExerciseEntry,
   type Session,
   type SetEntry,
@@ -600,25 +606,81 @@ function HistoryTab({ history }: { history: Session[] }) {
   )
 }
 
-function StatsTab({ history }: { history: Session[] }) {
+const PERIODS: readonly { id: Period; label: string }[] = [
+  { id: 'week', label: 'Week' },
+  { id: 'month', label: 'Month' },
+  { id: 'year', label: 'Year' },
+]
+
+const PREV_LABEL: Record<Period, string> = {
+  week: 'last week',
+  month: 'last month',
+  year: 'last year',
+}
+
+function InsightsTab({ history }: { history: Session[] }) {
   const [overview, setOverview] = useState<string | null>(null)
+  const [period, setPeriod] = useState<Period>('month')
   if (history.length === 0) {
-    return <Empty title="Nothing to chart yet" sub="Stats appear after your first workout." />
+    return <Empty title="Nothing to chart yet" sub="Insights appear after your first workout." />
   }
-  const buckets = weeklyVolume(history, 8)
+  const cur = aggregatePeriod(history, periodRange(period, 0))
+  const prev = aggregatePeriod(history, periodRange(period, 1))
+  const buckets = periodBuckets(history, period)
   const top = topExercises(history, 5)
   const names = allExerciseNames(history)
+  const volDelta = pctDelta(cur.volume, prev.volume)
+  const trendLine =
+    prev.volume === 0
+      ? 'First period on the books — the baseline every future comparison stands on.'
+      : volDelta !== null && volDelta >= 0
+        ? `Volume up ${Math.round(volDelta)}% on ${PREV_LABEL[period]} — that is the 1% compounding. Keep the inputs boring.`
+        : `Volume down ${Math.abs(Math.round(volDelta ?? 0))}% vs ${PREV_LABEL[period]}. One soft period is noise; two is a signal — check sleep, check the program, then add the reps back.`
   return (
     <>
-      <div className="card">
-        <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-ghisa)' }}>Weekly volume · kg</span>
-        </div>
-        <Bars data={buckets} accentVar="var(--m-ghisa)" />
+      <div className="chips" style={{ marginBottom: 14 }}>
+        {PERIODS.map((p) => (
+          <button
+            key={p.id}
+            className={'chip' + (p.id === period ? ' on' : '')}
+            style={{ ['--chip-accent' as string]: 'var(--m-ghisa)' } as CSSProperties}
+            onClick={() => setPeriod(p.id)}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
+
+      <div className="ins-grid three">
+        <StatBox label="workouts" value={String(cur.workouts)} delta={pctDelta(cur.workouts, prev.workouts)} />
+        <StatBox label="volume kg" value={cur.volume.toLocaleString()} delta={volDelta} />
+        <StatBox label="sets" value={String(cur.sets)} delta={pctDelta(cur.sets, prev.sets)} />
+        <StatBox label="reps" value={String(cur.reps)} delta={pctDelta(cur.reps, prev.reps)} />
+        <StatBox label="minutes" value={String(cur.minutes)} delta={pctDelta(cur.minutes, prev.minutes)} />
+        <StatBox label="avg length" value={`${cur.avgMinutes}m`} />
+      </div>
+      <div className="ins-note">vs {PREV_LABEL[period]} · {periodRange(period, 0).label}</div>
+
       <div className="card">
         <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-ghisa)' }}>Most trained</span>
+          <span className="label" style={{ color: 'var(--m-ghisa)' }}>
+            {period === 'week' ? 'Sessions this week' : period === 'month' ? 'Weeks this month' : 'Months this year'} · kg
+          </span>
+        </div>
+        {buckets.length === 0 ? (
+          <div className="rs-foot">No sessions in this period yet.</div>
+        ) : (
+          <Bars data={buckets} accentVar="var(--m-ghisa)" />
+        )}
+      </div>
+
+      <div className="card guide">
+        <p><b>Reading the period.</b> {trendLine}</p>
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <span className="label" style={{ color: 'var(--m-ghisa)' }}>Most trained · all time</span>
         </div>
         {top.map((t) => (
           <div className="kv" key={t.name}>
@@ -627,6 +689,7 @@ function StatsTab({ history }: { history: Session[] }) {
           </div>
         ))}
       </div>
+
       <div className="card">
         <div className="card-head">
           <span className="label" style={{ color: 'var(--m-ghisa)' }}>Exercise overview</span>
@@ -639,6 +702,15 @@ function StatsTab({ history }: { history: Session[] }) {
           ))}
         </div>
       </div>
+
+      <div className="card guide">
+        {TRAINING_ADVICE.map((a) => (
+          <p key={a.title}>
+            <b>{a.title}.</b> {a.body}
+          </p>
+        ))}
+      </div>
+
       <ExerciseSheet name={overview} history={history} onClose={() => setOverview(null)} />
     </>
   )
@@ -664,7 +736,7 @@ export default function GhisaScreen({ tab = 'train' }: { tab?: string }) {
       {st.active && <RunningBanner session={st.active} />}
       {tab === 'train' && <Train templates={st.templates} />}
       {tab === 'history' && <HistoryTab history={st.history} />}
-      {tab === 'stats' && <StatsTab history={st.history} />}
+      {tab === 'insights' && <InsightsTab history={st.history} />}
     </>
   )
 }

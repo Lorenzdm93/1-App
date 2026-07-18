@@ -74,3 +74,18 @@ export function percentileFor(level: LevelResult): number {
   const upper = level.index >= PERCENTILES.length ? 99 : PERCENTILES[level.index]
   return Math.round(lower + level.frac * (upper - lower))
 }
+
+export interface Confidence {
+  label: 'High' | 'Good' | 'Fair' | 'Rough'
+  /** 0 green … 2 red-ish, used for the dot colour. */
+  grade: 0 | 1 | 2
+  note: string
+}
+
+/** e1RM formulas diverge as reps rise — the dot says how much to trust the number. */
+export function confidenceFor(reps: number): Confidence {
+  if (reps <= 3) return { label: 'High', grade: 0, note: 'Triples and under track a true 1RM closely.' }
+  if (reps <= 6) return { label: 'Good', grade: 0, note: 'The classic estimation zone — Epley and Brzycki agree well here.' }
+  if (reps <= 10) return { label: 'Fair', grade: 1, note: 'The formulas start diverging; treat the number as a range.' }
+  return { label: 'Rough', grade: 2, note: 'Past ten reps this measures endurance more than max strength.' }
+}

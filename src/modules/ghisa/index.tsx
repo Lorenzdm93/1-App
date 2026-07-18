@@ -15,6 +15,34 @@ function Icon({ size = 20 }: { size?: number }) {
   )
 }
 
+function BellIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3.5 12h17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <rect x="5.4" y="8" width="2.8" height="8" rx="1" fill="currentColor" />
+      <rect x="15.8" y="8" width="2.8" height="8" rx="1" fill="currentColor" />
+    </svg>
+  )
+}
+
+function ClockIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M12 7.5V12l3 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function SparkIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 19V9M12 19V4M19 19v-7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx="12" cy="4" r="1.6" fill="currentColor" />
+    </svg>
+  )
+}
+
 const ghisa: ModuleDefinition = {
   id: 'ghisa',
   name: 'GHISA',
@@ -22,9 +50,9 @@ const ghisa: ModuleDefinition = {
   accentVar: 'var(--m-ghisa)',
   schemaVersion: 4,
   tabs: [
-    { id: 'train', label: 'Train' },
-    { id: 'history', label: 'History' },
-    { id: 'stats', label: 'Stats' },
+    { id: 'train', label: 'Train', Icon: BellIcon },
+    { id: 'history', label: 'History', Icon: ClockIcon },
+    { id: 'insights', label: 'Insights', Icon: SparkIcon },
   ],
   Icon,
   Screen,

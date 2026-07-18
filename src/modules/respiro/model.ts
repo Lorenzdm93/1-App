@@ -10,6 +10,10 @@ export interface RespiroState {
   spotifyUrl: string
   bestHold: number
   lastHold: number
+  /** Sound settings — a soft tick at each phase change. */
+  cues: boolean
+  /** A low bell when a session ends. */
+  bell: boolean
 }
 
 const DEFAULTS: RespiroState = {
@@ -19,21 +23,31 @@ const DEFAULTS: RespiroState = {
   spotifyUrl: '',
   bestHold: 0,
   lastHold: 0,
+  cues: true,
+  bell: true,
 }
 
-/** v1 had only protocol + autostart. */
+/** v1: protocol + autostart only. v2: no sound settings. */
 export function migrateRespiro(data: unknown, fromVersion: number): RespiroState {
-  if (fromVersion === 1 && data !== null && typeof data === 'object') {
+  if ((fromVersion === 1 || fromVersion === 2) && data !== null && typeof data === 'object') {
     const d = data as Partial<RespiroState>
     return {
       ...DEFAULTS,
       protocolId: typeof d.protocolId === 'string' ? d.protocolId : 'box',
+      custom: d.custom && typeof d.custom === 'object' ? d.custom : DEFAULTS.custom,
+      spotifyUrl: typeof d.spotifyUrl === 'string' ? d.spotifyUrl : '',
+      bestHold: typeof d.bestHold === 'number' ? d.bestHold : 0,
+      lastHold: typeof d.lastHold === 'number' ? d.lastHold : 0,
     }
   }
   return DEFAULTS
 }
 
-export const respiroStore = createPersistedStore<RespiroState>('respiro', DEFAULTS, 2, migrateRespiro)
+export const respiroStore = createPersistedStore<RespiroState>('respiro', DEFAULTS, 3, migrateRespiro)
+
+export function setSound(patch: Partial<Pick<RespiroState, 'cues' | 'bell'>>): void {
+  respiroStore.set((s) => ({ ...s, ...patch }))
+}
 
 /* ---------- spotify ---------- */
 

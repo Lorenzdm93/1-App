@@ -32,6 +32,7 @@
   /* module accents */
   --m-ghisa: #e8622c;   /* forged iron ember   */
   --m-respiro: #7fa98e; /* jade breath         */
+  --m-sana: #5fb0a5;
   --m-caliber: #c89b4b; /* brass gauge         */
   --m-cadence: #8fa7c9; /* moon rhythm         */
   --m-grove: #79a86d;   /* living leaf         */
@@ -74,6 +75,7 @@
 
   --m-ghisa: #d9531e;
   --m-respiro: #47795d;
+  --m-sana: #2c7a6e;
   --m-caliber: #96702a;
   --m-cadence: #4e6c99;
   --m-grove: #47773c;

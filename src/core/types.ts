@@ -3,6 +3,8 @@ import type { ComponentType } from 'react'
 export interface ModuleTab {
   id: string
   label: string
+  /** Small inline SVG mark rendered in the module tab bar. */
+  Icon?: ComponentType<{ size?: number }>
 }
 
 /**

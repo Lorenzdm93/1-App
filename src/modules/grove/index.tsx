@@ -13,6 +13,26 @@ function Icon({ size = 20 }: { size?: number }) {
   )
 }
 
+function TreeIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 3 17 11H7z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M12 8.5 18.5 17h-13z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M12 17v4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ForestIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M7 5 10.5 11h-7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M17 7 20.5 13h-7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M7 11v5M17 13v3M3 20h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 const grove: ModuleDefinition = {
   id: 'grove',
   name: 'GROVE',
@@ -20,8 +40,8 @@ const grove: ModuleDefinition = {
   accentVar: 'var(--m-grove)',
   schemaVersion: 1,
   tabs: [
-    { id: 'focus', label: 'Focus' },
-    { id: 'forest', label: 'Forest' },
+    { id: 'focus', label: 'Focus', Icon: TreeIcon },
+    { id: 'forest', label: 'Forest', Icon: ForestIcon },
   ],
   Icon,
   Screen,

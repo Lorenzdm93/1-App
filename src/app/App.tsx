@@ -12,6 +12,20 @@ import TabBar from './TabBar'
 import ModuleTabBar from './ModuleTabBar'
 import { ToastHost } from './ui'
 
+function Wordmark({ name, accent }: { name: string; accent: string }) {
+  const chars = [...name]
+  const idx = Math.max(0, chars.length - 2)
+  return (
+    <div className="name wordmark">
+      {chars.map((c, i) => (
+        <span key={i} style={i === idx ? { color: accent } : undefined}>
+          {c}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function BackIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -38,10 +52,8 @@ function ModuleScreen({ id, tab }: { id: string; tab?: string }) {
           <mod.Icon size={22} />
         </span>
         <div className="titles">
-          <div className="name" style={{ color: mod.accentVar }}>
-            {mod.name}
-          </div>
-          <div className="sub">{mod.tagline}</div>
+          <Wordmark name={mod.name} accent={mod.accentVar} />
+          <div className="sub eyebrow-sub">{mod.tagline}</div>
         </div>
       </div>
       <mod.Screen tab={active} />

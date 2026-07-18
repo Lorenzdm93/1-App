@@ -1,25 +1,121 @@
+/**
+ * The protocol catalog — every pattern carries its physiology in plain words.
+ * Categories mirror the prototype: Down-shift (calm), Steady & Sharpen (focus),
+ * Energise (activation — with warnings where they belong).
+ */
+
 export interface Phase {
   label: string
   seconds: number
-  /** Target orb scale at the END of this phase (1 = full, 0.62 = resting). */
+  /** 1 = lungs full (figure expanded), 0.62 = lungs empty. */
   scale: number
 }
+
+export type Category = 'downshift' | 'steady' | 'energise'
 
 export interface Protocol {
   id: string
   name: string
+  /** Pattern shorthand, e.g. '4 · 7 · 8'. */
   sub: string
-  /** Each pattern keeps its own accent, as in the original instrument. */
+  /** One-line card description. */
+  desc: string
+  /** Longer verbose text shown on the stage view. */
+  detail: string
+  category: Category
+  /** Small caps tag on the card: FOCUS, SLEEP, QUICK CALM… */
+  tag: string
+  /** Suggested session length in minutes (label only — sessions stay open-ended). */
+  suggestedMin: number
   accentVar: string
+  glyph: 'sigh' | 'ring' | 'wave' | 'tri' | 'box' | 'nadi' | 'bellows'
+  warning?: string
   phases: Phase[]
 }
 
 export const PROTOCOLS: readonly Protocol[] = [
   {
+    id: 'sigh',
+    name: 'Physiological Sigh',
+    sub: '2× in · long out',
+    desc: 'Double inhale, long exhale. The fastest known off-switch for acute stress.',
+    detail:
+      'Two stacked inhales through the nose re-inflate collapsed air sacs, then a long mouth exhale offloads CO₂ and slows the heart within a breath or two. One to three cycles is often enough; a few minutes deepens the effect. Use it in the moment — before a hard call, after bad news.',
+    category: 'downshift',
+    tag: 'QUICK CALM',
+    suggestedMin: 2,
+    accentVar: 'var(--rs-sigh, #e58a6b)',
+    glyph: 'sigh',
+    phases: [
+      { label: 'Inhale', seconds: 1.5, scale: 0.9 },
+      { label: 'Top-up', seconds: 1, scale: 1 },
+      { label: 'Long exhale', seconds: 6, scale: 0.62 },
+    ],
+  },
+  {
+    id: 'coherence',
+    name: 'Coherent Breathing',
+    sub: '5.5 · 5.5',
+    desc: 'Five and a half breaths a minute — the resonance frequency of the heart.',
+    detail:
+      'Equal in and out at about 5.5 seconds each lands most people at their cardiovascular resonance frequency, where heart-rate variability peaks. It is the workhorse: unremarkable in the moment, cumulative over weeks. Ten minutes daily is the classic dose.',
+    category: 'downshift',
+    tag: 'BALANCE',
+    suggestedMin: 10,
+    accentVar: 'var(--m-respiro)',
+    glyph: 'ring',
+    phases: [
+      { label: 'Inhale', seconds: 5.5, scale: 1 },
+      { label: 'Exhale', seconds: 5.5, scale: 0.62 },
+    ],
+  },
+  {
+    id: 'exhale',
+    name: 'Extended Exhale',
+    sub: '4 · 8',
+    desc: 'The tide going out. Exhale twice as long as you inhale.',
+    detail:
+      'Exhalation is when the vagus nerve brakes the heart — doubling its length tilts the whole cycle parasympathetic. Gentler than 4-7-8 (no hold), so it suits anyone who finds breath retention claustrophobic. Good default for winding down.',
+    category: 'downshift',
+    tag: 'UNWIND',
+    suggestedMin: 5,
+    accentVar: 'var(--m-respiro)',
+    glyph: 'wave',
+    phases: [
+      { label: 'Inhale', seconds: 4, scale: 1 },
+      { label: 'Exhale', seconds: 8, scale: 0.62 },
+    ],
+  },
+  {
+    id: '478',
+    name: '4 · 7 · 8 Breath',
+    sub: '4 · 7 · 8',
+    desc: "Dr. Weil's natural tranquiliser. Long hold, longer exhale.",
+    detail:
+      'Inhale four, hold seven, exhale eight — the hold lets CO₂ build, the long exhale releases it with interest. Drowsiness is the point: this one belongs in bed or on the edge of it. If the hold feels like strain, shrink the numbers but keep the 4:7:8 ratio.',
+    category: 'downshift',
+    tag: 'SLEEP',
+    suggestedMin: 4,
+    accentVar: 'var(--rs-478, #b48ead)',
+    glyph: 'tri',
+    phases: [
+      { label: 'Inhale', seconds: 4, scale: 1 },
+      { label: 'Hold', seconds: 7, scale: 1 },
+      { label: 'Exhale', seconds: 8, scale: 0.62 },
+    ],
+  },
+  {
     id: 'box',
-    name: 'Box',
-    sub: '4 · 4 · 4 · 4 — steady focus',
-    accentVar: 'var(--acc-jade)',
+    name: 'Box Breathing',
+    sub: '4 · 4 · 4 · 4',
+    desc: "Equal sides, steady mind. The operator's reset before anything high-stakes.",
+    detail:
+      'Four equal sides — in, hold, out, hold. Used by military and surgical teams because it steadies without sedating: arousal comes down, attention stays up. Trace the square with the dot and let the corners do the counting.',
+    category: 'steady',
+    tag: 'FOCUS',
+    suggestedMin: 3,
+    accentVar: 'var(--m-respiro)',
+    glyph: 'box',
     phases: [
       { label: 'Inhale', seconds: 4, scale: 1 },
       { label: 'Hold', seconds: 4, scale: 1 },
@@ -28,62 +124,75 @@ export const PROTOCOLS: readonly Protocol[] = [
     ],
   },
   {
-    id: 'relax478',
-    name: '4-7-8',
-    sub: 'Long exhale — downshift to rest',
-    accentVar: 'var(--acc-moon)',
+    id: 'nadi',
+    name: 'Nadi Shodhana',
+    sub: '4 · 4 · 6',
+    desc: 'Alternate-nostril balance from pranayama — one side at a time.',
+    detail:
+      'Close the right nostril with your thumb, inhale left; close the left with your ring finger, exhale right; inhale right, exhale left — that is one round. The app keeps the rhythm (in 4, hold 4, out 6); your hand does the switching. Traditionally used to settle a scattered mind before concentration work.',
+    category: 'steady',
+    tag: 'BALANCE',
+    suggestedMin: 6,
+    accentVar: 'var(--m-respiro)',
+    glyph: 'nadi',
     phases: [
       { label: 'Inhale', seconds: 4, scale: 1 },
-      { label: 'Hold', seconds: 7, scale: 1 },
-      { label: 'Exhale', seconds: 8, scale: 0.62 },
-    ],
-  },
-  {
-    id: 'coherence',
-    name: 'Coherence',
-    sub: '5.5 in · 5.5 out — heart-rate balance',
-    accentVar: 'var(--acc-brass)',
-    phases: [
-      { label: 'Inhale', seconds: 5.5, scale: 1 },
-      { label: 'Exhale', seconds: 5.5, scale: 0.62 },
-    ],
-  },
-  {
-    id: 'sigh',
-    name: 'Sigh',
-    sub: 'Double inhale, long exhale — fast reset',
-    accentVar: 'var(--acc-coral)',
-    phases: [
-      { label: 'Inhale', seconds: 2, scale: 0.88 },
-      { label: 'Top up', seconds: 1, scale: 1 },
+      { label: 'Hold', seconds: 4, scale: 1 },
       { label: 'Exhale', seconds: 6, scale: 0.62 },
+    ],
+  },
+  {
+    id: 'rounds',
+    name: 'Wim Hof Rounds',
+    sub: '30 × deep · then hold',
+    desc: 'Thirty full breaths, then a long retention. Strong medicine — read the warning.',
+    detail:
+      'Ride 30 deep, unforced breaths with the tracer — full in, relaxed out. Light-headedness and tingling are expected; that is the CO₂ dropping. After the 30th exhale, stop the session and use the breath-hold tool in Tools to time your retention, then one deep recovery breath held 15 seconds. Two to four rounds.',
+    category: 'energise',
+    tag: 'ACTIVATE',
+    suggestedMin: 8,
+    accentVar: 'var(--rs-hof, #e0b84f)',
+    glyph: 'bellows',
+    warning:
+      'Never in or near water, never driving, never standing. Fainting during retention is possible and has drowned experienced practitioners in shallow water. Sit or lie down. Skip it entirely if pregnant or with cardiovascular conditions.',
+    phases: [
+      { label: 'Deep in', seconds: 1.6, scale: 1 },
+      { label: 'Let go', seconds: 1.6, scale: 0.66 },
     ],
   },
 ]
 
 export function protocolById(id: string): Protocol {
-  return PROTOCOLS.find((p) => p.id === id) ?? PROTOCOLS[0]
+  return PROTOCOLS.find((p) => p.id === id) ?? PROTOCOLS[4]
 }
 
 export function cycleSeconds(p: Protocol): number {
-  return p.phases.reduce((s, ph) => s + ph.seconds, 0)
+  return p.phases.reduce((sum, ph) => sum + ph.seconds, 0)
 }
 
-/** Position within the protocol cycle for a given elapsed time. */
-export function phaseAt(
-  p: Protocol,
-  elapsedSec: number,
-): { phase: Phase; index: number; remaining: number } {
+export interface PhasePosition {
+  index: number
+  phase: Phase
+  remaining: number
+}
+
+/** Where inside the cycle a session at `elapsedSeconds` sits. */
+export function phaseAt(p: Protocol, elapsedSeconds: number): PhasePosition {
   const cycle = cycleSeconds(p)
-  let t = elapsedSec % cycle
+  let t = elapsedSeconds % cycle
   for (let i = 0; i < p.phases.length; i++) {
     const ph = p.phases[i]
-    if (t < ph.seconds) return { phase: ph, index: i, remaining: ph.seconds - t }
+    if (t < ph.seconds) return { index: i, phase: ph, remaining: ph.seconds - t }
     t -= ph.seconds
   }
-  const lastIndex = p.phases.length - 1
-  return { phase: p.phases[lastIndex], index: lastIndex, remaining: 0 }
+  return { index: 0, phase: p.phases[0], remaining: p.phases[0].seconds }
 }
+
+export const CATEGORIES: readonly { id: Category; label: string }[] = [
+  { id: 'downshift', label: 'Down-shift' },
+  { id: 'steady', label: 'Steady & sharpen' },
+  { id: 'energise', label: 'Energise' },
+]
 
 export interface CustomPattern {
   inS: number
@@ -106,7 +215,14 @@ export function buildCustomProtocol(c: CustomPattern): Protocol {
     id: 'custom',
     name: 'Custom',
     sub: [inS, h1, outS, h2].filter((v, i) => v > 0 || i === 0 || i === 2).join(' · '),
+    desc: 'Your numbers, your rhythm.',
+    detail:
+      'Set the four numbers to any pattern a teacher or a book gave you. Holds at zero are skipped. Longer exhale than inhale calms; equal sides steadies.',
+    category: 'steady',
+    tag: 'YOURS',
+    suggestedMin: 5,
     accentVar: 'var(--m-respiro)',
+    glyph: 'box',
     phases,
   }
 }

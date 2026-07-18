@@ -2,7 +2,9 @@ import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
 import { logEvent, eventsStore } from '../../core/events'
 import { toast } from '../../core/toast'
-import { dayKey, todayKey, shiftDay, dayDiff } from '../../core/dates'
+import { dayKey, todayKey, shiftDay, dayDiff, weekStartKey } from '../../core/dates'
+
+export { weekStartKey }
 
 export type HabitType = 'build' | 'quit'
 
@@ -285,14 +287,6 @@ export function dayCompletion(st: CadenceState, day: string): number {
 
 /* ---------- weekly frequency ---------- */
 
-/** Monday key of the week containing `day`. */
-export function weekStartKey(day: string): string {
-  const [y, m, d] = day.split('-').map(Number)
-  const date = new Date(y, m - 1, d, 12)
-  const back = (date.getDay() + 6) % 7
-  return shiftDay(day, -back)
-}
-
 /** The 7 day-keys of the week starting at `start` (a Monday key). */
 export function weekDayKeys(start: string): string[] {
   return Array.from({ length: 7 }, (_, i) => shiftDay(start, i))
@@ -326,4 +320,82 @@ export function weekStreak(st: CadenceState, habitId: string, today = todayKey()
     cursor = shiftDay(cursor, -7)
   }
   return streak
+}
+
+/* ---------- insights ---------- */
+
+export interface MonthInsights {
+  avgCompletion: number // 0..100 over elapsed days of the month
+  checkIns: number
+  activeBuilds: number
+  mostConsistent: { name: string; pct: number } | null
+}
+
+export function monthInsights(st: CadenceState, grid: MonthGrid, today = todayKey()): MonthInsights {
+  const builds = activeHabits(st).filter((h) => h.type === 'build')
+  let checkIns = 0
+  let ratioSum = 0
+  let counted = 0
+  const perHabit = new Map<string, number>()
+  for (let d = 1; d <= grid.days; d++) {
+    const day = monthDayKey(grid, d)
+    if (day > today) break
+    counted++
+    ratioSum += dayCompletion(st, day)
+    for (const h of builds) {
+      if (isChecked(st, h.id, day)) {
+        checkIns++
+        perHabit.set(h.id, (perHabit.get(h.id) ?? 0) + 1)
+      }
+    }
+  }
+  let mostConsistent: MonthInsights['mostConsistent'] = null
+  if (counted > 0) {
+    for (const h of builds) {
+      const pct = Math.round(((perHabit.get(h.id) ?? 0) / counted) * 100)
+      if (!mostConsistent || pct > mostConsistent.pct) mostConsistent = { name: h.name, pct }
+    }
+  }
+  return {
+    avgCompletion: counted > 0 ? Math.round((ratioSum / counted) * 100) : 0,
+    checkIns,
+    activeBuilds: builds.length,
+    mostConsistent,
+  }
+}
+
+export interface YearInsights {
+  activeDays: number
+  checkIns: number
+  habitsTracked: number
+  bestStreak: number
+}
+
+/** Over the trailing 365 days. Best streak = highest current streak/clean run right now. */
+export function yearInsights(st: CadenceState, today = todayKey()): YearInsights {
+  const habits = activeHabits(st)
+  const daysWithAny = new Set<string>()
+  let checkIns = 0
+  const start = shiftDay(today, -364)
+  for (const [day, ids] of Object.entries(st.checks)) {
+    if (day < start || day > today || ids.length === 0) continue
+    checkIns += ids.length
+    daysWithAny.add(day)
+  }
+  let bestStreak = 0
+  for (const h of habits) {
+    const s =
+      h.type === 'build'
+        ? h.targetPerWeek === 7
+          ? habitStreak(st, h.id, today)
+          : weekStreak(st, h.id, today) * 7
+        : daysClean(st, h.id, today)
+    if (s > bestStreak) bestStreak = s
+  }
+  return {
+    activeDays: daysWithAny.size,
+    checkIns,
+    habitsTracked: st.habits.length,
+    bestStreak,
+  }
 }

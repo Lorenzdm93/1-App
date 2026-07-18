@@ -13,15 +13,43 @@ function Icon({ size = 20 }: { size?: number }) {
   )
 }
 
+function LeafIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 21C6 16 5 9 12 3c7 6 6 13 0 18z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M12 20V8" stroke="currentColor" strokeWidth="1.4" opacity="0.6" />
+    </svg>
+  )
+}
+
+function ChartIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 20V12M12 20V6M19 20v-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function NoteIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9 18V6l9-2v12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="7" cy="18" r="2.4" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="16" cy="16" r="2.4" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  )
+}
+
 const respiro: ModuleDefinition = {
   id: 'respiro',
   name: 'RESPIRO',
   tagline: 'Breathwork — box, 4-7-8, coherence, sigh.',
   accentVar: 'var(--m-respiro)',
-  schemaVersion: 2,
+  schemaVersion: 3,
   tabs: [
-    { id: 'breathe', label: 'Breathe' },
-    { id: 'tools', label: 'Tools' },
+    { id: 'practice', label: 'Practice', Icon: LeafIcon },
+    { id: 'progress', label: 'Progress', Icon: ChartIcon },
+    { id: 'sound', label: 'Sound', Icon: NoteIcon },
   ],
   Icon,
   Screen,

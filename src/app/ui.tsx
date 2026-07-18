@@ -124,6 +124,35 @@ export function ConfirmSheet({
   )
 }
 
+/* ---------- insight stat box ---------- */
+
+/** Small aggregate tile used by module insight grids. `delta` renders a ▲/▼ vs the previous period. */
+export function StatBox({
+  label,
+  value,
+  sub,
+  delta,
+}: {
+  label: string
+  value: string
+  sub?: string
+  delta?: number | null
+}) {
+  return (
+    <div className="ins-box">
+      <div className="v num">{value}</div>
+      <div className="k">{label}</div>
+      {sub !== undefined && <div className="s">{sub}</div>}
+      {delta !== undefined && delta !== null && Number.isFinite(delta) && (
+        <div className={'d num ' + (delta >= 0 ? 'up' : 'down')}>
+          {delta >= 0 ? '▲' : '▼'} {Math.abs(Math.round(delta))}%
+        </div>
+      )}
+      {delta === null && <div className="d new">new</div>}
+    </div>
+  )
+}
+
 /* ---------- toast host (pointer-events: none, always) ---------- */
 
 export function ToastHost() {

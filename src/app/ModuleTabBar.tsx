@@ -24,7 +24,8 @@ export default function ModuleTabBar({
             onClick={() => navigate(`/m/${moduleId}/${t.id}`)}
             aria-current={t.id === active ? 'page' : undefined}
           >
-            {t.label}
+            {t.Icon && <t.Icon size={18} />}
+            <span>{t.label}</span>
           </button>
         ))}
       </div>

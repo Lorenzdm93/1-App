@@ -1,7 +1,7 @@
 import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
 import { logEvent } from '../../core/events'
-import { dayKey, todayKey, shiftDay } from '../../core/dates'
+import { dayKey, todayKey, shiftDay, weekStartKey } from '../../core/dates'
 import { e1rm } from '../../core/strength'
 
 export type SetType = 'normal' | 'warmup' | 'drop' | 'fail'
@@ -624,3 +624,158 @@ export function topExercises(
   }
   return [...counts.values()].sort((a, b) => b.sets - a.sets).slice(0, n)
 }
+
+/* ---------- insights: period aggregation & comparison ---------- */
+
+export type Period = 'week' | 'month' | 'year'
+
+export interface PeriodRange {
+  start: string
+  end: string
+  label: string
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/** Calendar-aligned range for `offset` periods back (0 = current). */
+export function periodRange(period: Period, offset: number, today = todayKey()): PeriodRange {
+  if (period === 'week') {
+    const start = shiftDay(weekStartKey(today), -7 * offset)
+    const end = shiftDay(start, 6)
+    const [, m, d] = start.split('-')
+    return { start, end, label: offset === 0 ? 'This week' : `Wk of ${Number(d)}/${Number(m)}` }
+  }
+  const [y, m] = today.split('-').map(Number)
+  if (period === 'month') {
+    const date = new Date(y, m - 1 - offset, 1, 12)
+    const yy = date.getFullYear()
+    const mm = date.getMonth()
+    const start = dayKey(date.getTime())
+    const end = dayKey(new Date(yy, mm + 1, 0, 12).getTime())
+    return { start, end, label: `${MONTHS[mm]} ${yy}` }
+  }
+  const yy = y - offset
+  return { start: `${yy}-01-01`, end: `${yy}-12-31`, label: String(yy) }
+}
+
+export interface PeriodStats {
+  workouts: number
+  volume: number
+  sets: number
+  reps: number
+  minutes: number
+  avgMinutes: number
+}
+
+export function aggregatePeriod(history: readonly Session[], range: PeriodRange): PeriodStats {
+  let workouts = 0
+  let volume = 0
+  let sets = 0
+  let reps = 0
+  let minutes = 0
+  for (const s of history) {
+    const k = dayKey(s.startTs)
+    if (k < range.start || k > range.end) continue
+    workouts++
+    volume += sessionVolume(s)
+    minutes += s.endTs ? Math.round((s.endTs - s.startTs) / 60000) : 0
+    for (const ex of s.exercises) {
+      for (const set of ex.sets) {
+        if (!set.done || set.type === 'warmup') continue
+        sets++
+        reps += set.reps
+      }
+    }
+  }
+  return {
+    workouts,
+    volume: Math.round(volume),
+    sets,
+    reps,
+    minutes,
+    avgMinutes: workouts > 0 ? Math.round(minutes / workouts) : 0,
+  }
+}
+
+/** % change vs previous; null when the previous period had nothing ("new"). */
+export function pctDelta(current: number, previous: number): number | null {
+  if (previous === 0) return current === 0 ? 0 : null
+  return ((current - previous) / previous) * 100
+}
+
+export interface InsightBucket {
+  label: string
+  value: number
+}
+
+/** Chart breakdown for the current period: week→sessions, month→weeks, year→months. */
+export function periodBuckets(
+  history: readonly Session[],
+  period: Period,
+  today = todayKey(),
+): InsightBucket[] {
+  const range = periodRange(period, 0, today)
+  if (period === 'week') {
+    return history
+      .filter((s) => {
+        const k = dayKey(s.startTs)
+        return k >= range.start && k <= range.end
+      })
+      .sort((a, b) => a.startTs - b.startTs)
+      .map((s) => {
+        const d = new Date(s.startTs)
+        return {
+          label: d.toLocaleDateString(undefined, { weekday: 'short' }),
+          value: Math.round(sessionVolume(s)),
+        }
+      })
+  }
+  if (period === 'month') {
+    const buckets: InsightBucket[] = []
+    let wStart = weekStartKey(range.start)
+    let i = 1
+    while (wStart <= range.end) {
+      const wEnd = shiftDay(wStart, 6)
+      let v = 0
+      for (const s of history) {
+        const k = dayKey(s.startTs)
+        if (k >= wStart && k <= wEnd && k >= range.start && k <= range.end) v += sessionVolume(s)
+      }
+      buckets.push({ label: `W${i}`, value: Math.round(v) })
+      wStart = shiftDay(wStart, 7)
+      i++
+    }
+    return buckets
+  }
+  const year = Number(range.start.slice(0, 4))
+  return MONTHS.map((label, mi) => {
+    const start = dayKey(new Date(year, mi, 1, 12).getTime())
+    const end = dayKey(new Date(year, mi + 1, 0, 12).getTime())
+    let v = 0
+    for (const s of history) {
+      const k = dayKey(s.startTs)
+      if (k >= start && k <= end) v += sessionVolume(s)
+    }
+    return { label: label[0], value: Math.round(v) }
+  })
+}
+
+/** The coaching card — the principles that survive every program fad. */
+export const TRAINING_ADVICE: readonly { title: string; body: string }[] = [
+  {
+    title: 'Progressive overload is the whole game',
+    body: 'Add a rep, a set, or 2.5 kg — one of them, most weeks. The charts above exist to catch the weeks where nothing moved. Volume drifting up over months matters more than any single session.',
+  },
+  {
+    title: 'Keep the program longer than feels exciting',
+    body: 'Eight to twelve weeks minimum before changing anything structural. Templates here are deliberately reusable: the value is in the repetition, because you can only progress on what you repeat.',
+  },
+  {
+    title: 'Core lifts carry the load',
+    body: 'Squat, bench, deadlift, press, row — get stronger on these and log them honestly. Accessories are where freedom lives: rotate them by feel without guilt, they season the meal, they are not the meal.',
+  },
+  {
+    title: 'Warmups are preparation, not production',
+    body: "That's why W-sets are excluded from volume and PRs everywhere in GHISA — inflating the numbers would only blur the signal you're training for.",
+  },
+]

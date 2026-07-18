@@ -13,6 +13,36 @@ function Icon({ size = 20 }: { size?: number }) {
   )
 }
 
+function CheckIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="4" y="4" width="16" height="16" rx="5" stroke="currentColor" strokeWidth="1.7" />
+      <path d="m8.5 12 2.4 2.4 4.6-4.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function CalIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3.5" y="5" width="17" height="15.5" rx="3" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M3.5 9.5h17M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function GridIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      {[0, 1, 2, 3].map((r) =>
+        [0, 1, 2, 3, 4].map((c) => (
+          <rect key={r + '-' + c} x={3.4 + c * 3.7} y={5 + r * 3.7} width="2.5" height="2.5" rx="0.7" fill="currentColor" opacity={(r + c) % 3 === 0 ? 1 : 0.4} />
+        )),
+      )}
+    </svg>
+  )
+}
+
 const cadence: ModuleDefinition = {
   id: 'cadence',
   name: 'CADENCE',
@@ -20,9 +50,9 @@ const cadence: ModuleDefinition = {
   accentVar: 'var(--m-cadence)',
   schemaVersion: 3,
   tabs: [
-    { id: 'today', label: 'Today' },
-    { id: 'month', label: 'Month' },
-    { id: 'year', label: 'Year' },
+    { id: 'today', label: 'Today', Icon: CheckIcon },
+    { id: 'month', label: 'Month', Icon: CalIcon },
+    { id: 'year', label: 'Year', Icon: GridIcon },
   ],
   Icon,
   Screen,

@@ -51,3 +51,12 @@ export function dayDiff(fromKey: string, toKey: string): number {
   const b = new Date(ty, tm - 1, td, 12).getTime()
   return Math.round((b - a) / 86_400_000)
 }
+
+/** Monday key of the week containing `day`. */
+export function weekStartKey(day: string): string {
+  const [y, m, d] = day.split('-').map(Number)
+  const date = new Date(y, m - 1, d, 12)
+  const back = (date.getDay() + 6) % 7
+  date.setDate(date.getDate() - back)
+  return dayKey(date.getTime())
+}
