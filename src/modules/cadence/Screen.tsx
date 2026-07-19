@@ -81,6 +81,7 @@ function WeekDots({ habitId }: { habitId: string }) {
           className={
             'cdh-wdot' +
             (isChecked(st, habitId, day) ? ' on' : '') +
+            (slipDays(st, habitId).includes(day) ? ' slip' : '') +
             (day === today ? ' today' : '') +
             (day > today ? ' future' : '')
           }
@@ -118,7 +119,13 @@ function BuildRow({ habit, day, onManage }: { habit: Habit; day: string; onManag
         </span>
         <WeekDots habitId={habit.id} />
       </button>
-      <WeekRing count={count} target={habit.targetPerWeek} />
+      <button
+        className={'cdh-checkbtn' + (done ? ' on' : '')}
+        onClick={() => setCheck(habit.id, day, !done)}
+        aria-label={(done ? 'Uncheck ' : 'Check ') + habit.name}
+      >
+        ✓
+      </button>
     </div>
   )
 }
@@ -581,7 +588,18 @@ export default function CadenceScreen({ tab = 'today' }: { tab?: string }) {
             </button>
           </div>
           <div className="cd-mood">
-            <span className="cd-mood-k">Mood</span>
+            <span className="cd-mood-k">
+              Mood
+              {(() => {
+                const vals = Object.entries(st.moods ?? {})
+                  .sort(([a], [b]) => (a < b ? 1 : -1))
+                  .slice(0, 7)
+                  .map(([, v]) => v)
+                if (vals.length === 0) return null
+                const avg = vals.reduce((s, v) => s + v, 0) / vals.length
+                return <i className="cd-mood-avg">{['😞', '😕', '😐', '🙂', '😄'][Math.round(avg) - 1]} 7d</i>
+              })()}
+            </span>
             {([[1, '😞'], [2, '😕'], [3, '😐'], [4, '🙂'], [5, '😄']] as const).map(([v, em]) => (
               <button
                 key={v}

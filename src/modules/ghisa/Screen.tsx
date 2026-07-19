@@ -227,6 +227,7 @@ function SetRow({
   const empty = set.weight === 0 && set.reps === 0 && !set.done
   const [dx, setDx] = useState(0)
   const touchX = useRef<number | null>(null)
+  const rowRef = useRef<HTMLDivElement | null>(null)
 
   function commitField(field: 'weight' | 'reps', raw: string) {
     const n = parseNum(raw)
@@ -266,16 +267,18 @@ function SetRow({
       }}
       onTouchMove={(e: { touches: { clientX: number }[] }) => {
         if (touchX.current === null) return
-        setDx(Math.min(0, Math.max(-96, e.touches[0].clientX - touchX.current)))
+        const w = rowRef.current?.offsetWidth ?? 320
+        setDx(Math.min(0, Math.max(-w, e.touches[0].clientX - touchX.current)))
       }}
       onTouchEnd={() => {
-        if (dx < -70) removeSet(exercise.id, set.id)
+        const w2 = rowRef.current?.offsetWidth ?? 320
+        if (-dx > w2 / 2) removeSet(exercise.id, set.id)
         setDx(0)
         touchX.current = null
       }}
     >
       <span className="gh-del-hint" aria-hidden="true">Delete</span>
-      <div className="gh-row-inner" style={{ transform: `translateX(${dx}px)` }}>
+      <div ref={rowRef} className="gh-row-inner" style={{ transform: `translateX(${dx}px)` }}>
       <button
         className={'gh-type gh-type-' + set.type}
         onClick={() => cycleSetType(exercise.id, set.id)}
@@ -476,6 +479,25 @@ function TemplateEditor({
               {x.targetSets}
               <button onClick={() => bump(i, 1)} aria-label="More sets">+</button>
             </span>
+            <input
+              className="tinput num gh-ed-scheme"
+              placeholder="15·12·10"
+              value={(x.targetReps ?? []).join('·')}
+              onChange={(e) => {
+                const parts = e.target.value.split(/[^0-9]+/).filter(Boolean).map((p: string) => parseInt(p, 10))
+                setExercises((xs) =>
+                  xs.map((y, j) =>
+                    j === i
+                      ? {
+                          ...y,
+                          targetReps: parts.length > 0 ? parts.slice(0, 9) : undefined,
+                          targetSets: parts.length > 0 ? Math.min(9, parts.length) : y.targetSets,
+                        }
+                      : y,
+                  ),
+                )
+              }}
+            />
             <button
               className="del"
               onClick={() => setExercises((xs) => xs.filter((_, j) => j !== i))}
@@ -568,14 +590,14 @@ function Train({ templates }: { templates: Template[] }) {
       ))}
       <Sheet open={chooser} title="Start workout" onClose={() => setChooser(false)}>
         <button
-          className="btn btn-primary"
-          style={{ width: '100%' }}
+          className="gh-choose"
           onClick={() => {
             setChooser(false)
             startSession()
           }}
         >
-          Empty workout
+          <b>Empty workout</b>
+          <span>A blank slate — add exercises as you go</span>
         </button>
         {templates.map((t) => (
           <button

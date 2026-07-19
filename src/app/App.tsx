@@ -119,6 +119,7 @@ export default function App() {
   return (
     <>
       <main className="frame">
+        <div className="view" key={route.name === 'module' ? 'm-' + route.id + '-' + (route.tab ?? '') : route.name}>
         {route.name === 'today' && <Today />}
         {route.name === 'modules' && <Modules />}
         {route.name === 'settings' && <Settings />}
@@ -127,6 +128,7 @@ export default function App() {
         {route.name === 'module' && (
           <ModuleScreen id={route.id} tab={route.tab} key={route.id} />
         )}
+        </div>
       </main>
       {!(route.name === 'module' && moduleById(route.id)?.tabs) && <TabBar route={route} />}
       <ToastHost />

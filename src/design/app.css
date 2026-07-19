@@ -3968,3 +3968,47 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
 .mod-head .back { width: 40px; height: 40px; top: calc(env(safe-area-inset-top, 0px) + 8px); }
 .frame { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 20px); }
 .toast { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 10px); }
+
+/* ============================================================
+   v0.9.9 — prototype-true cadence · red swipe · fluid chrome
+   ============================================================ */
+
+/* cadence: squares, states, the check circle */
+.cdh-wdot { width: 13px; height: 13px; border-radius: 4px; }
+.cdh-wdot.on { background: var(--hc, var(--m-cadence)); }
+.cdh-wdot.slip { background: var(--danger) !important; }
+.cdh-checkbtn {
+  flex: none; width: 42px; height: 42px; border-radius: 50%;
+  border: 2px solid var(--line-strong); background: none;
+  color: transparent; font-size: 17px; font-weight: 800;
+  transition: all 0.16s var(--spring);
+}
+.cdh-checkbtn.on { background: var(--ok); border-color: var(--ok); color: #fff; transform: scale(1.04); }
+.cd-mood-avg { font-style: normal; margin-left: 8px; font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--dim); }
+
+/* ghisa: the swipe tells the truth — full red underlay, commit at half */
+.gh-row { background: var(--danger); border-radius: 12px; }
+.gh-del-hint {
+  opacity: 0; inset: 0; justify-content: flex-end; padding-right: 18px;
+  color: #fff; font-size: 12px;
+}
+.gh-row.swiping .gh-del-hint { opacity: 1; }
+.gh-row-inner { border-radius: 12px; }
+.gh-ed-scheme { grid-column: 1 / -1; margin-top: 6px; font-size: 12px; padding: 9px 11px; }
+.gh-tpl-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; }
+
+/* fluid chrome: instagram-compact, animated views */
+:root { --tabbar-h: 54px; }
+.tabbar, .tabbar-mod { bottom: max(4px, env(safe-area-inset-bottom, 0px)); padding: 3px; }
+.tab, .mtab { min-width: 48px; padding: 5px 9px 4px; font-size: 8.5px; gap: 2px; letter-spacing: 0.06em; }
+.tab svg { width: 20px; height: 20px; }
+.mtab svg { width: 19px; height: 19px; }
+.tab.on, .mtab.on { transition: background 0.22s var(--ease), box-shadow 0.22s var(--ease); }
+.frame { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 18px); }
+.toast { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 8px); }
+.view { animation: viewIn 0.2s var(--ease) both; }
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .view { animation: none; } }

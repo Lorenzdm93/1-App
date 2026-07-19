@@ -21,6 +21,25 @@ export default function SanaQuickActions() {
         onClick={() => (left > 0 ? setOpen(true) : navigate('/m/sana'))}
       />
       <Sheet open={open} title={method === 'stack' ? 'Log a stack' : 'Log by time of day'} onClose={() => setOpen(false)}>
+        {(() => {
+          const allRemaining = due
+            .filter(({ compound }) => !isTaken(st, compound.id, today))
+            .map(({ compound }) => compound.id)
+          if (allRemaining.length === 0) return null
+          return (
+            <button
+              className="gh-choose"
+              onClick={() => {
+                const n = takeMany(allRemaining, today)
+                toast(`Everything — ${n} taken`)
+                setOpen(false)
+              }}
+            >
+              <b>✔ Everything</b>
+              <span>{allRemaining.length} remaining across all groups</span>
+            </button>
+          )
+        })()}
         {method === 'stack'
           ? st.stacks.map((s) => {
               const ids = s.compoundIds.filter((id) => due.some((d) => d.compound.id === id))

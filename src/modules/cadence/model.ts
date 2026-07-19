@@ -71,10 +71,11 @@ export function migrateCadence(data: unknown, fromVersion: number): CadenceState
 
 export const cadenceStore = createPersistedStore<CadenceState>('cadence', DEFAULTS, 3, migrateCadence)
 
-export const EMOJI_PRESETS: readonly string[] = [
-  '💪', '📖', '🧘', '💧', '🥗', '😴',
-  '🚶', '🇮🇹', '✍️', '🧹', '🎸', '🌅',
-  '🚭', '🍺', '📵', '🍬', '☕', '🎮',
+export const EMOJI_PRESETS = [
+  '💪', '🏃', '📚', '🧘', '💧', '✍️', '🥦', '🌱', '😴', '💊',
+  '🚭', '🍺', '📵', '🍬', '🎮', '☕', '🍔', '💸', '🧊', '🚿',
+  '🦷', '🧴', '🌞', '🚶', '🚴', '🏊', '⛰️', '🎸', '🎹', '🗣️',
+  '🧠', '❤️', '🙏', '📖', '💻', '🧹', '🛏️', '🐶', '🌿', '⏰',
 ]
 
 export const MILESTONES: readonly number[] = [7, 30, 100]

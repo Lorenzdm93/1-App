@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { useStore } from '../core/hooks'
@@ -73,7 +74,7 @@ export function Sheet({
   children: ReactNode
 }) {
   if (!open) return null
-  return (
+  return createPortal(
     <>
       <div className="sheet-backdrop" onClick={onClose} />
       <div className="sheet" role="dialog" aria-label={title}>
@@ -82,7 +83,8 @@ export function Sheet({
         <div className="sheet-title">{title}</div>
         <div className="sheet-body">{children}</div>
       </div>
-    </>
+    </>,
+    document.body,
   )
 }
 

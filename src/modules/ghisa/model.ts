@@ -35,6 +35,8 @@ export interface Session {
 export interface TemplateExercise {
   name: string
   targetSets: number
+  /** Optional per-set rep scheme, e.g. [15, 12, 10, 8]. */
+  targetReps?: number[]
 }
 
 export interface Template {
@@ -221,7 +223,7 @@ export function startFromTemplate(templateId: string): void {
         exercises: tpl.exercises.map((e) => ({
           id: uid(),
           name: e.name,
-          sets: Array.from({ length: Math.max(1, e.targetSets) }, () => plannedSet()),
+          sets: Array.from({ length: Math.max(1, e.targetSets) }, (_, i) => plannedSet(0, e.targetReps?.[i] ?? 0)),
         })),
       },
     }

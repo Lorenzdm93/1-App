@@ -27,6 +27,13 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9.9 — prototype-true details, and one deep bug**
+
+- **The SANA popup bug was a CSS law, now repealed app-wide.** `position: fixed` gets trapped inside any transformed ancestor — the quick-log sheet was rendering inside a pressed card's transform, hence the mid-page float. Every Sheet now portals to `document.body`: bottom-docked always, everywhere. The quick-log sheet also gained **"✔ Everything — N remaining"** as its first row.
+- **CADENCE, per the prototype**: the week strip is **squares** — habit-colored when checked, **red on slip days**; build rows carry the **empty circle → green ✓** check on the right; the emoji picker grew to 40; and the Mood label now shows the **7-day average face** beside it, so logged moods are visibly going somewhere (they also feed the Today cross-note).
+- **GHISA**: chooser rows are consistent (Empty workout is a row like the templates, not an orange shout); **+ New template** is a chip; the swipe shows a **full red underlay** and commits at **half the row width** — the physics you asked for; and template exercises accept a **rep scheme** ("15·12·10·8" in the editor) that sets both the set count and each set's prefilled reps on start.
+- **Chrome, Instagram-compact and fluid**: 54 px pill, 20 px icons, 8.5 px labels, bottom-hugging; every screen and tab change animates in with a 200 ms rise-and-fade (respecting reduced-motion).
+
 **New in v0.9.8 — the corrections round (with a confession)**
 
 An audit against the last feedback found three items genuinely missing and three already shipped but unseen. The confession: some v0.9.7 edits used unverified string replacements — one (SANA's method picker) silently failed against a renamed heading and reported success anyway. All replacements are now assertion-guarded. The already-shipped trio — GROVE's start-sheet, RESPIRO's in-module browse toggle, the gear icon — appear after upload + hard-refresh (they landed in v0.9.7's sw bump).
