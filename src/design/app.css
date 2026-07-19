@@ -3127,3 +3127,110 @@ body.rs-running .tabbar {
 .one-rate em { display: block; font-style: normal; font-size: 10px; margin-top: 5px; color: var(--faint); }
 .one-rate.on { border-color: var(--m-grove); background: color-mix(in srgb, var(--m-grove) 9%, var(--surface)); }
 .one-rate.on b, .one-rate.on em { color: var(--m-grove); }
+
+/* ============================================================
+   v0.8 — ORA · fasting, hour by hour
+   ============================================================ */
+:root { --m-ora: #8fb3c7; }
+[data-theme='light'] { --m-ora: #4a7189; }
+
+.or-dial-wrap { position: relative; width: min(72vw, 280px); margin: 6px auto 4px; }
+.or-dial { width: 100%; height: auto; }
+.or-arc-live { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--m-ora) 55%, transparent)); transition: stroke-dasharray 1s linear; }
+.or-dial-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 5px; }
+.or-dial-target { font-family: var(--font-display); font-size: 58px; font-weight: 600; line-height: 1; }
+.or-dial-time { font-family: var(--font-display); font-size: 37px; font-weight: 600; line-height: 1; letter-spacing: 0.01em; }
+.or-dial-sub { font-size: 11.5px; color: var(--dim); }
+.or-dial-stage { font-size: 10px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--m-ora); animation: or-breathe 3.2s ease-in-out infinite; }
+@keyframes or-breathe { 50% { text-shadow: 0 0 14px color-mix(in srgb, var(--m-ora) 60%, transparent); } }
+.or-next { text-align: center; font-size: 12px; color: var(--dim); margin: 2px 0 0; }
+.or-cta { width: 100%; margin-top: 14px; padding: 15px; font-size: 14px; --accent: var(--m-ora); }
+.or-startlink { display: block; margin: 12px auto 4px; }
+.linklike { background: none; border: none; color: var(--dim); font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px; }
+
+.or-sched-head { display: flex; align-items: baseline; justify-content: space-between; margin: 22px 2px 10px; }
+.or-h2 { font-family: var(--font-display); font-size: 19px; font-weight: 650; }
+.or-hint { font-size: 11px; color: var(--faint); }
+.or-proto { display: flex; align-items: flex-start; gap: 13px; width: 100%; text-align: left; padding: 14px 15px; margin-bottom: 10px; }
+.or-proto.on { border-color: color-mix(in srgb, var(--m-ora) 55%, var(--line)); background: color-mix(in srgb, var(--m-ora) 6%, var(--surface)); }
+.or-proto-name { font-family: var(--font-display); font-size: 22px; font-weight: 650; min-width: 64px; line-height: 1.15; }
+.or-proto-main { flex: 1; min-width: 0; }
+.or-proto-main em { display: block; font-style: normal; font-size: 12px; font-weight: 700; color: var(--m-ora); letter-spacing: 0.04em; }
+.or-proto-main > span { display: block; font-size: 12.5px; color: var(--dim); line-height: 1.55; margin-top: 4px; }
+.or-radio { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); flex: none; margin-top: 2px; position: relative; }
+.or-radio.on { border-color: var(--m-ora); background: var(--m-ora); }
+.or-radio.on::after { content: '✓'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--bg); font-size: 12px; font-weight: 800; }
+.or-window-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.or-window-row .tinput { width: 74px; text-align: center; padding: 8px 6px; }
+.or-window-row i { color: var(--faint); font-style: normal; }
+.or-window-row b { color: var(--m-ora); font-size: 12px; }
+
+.or-rail { position: relative; padding-left: 22px; }
+.or-rail::before { content: ''; position: absolute; left: 7px; top: 10px; bottom: 24px; width: 1.5px; background: var(--line); }
+.or-stage { position: relative; margin-bottom: 12px; }
+.or-stage-dot {
+  position: absolute; left: -22px; top: 18px; width: 15px; height: 15px; border-radius: 50%;
+  border: 2px solid var(--line); background: var(--bg);
+}
+.or-stage-dot.on { border-color: var(--m-ora); box-shadow: 0 0 0 4px color-mix(in srgb, var(--m-ora) 18%, transparent), 0 0 12px color-mix(in srgb, var(--m-ora) 45%, transparent); animation: or-pulse 2.6s ease-in-out infinite; }
+@keyframes or-pulse { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--m-ora) 10%, transparent), 0 0 16px color-mix(in srgb, var(--m-ora) 55%, transparent); } }
+.or-stage-card { padding: 14px 15px; margin: 0; }
+.or-stage.active .or-stage-card { border-color: color-mix(in srgb, var(--m-ora) 45%, var(--line)); box-shadow: 0 0 22px color-mix(in srgb, var(--m-ora) 12%, transparent); }
+.or-stage-head { display: flex; align-items: baseline; justify-content: space-between; }
+.or-stage-head b { font-family: var(--font-display); font-size: 17px; font-weight: 650; color: var(--sc); }
+.or-stage-head .num { font-size: 11px; color: var(--faint); }
+.or-stage-card > p { font-size: 13px; color: var(--dim); line-height: 1.55; margin: 7px 0 0; }
+.or-note { display: flex; gap: 9px; margin-top: 11px; border-radius: 11px; padding: 10px 12px; background: var(--raised); font-size: 12px; line-height: 1.5; }
+.or-note b { flex: none; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px; }
+.or-note.now b { color: var(--m-ora); }
+.or-note.tip b { color: var(--m-grove); }
+.or-note.care b { color: var(--m-caliber); }
+.or-note span { color: var(--dim); }
+
+.or-total { text-align: left; font-size: 13px; color: var(--dim); padding: 13px 15px; }
+.or-total b { font-family: var(--font-display); font-size: 24px; font-weight: 650; color: var(--m-ora); margin-right: 6px; }
+.or-bars { display: flex; align-items: flex-end; gap: 5px; height: 96px; }
+.or-bar-col { position: relative; flex: 1; max-width: 26px; height: 100%; display: flex; align-items: flex-end; }
+.or-bar-col i { display: block; width: 100%; border-radius: 4px 4px 0 0; }
+.or-bar-col i.hit { background: color-mix(in srgb, var(--m-grove) 60%, var(--raised)); }
+.or-bar-col i.early { background: color-mix(in srgb, var(--m-ora) 45%, var(--raised)); }
+.or-bar-col em { position: absolute; left: -1px; right: -1px; height: 1.5px; background: var(--faint); opacity: 0.7; }
+.or-legend { display: flex; gap: 14px; margin-top: 10px; font-size: 10.5px; color: var(--faint); flex-wrap: wrap; }
+.or-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.or-legend i.hit { background: color-mix(in srgb, var(--m-grove) 60%, var(--raised)); }
+.or-legend i.early { background: color-mix(in srgb, var(--m-ora) 45%, var(--raised)); }
+.or-legend i.line { background: var(--faint); height: 2px; border-radius: 1px; vertical-align: 2px; }
+
+.or-weight-row { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+.or-weight-row .tinput { flex: 1; }
+.or-unit { color: var(--faint); font-size: 12px; }
+.or-hydro { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.or-hydro-count { font-size: 13px; color: var(--dim); }
+.or-hydro-count b { font-family: var(--font-display); font-size: 26px; font-weight: 650; color: var(--m-ora); margin-right: 4px; }
+.or-hydro-count span { display: block; font-size: 10.5px; color: var(--faint); margin-top: 2px; }
+.or-hydro-btns { display: flex; gap: 9px; }
+.or-hydro-btns button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--raised); color: var(--ink); font-size: 18px; }
+.or-glasses { display: flex; gap: 6px; margin-top: 12px; }
+.or-glass { flex: 1; height: 26px; border-radius: 7px; border: 1px solid var(--line-soft); background: var(--raised); }
+.or-glass.on { background: color-mix(in srgb, var(--m-ora) 40%, var(--raised)); border-color: color-mix(in srgb, var(--m-ora) 45%, var(--line)); }
+
+.or-miles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+.or-mile { border: 1px solid var(--line-soft); border-radius: 14px; background: var(--surface); padding: 12px 13px; opacity: 0.5; }
+.or-mile.on { opacity: 1; border-color: color-mix(in srgb, var(--m-ora) 40%, var(--line)); }
+.or-mile b { display: block; font-family: var(--font-display); font-size: 14.5px; font-weight: 650; }
+.or-mile.on b { color: var(--m-ora); }
+.or-mile span { display: block; font-size: 11px; color: var(--faint); margin-top: 3px; }
+
+.or-empty { text-align: center; padding: 44px 20px; color: var(--faint); }
+.or-empty-title { font-family: var(--font-display); font-size: 20px; font-weight: 650; color: var(--dim); }
+.or-empty p { font-size: 13px; line-height: 1.6; margin: 8px auto 0; max-width: 300px; }
+.or-log { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 9px; }
+.or-log-main { flex: 1; min-width: 0; }
+.or-log-main b { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 650; }
+.or-log-main > span { display: block; font-size: 11px; color: var(--faint); margin-top: 2px; }
+.or-badge { font-size: 9px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--line); border-radius: 7px; padding: 4px 8px; color: var(--faint); }
+.or-badge.hit { color: var(--m-grove); border-color: color-mix(in srgb, var(--m-grove) 45%, var(--line)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .or-dial-stage, .or-stage-dot.on { animation: none; }
+}

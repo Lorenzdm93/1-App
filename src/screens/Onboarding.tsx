@@ -13,7 +13,7 @@ const GOALS: Goal[] = [
   { id: 'gym', label: 'Strength & Gym', modules: ['ghisa', 'caliber'] },
   { id: 'calm', label: 'Breath & Calm', modules: ['respiro'] },
   { id: 'habits', label: 'Daily consistency', modules: ['cadence', 'grove'] },
-  { id: 'health', label: 'Supplements & meds', modules: ['sana'] },
+  { id: 'health', label: 'Health & fasting', modules: ['sana', 'ora'] },
   { id: 'all', label: 'All of it', modules: MODULES.map((m) => m.id) },
 ]
 

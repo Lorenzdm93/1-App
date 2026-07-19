@@ -27,6 +27,12 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.8 — ORA joins the platform**
+
+- **ORA — fasting, hour by hour.** The full prototype, integrated: a dual-tone dial (fasting arc in steel blue, eating window in amber, live glowing progress), Begin fast with "already fasting? set your start time" (overnight-aware), and the verbose schedule — an **eating Window** that derives the fast around when you actually eat (midnight-safe), a **custom length**, and the daily rhythms 14:10 → OMAD, each with its honest description. **Body** is the stage timeline (Fed → Extended renewal) with Now/Tip/Care callouts and a pulsing glow on wherever you are right now. **Progress** carries streaks, goal-hit rate, longest/average, total hours, recent-fast bars with the goal line, a 17-week consistency heatmap, weight logging with trend, hydration glasses, and ten milestones. **Log** lists every fast, deletable, with its event cleaned up too. Ending early is logged without shame — it's data. The medical disclaimer lives in ORA's settings.
+- **In the 1% engine** ORA scores as **completion**: the mean goal-completion of the week's finished fasts. Deliberately *not* growth — fasting is the one metric where ratcheting "more hours" would be wrong by design; the target is the target.
+- Platform: `removeEvent(id)` joins the core event API (deleting a fast removes its metric event).
+
 **New in v0.7.1 — the engine gets its own room**
 
 - **The 1% screen.** The engine is now a destination (`#/one`), not a settings card: tap the score on Today and it opens — the big number with the glow bar to the "1% better" mark, weeks won / compounded / streak, the full week-by-week ledger chart, a **module-by-module breakdown** with per-row bars and honest sub-lines ("sits out", "at your ceiling", "tested and held"), the **rate picker with its yearly translation** (0.5% ≈ +30%/yr · 1% ≈ +68%/yr · 2% ≈ +180%/yr), goal ceilings, and the philosophy written out: consistency is the growth, plateaus at your chosen level are wins, one plain average you can recompute in your head. It's a route, not a module — it aggregates the others, so it can't be disabled, scored, or widget-ed.
@@ -121,8 +127,8 @@ Everything lives on-device. **Settings → Export** produces one JSON backup cov
 
 ## Roadmap
 
-- **v0.8** — Ora (fasting) and Minim (mood) modules wired straight into the engine; the full-app premium reskin pass.
-- **v0.9** — optional end-to-end Firebase sync (the event log and week ledger are already sync-shaped).
+- **v0.9** — the full-app premium reskin pass; Minim (mood) when its moment comes.
+- **v1.0** — Capacitor wrap; optional Firebase sync; Health Connect / HealthKit as the universal intake.
 - **Later** — Capacitor wrap for the App Store; reminders/notifications (needs the native shell).
 
 ### Earlier roadmap notes

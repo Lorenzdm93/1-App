@@ -9,8 +9,9 @@ import caliber from '../modules/caliber'
 import cadence from '../modules/cadence'
 import grove from '../modules/grove'
 import sana from '../modules/sana'
+import ora from '../modules/ora'
 
-export const MODULES: readonly ModuleDefinition[] = [ghisa, cadence, grove, respiro, sana, caliber]
+export const MODULES: readonly ModuleDefinition[] = [ghisa, cadence, grove, respiro, sana, ora, caliber]
 
 export function moduleById(id: string): ModuleDefinition | undefined {
   return MODULES.find((m) => m.id === id)
