@@ -350,6 +350,27 @@ function HabitForm({
 
   return (
     <Sheet open={open} title={mode === 'add' ? 'New habit' : 'Edit habit'} onClose={onClose}>
+      {mode === 'add' && (
+        <div className="cd-quick">
+          <div className="cd-quick-label">Quick start <span>— tap to prefill</span></div>
+          <div className="cd-quick-k">Build</div>
+          <div className="cd-quick-row">
+            {([['💪','Workout'],['🏃','Run'],['📚','Read'],['🧘','Meditate'],['💧','Drink water'],['✍️','Journal'],['🥦','Eat vegetables'],['🌱','Stretch'],['😴','Sleep by 11pm'],['💊','Vitamins']] as const).map(([em, nm]) => (
+              <button key={nm} className="cd-quick-chip" onClick={() => { setName(nm); setEmoji(em); setType('build') }}>
+                {em} {nm}
+              </button>
+            ))}
+          </div>
+          <div className="cd-quick-k">Quit</div>
+          <div className="cd-quick-row">
+            {([['🚬','No smoking'],['🍺','No alcohol'],['📵','No doomscrolling'],['🍬','No sugar'],['🎮','No gaming'],['☕','No caffeine'],['🍔','No junk food'],['💸','No impulse buys']] as const).map(([em, nm]) => (
+              <button key={nm} className="cd-quick-chip" onClick={() => { setName(nm); setEmoji(em); setType('quit') }}>
+                {em} {nm}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {mode === 'add' ? (
         <Seg<HabitType>
           options={[
@@ -567,7 +588,10 @@ export default function CadenceScreen({ tab = 'today' }: { tab?: string }) {
                   key={h.id}
                   habit={h}
                   onManage={() => setManaging(h)}
-                  onSlip={() => setSlipping(h)}
+                  onSlip={() => {
+                    logSlip(h.id)
+                    toast(`${h.name} — slip logged. Clean days reset; the record stays honest.`)
+                  }}
                 />
               ) : null,
             )

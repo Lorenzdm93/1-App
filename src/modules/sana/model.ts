@@ -49,6 +49,8 @@ export interface Stack {
   color: string
   compoundIds: string[]
   createdTs: number
+  /** JS getDay() values (0 = Sunday). Absent or all seven = every day. */
+  days?: number[]
 }
 
 export interface SanaState {
@@ -148,6 +150,18 @@ export function toggleFollow(day: string, stackId: string): void {
 }
 
 /** Unique compounds due on a day (union of followed stacks), with their stack memberships. */
+export function stackActiveOn(stack: Stack, day: string): boolean {
+  if (!stack.days || stack.days.length === 0 || stack.days.length === 7) return true
+  return stack.days.includes(new Date(day + 'T12:00:00').getDay())
+}
+
+export function setStackDays(stackId: string, days: number[] | undefined): void {
+  sanaStore.set((s) => ({
+    ...s,
+    stacks: s.stacks.map((x) => (x.id === stackId ? { ...x, days: days && days.length < 7 ? days : undefined } : x)),
+  }))
+}
+
 export function dueOn(
   st: SanaState,
   day: string,

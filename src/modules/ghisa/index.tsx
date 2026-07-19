@@ -9,14 +9,16 @@ function Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <g transform="rotate(45 12 12)">
-        <rect x="5.2" y="10.9" width="13.6" height="2.2" rx="1.1" />
-        <rect x="2.6" y="8.8" width="2.4" height="6.4" rx="1.1" />
-        <rect x="19" y="8.8" width="2.4" height="6.4" rx="1.1" />
+        <rect x="6.8" y="10.9" width="10.4" height="2.2" rx="1.1" />
+        <rect x="4.6" y="8.6" width="2.4" height="6.8" rx="1.1" />
+        <rect x="17" y="8.6" width="2.4" height="6.8" rx="1.1" />
+        <rect x="2.9" y="10.1" width="1.5" height="3.8" rx="0.75" />
+        <rect x="19.6" y="10.1" width="1.5" height="3.8" rx="0.75" />
       </g>
-      <g transform="rotate(-45 12 12)" opacity="0.55">
-        <rect x="5.2" y="10.9" width="13.6" height="2.2" rx="1.1" />
-        <rect x="2.6" y="8.8" width="2.4" height="6.4" rx="1.1" />
-        <rect x="19" y="8.8" width="2.4" height="6.4" rx="1.1" />
+      <g transform="rotate(-45 12 12)">
+        <rect x="6.8" y="10.9" width="10.4" height="2.2" rx="1.1" />
+        <rect x="4.6" y="8.6" width="2.4" height="6.8" rx="1.1" />
+        <rect x="17" y="8.6" width="2.4" height="6.8" rx="1.1" />
       </g>
     </svg>
   )
@@ -26,9 +28,16 @@ function BellIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <g transform="rotate(45 12 12)">
-        <rect x="5.2" y="10.9" width="13.6" height="2.2" rx="1.1" />
-        <rect x="2.6" y="8.8" width="2.4" height="6.4" rx="1.1" />
-        <rect x="19" y="8.8" width="2.4" height="6.4" rx="1.1" />
+        <rect x="6.8" y="10.9" width="10.4" height="2.2" rx="1.1" />
+        <rect x="4.6" y="8.6" width="2.4" height="6.8" rx="1.1" />
+        <rect x="17" y="8.6" width="2.4" height="6.8" rx="1.1" />
+        <rect x="2.9" y="10.1" width="1.5" height="3.8" rx="0.75" />
+        <rect x="19.6" y="10.1" width="1.5" height="3.8" rx="0.75" />
+      </g>
+      <g transform="rotate(-45 12 12)">
+        <rect x="6.8" y="10.9" width="10.4" height="2.2" rx="1.1" />
+        <rect x="4.6" y="8.6" width="2.4" height="6.8" rx="1.1" />
+        <rect x="17" y="8.6" width="2.4" height="6.8" rx="1.1" />
       </g>
     </svg>
   )

@@ -506,6 +506,7 @@ function Stage({
         <div className="rs-phaseblock">
           <span className="rs-phase">{running ? pos.phase.label : 'Ready'}</span>
           <span className="rs-count num">{running ? `${Math.ceil(pos.remaining)}s` : '—'}</span>
+          {running && pos.phase.hint && <span className="rs-hint">{pos.phase.hint}</span>}
         </div>
         <div className="rs-dots" aria-hidden="true">
           {protocol.phases.map((_, i) => (

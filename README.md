@@ -27,6 +27,17 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9.4 — mobile P0, and the round finished**
+
+- **You are no longer stuck in modules.** The app had no notch awareness: on phones the header (and the back button with it) rendered under the status bar. Fixed with `viewport-fit=cover` + safe-area padding top and bottom; the back button grew to a 44 px target; the nav bar slimmed (24 px icons, tighter padding) so content gets the room back.
+- **GHISA**: the crossed-dumbbell mark redrawn solid and chunky (both arms full weight, plates and collars); DELETE now appears **only while swiping** (it was bleeding through — a missing background on the sliding layer); the column header rides the same grid as the rows, so SET/PREV/KG/REPS finally line up. **The Today widget lists your templates** — tap one and the workout starts *from that template*, not empty.
+- **Next moves** carry each module's **own icon** in a tiny tinted squircle — the module's face, not its name shouted.
+- **RESPIRO**: phases now carry **per-phase instructions** — Nadi Shodhana became the full six-phase round ("Inhale left — thumb closes the RIGHT nostril" … "Exhale left"), 4·7·8 explains the mouth whoosh, box breathing traces its corners — and because the curve is generated from the phases, **every protocol now draws its own distinct shape** (nadi's double peak, the sigh's two-step rise, the box's flat top and bottom).
+- **SANA**: tap a stack → **only its doses are listed** (your original ask restored — I over-corrected last round), and every stack gained **active days**: seven weekday chips in the editor; Sport on Mon/Wed/Fri simply doesn't appear on Tuesday, and the week's adherence math follows automatically. "Any N days a week" (flexible) is designed but deferred — it needs its own adherence semantics done honestly.
+- **CADENCE**: the prototype's **Quick start** grid in New habit (ten build presets, eight quit presets — tap to prefill), and **Log slip is now one tap** — no confirm sheet; the streak resets, a toast says so, the record stays honest. The slip button wears the prototype's red-outline pill.
+
+**Deferred by agreement to the next sessions** (proper builds, not squeezes): GHISA exercise pages with two-frame movement animations + per-exercise stats (heaviest, e1RM trend, best sets, PRs, percentile level) — including a licensing check on the open exercise-image datasets; RESPIRO's multi-track Spotify library with the docked player (full-length playback requires the browser to be logged into Spotify — an embed limitation no code can bypass); and the sample-data loader/remover in Settings, built on tagged data so removal is surgical.
+
 **New in v0.9.3 — the response round**
 
 - **Nav, docked.** The bar returns to full screen width, fixed to the bottom edge (rounded top corners, blurred, nothing showing behind), slightly shorter, with 26 px icons evenly distributed and a small accent underline for the active tab — **which now takes the module's color**, in every module.

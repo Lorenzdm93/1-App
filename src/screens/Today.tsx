@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react'
 import { useStore } from '../core/hooks'
 import { eventsStore, currentStreak } from '../core/events'
 import { settingsStore } from '../core/settings'
-import { enabledModules } from '../core/registry'
+import { enabledModules, moduleById } from '../core/registry'
 import { navigate } from '../core/router'
 import { todayKey, lastNDayKeys, dayKey } from '../core/dates'
 import { oneStore } from '../core/one'
@@ -95,7 +95,12 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
               style={{ ['--wc' as string]: mv.accentVar } as CSSProperties}
               onClick={() => navigate('/m/' + mv.id)}
             >
-              <span className="wp-tag">{mv.name}</span>
+              <span className="wp-ic">
+                {(() => {
+                  const M = moduleById(mv.id)!.Icon
+                  return <M size={13} />
+                })()}
+              </span>
               <span>{mv.text}</span>
               <Chevron />
             </button>

@@ -1,33 +1,40 @@
 import { useStore } from '../../core/hooks'
-import { dayKey, lastNDayKeys } from '../../core/dates'
-import { ghisaStore, sessionVolume, sessionSets } from './model'
+import { navigate } from '../../core/router'
+import { ghisaStore, startFromTemplate, sessionSets, sessionVolume } from './model'
 
 export default function GhisaWidget() {
   const st = useStore(ghisaStore)
-  const week = new Set(lastNDayKeys(7))
-  const weekSessions = st.history.filter((s) => week.has(dayKey(s.startTs)))
-  const weekVolume = weekSessions.reduce((sum, s) => sum + sessionVolume(s), 0)
+  if (st.active) {
+    return (
+      <div className="w-line">
+        Workout in progress — <b className="num">{sessionSets(st.active)} sets · {Math.round(sessionVolume(st.active)).toLocaleString()} kg</b>
+      </div>
+    )
+  }
   const last = st.history[0]
-
   return (
     <>
-      <div className="w-stat-row">
-        <div className="w-stat">
-          <div className="v">{weekSessions.length}</div>
-          <div className="k">workouts · 7d</div>
+      {last && (
+        <div className="w-line">
+          Last: <b className="num">{Math.round(sessionVolume(last)).toLocaleString()} kg</b> · {new Date(last.endTs ?? last.startTs).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
         </div>
-        <div className="w-stat">
-          <div className="v">{Math.round(weekVolume).toLocaleString()}</div>
-          <div className="k">kg volume · 7d</div>
+      )}
+      {st.templates.length > 0 && (
+        <div className="gh-w-tpls">
+          {st.templates.slice(0, 3).map((t) => (
+            <button
+              key={t.id}
+              className="gh-w-tpl"
+              onClick={() => {
+                startFromTemplate(t.id)
+                navigate('/m/ghisa')
+              }}
+            >
+              ▶ {t.name}
+            </button>
+          ))}
         </div>
-      </div>
-      <div className="w-line">
-        {st.active
-          ? 'Session in progress — sets are waiting.'
-          : last
-            ? `Last: ${new Date(last.startTs).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })} · ${sessionSets(last)} sets · ${Math.round(sessionVolume(last)).toLocaleString()} kg`
-            : 'No workouts yet — the iron is patient.'}
-      </div>
+      )}
     </>
   )
 }

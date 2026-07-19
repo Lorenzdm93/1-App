@@ -6,7 +6,7 @@ import { todayKey, shiftDay } from '../../core/dates'
 import { toast } from '../../core/toast'
 import { Sheet, ConfirmSheet, Empty, Seg, Field, StatBox } from '../../app/ui'
 import {
-  sanaStore, SLOTS, FORMS, STACK_COLORS, STACK_EMOJIS,
+  sanaStore, setStackDays, SLOTS, FORMS, STACK_COLORS, STACK_EMOJIS,
   dueOn, isTaken, takeDose, takeMany, followedOn, toggleFollow,
   addStack, updateStack, deleteStack, addCompound, linkCompound, unlinkCompound, updateCompound,
   dayCount, historyStats, compoundById,
@@ -153,6 +153,7 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
   const due = dueOn(st, day)
   const focused = focusStack ? st.stacks.find((x) => x.id === focusStack) ?? null : null
   const member = focused ? new Set(focused.compoundIds) : null
+  const shown = member ? due.filter((d) => member.has(d.compound.id)) : due
   const takenCount = due.filter(({ compound }) => isTaken(st, compound.id, day)).length
   const followed = followedOn(st, day)
   const followedStacks = st.stacks.filter((s) => followed.includes(s.id))
@@ -234,16 +235,16 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
       <p className="rs-foot sn-filter-line" style={{ marginTop: 4 }}>
         {focused ? (
           <>
-            Highlighting <b style={{ color: focused.color }}>{focused.name}</b> below ·{' '}
-            <button className="linklike" onClick={() => setFocusStack(null)}>clear</button>
+            Showing <b style={{ color: focused.color }}>{focused.name}</b> only ·{' '}
+            <button className="linklike" onClick={() => setFocusStack(null)}>show all stacks</button>
           </>
         ) : (
-          <>Tap a stack to light up its doses below. Shared compounds are listed once.</>
+          <>Tap a stack to see only its doses. Shared compounds are listed once.</>
         )}
       </p>
 
       {SLOTS.map((slot) => {
-        const rows = due.filter((d) => d.compound.slot === slot.id)
+        const rows = shown.filter((d) => d.compound.slot === slot.id)
         if (rows.length === 0) return null
         const remaining = rows.filter((r) => !isTaken(st, r.compound.id, day))
         return (
@@ -267,7 +268,7 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
               return (
                 <div
                   key={compound.id}
-                  className={'card sn-comp' + (taken ? ' taken' : '') + (member ? (member.has(compound.id) ? ' hl' : ' dm') : '')}
+                  className={'card sn-comp' + (taken ? ' taken' : '')}
                   style={member && member.has(compound.id) && focused ? ({ ['--sk' as string]: focused.color } as CSSProperties) : undefined}
                 >
                   <span className="sn-comp-glyph"><FormGlyph form={compound.form} /></span>
@@ -472,6 +473,28 @@ function StackEditor({ stackId, onBack }: { stackId: string; onBack: () => void 
           {STACK_COLORS.map((c) => (
             <button key={c} className={'sn-color' + (stack.color === c ? ' on' : '')} style={{ background: c }} onClick={() => updateStack(stack.id, { color: c })} aria-label={`Colour ${c}`} />
           ))}
+        </div>
+
+        <div className="sn-ed-days">
+          <span className="k">Active days <span className="hint">· all off = every day</span></span>
+          <div className="sn-daychips">
+            {[1, 2, 3, 4, 5, 6, 0].map((d) => {
+              const on = (stack.days ?? []).includes(d)
+              return (
+                <button
+                  key={d}
+                  className={'sn-daychip' + (on ? ' on' : '')}
+                  onClick={() => {
+                    const cur = stack.days ?? []
+                    const next = on ? cur.filter((x) => x !== d) : [...cur, d]
+                    setStackDays(stack.id, next.length === 0 ? undefined : next)
+                  }}
+                >
+                  {'SMTWTFS'[d]}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </Field>
       <div className="section-label" style={{ marginTop: 18 }}>Compounds</div>
