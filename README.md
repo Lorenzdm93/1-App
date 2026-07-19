@@ -27,6 +27,15 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9.8 — the corrections round (with a confession)**
+
+An audit against the last feedback found three items genuinely missing and three already shipped but unseen. The confession: some v0.9.7 edits used unverified string replacements — one (SANA's method picker) silently failed against a renamed heading and reported success anyway. All replacements are now assertion-guarded. The already-shipped trio — GROVE's start-sheet, RESPIRO's in-module browse toggle, the gear icon — appear after upload + hard-refresh (they landed in v0.9.7's sw bump).
+
+- **Overview chips, single-entry everywhere.** RESPIRO's Today chip is one "Start breathwork" (the two protocol shortcuts are gone); CALIBER's widget dropped the per-lift e1RM list for a one-line summary plus a **"Log a strength set"** chip.
+- **SANA**: the **Quick-log method** picker (By stack / By time of day) now truly sits atop the Stacks tab — asserted this time; and **everything unticks**: compound checks always toggled (with proper labels), and now a completed stack's ✓ untakes the whole stack too.
+- **CADENCE slips are unmissable**: the quit row goes red-edged with "0 · slipped today" on the day it happens; the Month calendar marks any-slip days in red (streak days keep their green levels); the Year heat's slip class finally has its red CSS.
+- **Nav, compact and low**: pill dropped to the true bottom (6 px + safe-area), padding tightened, 21 px icons, smaller labels — less chrome, more app.
+
 **New in v0.9.7 — real glass, and the Profile**
 
 - **Actual translucency.** The chrome read as black because a dark tint over a near-black page *is* black. The recipe changed: a faint white gradient sits over a much lighter surface tint (~52%) with 28 px blur and boosted saturation — content now visibly ghosts through the pill and the floating back button, Hevy-style, in both themes.

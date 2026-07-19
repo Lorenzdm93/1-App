@@ -4,6 +4,7 @@ import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import Screen from './Screen'
 import Widget from './Widget'
+import QuickActions from './QuickActions'
 
 function Icon({ size = 20 }: { size?: number }) {
   return (
@@ -68,6 +69,7 @@ const caliber: ModuleDefinition = {
   Icon,
   Screen,
   Widget,
+  QuickActions,
   weekly: {
     label: 'strength',
     unit: 'kg',

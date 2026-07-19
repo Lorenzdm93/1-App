@@ -136,15 +136,15 @@ function QuitRow({
   const clean = daysClean(st, habit.id)
   const slippedToday = slipDays(st, habit.id).includes(todayKey())
   return (
-    <div className="cdh-row" style={accent(habit)}>
+    <div className={'cdh-row' + (slippedToday ? ' slipped' : '')} style={accent(habit)}>
       <span className="cdh-tile quit" aria-hidden="true">
         <span className="em">{habit.emoji}</span>
       </span>
       <button className="cdh-info" onClick={onManage}>
         <span className="cdh-name">{habit.name}</span>
         <span className="cdh-sub">{habit.cue ?? 'clean days'}</span>
-        <span className="cdh-clean num">
-          {clean} <i>{clean === 1 ? 'day clean' : 'days clean'}</i>
+        <span className={'cdh-clean num' + (slippedToday ? ' slipped' : '')}>
+          {slippedToday ? <>0 <i>· slipped today</i></> : <>{clean} <i>{clean === 1 ? 'day clean' : 'days clean'}</i></>}
         </span>
       </button>
       {slippedToday ? (
@@ -210,11 +210,12 @@ function MonthView() {
             const ratio = dayCompletion(st, day)
             const future = day > today
             const level = ratio === 0 ? 0 : ratio < 0.34 ? 1 : ratio < 0.67 ? 2 : ratio < 1 ? 3 : 4
+            const slipped = activeHabits(st).some((h) => (st.slips[h.id] ?? []).includes(day))
             return (
               <button
                 key={day}
                 className={
-                  'cd-day l' + level + (day === today ? ' today' : '') + (future ? ' future' : '')
+                  'cd-day l' + level + (slipped ? ' slip' : '') + (day === today ? ' today' : '') + (future ? ' future' : '')
                 }
                 disabled={future}
                 onClick={() => setBackfill(day)}

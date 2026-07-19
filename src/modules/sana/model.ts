@@ -225,6 +225,17 @@ export function takeDose(compoundId: string, day = todayKey()): boolean {
 }
 
 /** TAKE ALL — every listed compound not yet taken. Returns how many were taken. */
+export function untakeMany(compoundIds: string[], day = todayKey()): number {
+  let n = 0
+  for (const id of compoundIds) {
+    if (isTaken(sanaStore.get(), id, day)) {
+      takeDose(id, day) // toggles off, removing the event
+      n++
+    }
+  }
+  return n
+}
+
 export function takeMany(compoundIds: string[], day = todayKey()): number {
   let n = 0
   for (const id of compoundIds) {

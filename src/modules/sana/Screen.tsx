@@ -6,7 +6,7 @@ import { todayKey, shiftDay } from '../../core/dates'
 import { toast } from '../../core/toast'
 import { Sheet, ConfirmSheet, Empty, Seg, Field, StatBox } from '../../app/ui'
 import {
-  sanaStore, setStackDays, setLogMethod, SLOTS, FORMS, STACK_COLORS, STACK_EMOJIS,
+  sanaStore, setStackDays, untakeMany, setLogMethod, SLOTS, FORMS, STACK_COLORS, STACK_EMOJIS,
   dueOn, isTaken, takeDose, takeMany, followedOn, toggleFollow,
   addStack, updateStack, deleteStack, addCompound, linkCompound, unlinkCompound, updateCompound,
   dayCount, historyStats, compoundById,
@@ -223,8 +223,13 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
               aria-label={`Take all of ${s.name}`}
               onClick={(e) => {
                 e.stopPropagation()
-                const n = takeMany(ids, day)
-                if (n > 0) toast(`${s.name} — ${n} taken`)
+                if (done === ids.length && ids.length > 0) {
+                  const n = untakeMany(ids, day)
+                  toast(`${s.name} — ${n} unticked`)
+                } else {
+                  const n = takeMany(ids, day)
+                  if (n > 0) toast(`${s.name} — ${n} taken`)
+                }
               }}
             >
               ✓
@@ -543,6 +548,20 @@ function StacksTab() {
   return (
     <>
       <h2 className="sn-h1">Your stacks</h2>
+      <div className="kv" style={{ marginTop: 2, marginBottom: 10 }}>
+        <span className="k">Quick-log method <span className="hint">· how the Today shortcut thinks</span></span>
+        <div className="chips">
+          {(['stack', 'slot'] as const).map((mth) => (
+            <button
+              key={mth}
+              className={'chip' + ((st.logMethod ?? 'stack') === mth ? ' on' : '')}
+              onClick={() => setLogMethod(mth)}
+            >
+              {mth === 'stack' ? 'By stack' : 'By time of day'}
+            </button>
+          ))}
+        </div>
+      </div>
       <p className="sn-sub">Saved regimens you can switch between on any day.</p>
       <button
         className="btn btn-primary"
