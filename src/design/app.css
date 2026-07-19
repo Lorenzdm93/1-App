@@ -4012,3 +4012,16 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
   to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) { .view { animation: none; } }
+
+/* ============================================================
+   v0.9.10 — HOTFIX: transform-free transitions
+   The .view slide animated `transform` with fill-mode both — a
+   permanent containing block that captured position:fixed bars
+   (they drifted into content and swallowed taps beneath them).
+   Opacity-only from here; fixed chrome answers to the viewport.
+   ============================================================ */
+.view { animation: viewFade 0.18s ease backwards; }
+@keyframes viewFade { from { opacity: 0; } to { opacity: 1; } }
+.tabbar, .tabbar-mod { bottom: max(10px, env(safe-area-inset-bottom, 0px) + 4px); }
+.cdh-wdot.today { box-shadow: 0 0 0 1.5px var(--line-strong); }
+.cdh-wdot.slip.today { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--danger) 80%, transparent); }

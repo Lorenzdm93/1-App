@@ -27,6 +27,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9.10 — hotfix: the wandering tab bar**
+
+One root cause, two symptoms. The v0.9.9 view transition animated `transform` with `fill-mode: both`, leaving a permanent transform on every screen wrapper — and a transformed ancestor becomes the containing block for `position: fixed`. The module tab bars (rendered inside the wrapper) detached from the viewport, drifted into the content, and their hitboxes swallowed taps on whatever sat beneath — which is why CADENCE rows "couldn't" be logged and the new slip visuals seemed absent: the check circles, red slip squares, and one-tap slip were all in the build, occluded and tap-blocked by the stray bar. Transitions are now opacity-only (no transform, ever, on screen wrappers); the pills float again with a visible 10 px gap; the today-cell in the week strip gained a subtle outline so the current square reads clearly.
+
 **New in v0.9.9 — prototype-true details, and one deep bug**
 
 - **The SANA popup bug was a CSS law, now repealed app-wide.** `position: fixed` gets trapped inside any transformed ancestor — the quick-log sheet was rendering inside a pressed card's transform, hence the mid-page float. Every Sheet now portals to `document.body`: bottom-docked always, everywhere. The quick-log sheet also gained **"✔ Everything — N remaining"** as its first row.
