@@ -3037,3 +3037,93 @@ body.rs-running .tabbar {
 @media (prefers-reduced-motion: reduce) {
   .gv-plant, .gv-dial-wrap.paused { animation: none; }
 }
+
+/* ============================================================
+   v0.7.1 — the ONE screen; hero as gateway; module week meters
+   ============================================================ */
+
+.wp-tap { width: 100%; text-align: left; display: block; }
+.wp-tap:active { transform: scale(0.995); }
+.wp.won {
+  border-color: color-mix(in srgb, var(--m-grove) 35%, var(--line));
+  background:
+    radial-gradient(120% 140% at 85% -20%, color-mix(in srgb, var(--m-grove) 14%, transparent), transparent 60%),
+    linear-gradient(170deg, var(--surface), color-mix(in srgb, var(--surface) 86%, var(--bg)));
+}
+.wp-score { font-size: 56px; letter-spacing: -0.02em; }
+.wp-open {
+  display: inline-block; margin-top: 12px; font-size: 11px; font-weight: 800;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim);
+}
+.wp-move-pill {
+  flex: none; font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--wc); border: 1px solid color-mix(in srgb, var(--wc) 45%, var(--line));
+  background: color-mix(in srgb, var(--wc) 9%, var(--surface));
+  border-radius: 7px; padding: 3px 7px; margin-top: 1px;
+}
+.mw-pct { margin-left: auto; font-size: 11.5px; font-weight: 800; color: var(--dim); padding-right: 2px; }
+.mw-pct.won { color: var(--wc); }
+.card-head .mw-pct + svg { margin-left: 4px; }
+.mw-bar { height: 3.5px; border-radius: 99px; background: var(--raised); margin: 2px 0 12px; overflow: hidden; }
+.mw-bar i { display: block; height: 100%; border-radius: 99px; background: color-mix(in srgb, var(--wc) 75%, var(--line)); min-width: 0; transition: width 0.4s ease; }
+
+/* --- ONE screen --- */
+.one-head { display: flex; align-items: center; gap: 12px; }
+.one-back {
+  width: 40px; height: 40px; border-radius: 13px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-size: 21px; line-height: 1; flex: none;
+}
+.one-pct { color: var(--m-grove); }
+.one-hero {
+  padding: 26px 20px 20px; text-align: left;
+  background:
+    radial-gradient(130% 150% at 90% -30%, color-mix(in srgb, var(--m-grove) 10%, transparent), transparent 55%),
+    linear-gradient(170deg, var(--surface), color-mix(in srgb, var(--surface) 86%, var(--bg)));
+}
+.one-hero.won { border-color: color-mix(in srgb, var(--m-grove) 40%, var(--line)); }
+.one-score-wrap { display: flex; align-items: baseline; gap: 4px; }
+.one-score { font-family: var(--font-display); font-size: 82px; font-weight: 650; line-height: 0.95; letter-spacing: -0.03em; }
+.one-hero.won .one-score { color: var(--m-grove); text-shadow: 0 0 34px color-mix(in srgb, var(--m-grove) 35%, transparent); }
+.one-score-pct { font-family: var(--font-display); font-size: 30px; color: var(--dim); }
+.one-bar { position: relative; height: 12px; border-radius: 99px; background: var(--raised); border: 1px solid var(--line); margin-top: 18px; }
+.one-bar i {
+  position: absolute; inset: 0 auto 0 0; border-radius: 99px; min-width: 5px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--m-grove) 40%, var(--raised)), var(--m-grove));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--m-grove) 30%, transparent);
+  transition: width 0.5s cubic-bezier(0.3, 0.9, 0.35, 1);
+}
+.one-mark { position: absolute; right: -1px; top: -7px; bottom: -7px; width: 2.5px; background: var(--ink); border-radius: 2px; }
+.one-mark b {
+  position: absolute; right: -4px; top: -16px; font-size: 8.5px; font-weight: 800;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); white-space: nowrap;
+}
+.one-status { margin: 22px 0 0; font-size: 13px; color: var(--dim); line-height: 1.6; }
+.one-stat { border: 1px solid var(--line-soft); border-radius: 15px; background: var(--surface); padding: 12px 13px; }
+.one-stat .v { font-family: var(--font-display); font-size: 22px; font-weight: 650; }
+.one-stat.lit .v { color: var(--m-grove); }
+.one-stat .k { margin-top: 3px; font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); }
+.one-best { margin-left: auto; font-size: 11px; color: var(--faint); }
+.one-spark { display: flex; align-items: flex-end; gap: 5px; height: 74px; }
+.one-spark-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; justify-content: flex-end; }
+.one-spark-col i { width: 100%; max-width: 22px; border-radius: 4px 4px 0 0; background: var(--raised); border: 1px solid var(--line-soft); border-bottom: none; }
+.one-spark-col i.won { background: color-mix(in srgb, var(--m-grove) 42%, var(--raised)); border-color: color-mix(in srgb, var(--m-grove) 40%, var(--line)); }
+.one-spark-col span { font-size: 8.5px; color: var(--faint); }
+.one-row { display: block; width: 100%; text-align: left; padding: 12px 2px; border-bottom: 1px solid var(--line-soft); background: none; border-top: none; border-left: none; border-right: none; color: var(--ink); }
+.one-row:last-of-type { border-bottom: none; }
+.one-row-head { display: flex; align-items: center; gap: 9px; }
+.one-row-head i { width: 8px; height: 8px; border-radius: 50%; background: var(--wc); }
+.one-row-head b { font-size: 13px; letter-spacing: 0.04em; }
+.one-row-head em { margin-left: auto; font-style: normal; font-size: 12.5px; font-weight: 800; color: var(--dim); }
+.one-row-bar { display: block; height: 4px; border-radius: 99px; background: var(--raised); margin: 8px 0 0; overflow: hidden; }
+.one-row-bar i { display: block; height: 100%; background: color-mix(in srgb, var(--wc) 80%, var(--line)); border-radius: 99px; }
+.one-row-sub { display: block; margin-top: 7px; font-size: 11.5px; color: var(--faint); line-height: 1.5; }
+.one-rates { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.one-rate {
+  border: 1px solid var(--line); border-radius: 15px; background: var(--surface);
+  padding: 12px 8px; text-align: center; color: var(--dim);
+}
+.one-rate b { display: block; font-family: var(--font-display); font-size: 21px; font-weight: 650; color: var(--ink); }
+.one-rate span { display: block; font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 2px; }
+.one-rate em { display: block; font-style: normal; font-size: 10px; margin-top: 5px; color: var(--faint); }
+.one-rate.on { border-color: var(--m-grove); background: color-mix(in srgb, var(--m-grove) 9%, var(--surface)); }
+.one-rate.on b, .one-rate.on em { color: var(--m-grove); }

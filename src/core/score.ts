@@ -195,10 +195,12 @@ export function computePulse(today = todayKey()): WeekPulse {
 }
 
 /** Top actionable gaps for "what next" — worst first, capped at three. */
-export function nextMoves(pulse: WeekPulse): { id: string; accentVar: string; text: string }[] {
+export function nextMoves(
+  pulse: WeekPulse,
+): { id: string; name: string; accentVar: string; text: string }[] {
   return pulse.modules
     .filter((m) => m.score !== null && m.score < 100 && m.advice !== null)
     .sort((a, b) => (a.score as number) - (b.score as number))
     .slice(0, 3)
-    .map((m) => ({ id: m.id, accentVar: m.accentVar, text: m.advice as string }))
+    .map((m) => ({ id: m.id, name: m.name, accentVar: m.accentVar, text: m.advice as string }))
 }

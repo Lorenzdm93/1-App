@@ -10,12 +10,17 @@ import { oneStore } from '../core/one'
 import { computePulse, nextMoves } from '../core/score'
 import { Chevron, Empty } from '../app/ui'
 
-function WeekPulseCard() {
+function useWeekPulse() {
   const events = useStore(eventsStore)
-  useStore(oneStore)
+  const one = useStore(oneStore)
   useStore(settingsStore)
   const today = todayKey()
-  const pulse = useMemo(() => computePulse(today), [events, today])
+  return useMemo(() => computePulse(today), [events, today, one.rate, one.goals])
+}
+
+function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
+  const events = useStore(eventsStore)
+  const today = todayKey()
   const moves = nextMoves(pulse)
   const streak = currentStreak(events, today)
   const activeDays = new Set(events.map((e) => dayKey(e.ts)))
@@ -24,20 +29,21 @@ function WeekPulseCard() {
 
   if (pulse.score === null) {
     return (
-      <div className="card hero wp">
+      <button className="card hero wp wp-tap" onClick={() => navigate('/one')}>
         <div className="wp-empty-title">Your 1% starts with one log.</div>
         <p className="wp-empty-sub">
           Finish anything — a set, a session, a habit tick — and this becomes your weekly score:
-          beat your own recent pace by {rate * 100}% and the week is won.
+          beat your own recent pace by {rate * 100}% and the week is won. Tap to see how the engine
+          works.
         </p>
-      </div>
+      </button>
     )
   }
 
   const won = pulse.score >= 100
   return (
     <>
-      <div className="card hero wp">
+      <button className={'card hero wp wp-tap' + (won ? ' won' : '')} onClick={() => navigate('/one')}>
         <div className="wp-top">
           <div className={'wp-score num' + (won ? ' won' : '')}>
             {pulse.score}
@@ -82,21 +88,8 @@ function WeekPulseCard() {
             />
           ))}
         </div>
-      </div>
-
-      <div className="wp-chips">
-        {pulse.modules.map((m) => (
-          <button
-            key={m.id}
-            className={'wp-chip num' + (m.score === null ? ' idle' : m.score >= 100 ? ' won' : '')}
-            style={{ ['--wc' as string]: m.accentVar } as CSSProperties}
-            onClick={() => navigate('/m/' + m.id)}
-          >
-            <i />
-            {m.name} {m.score === null ? '—' : `${m.score}%`}
-          </button>
-        ))}
-      </div>
+        <span className="wp-open">The full engine ›</span>
+      </button>
 
       {(moves.length > 0 || pulse.modules.some((m) => m.plateauNote)) && (
         <div className="card">
@@ -110,7 +103,7 @@ function WeekPulseCard() {
               style={{ ['--wc' as string]: mv.accentVar } as CSSProperties}
               onClick={() => navigate('/m/' + mv.id)}
             >
-              <i />
+              <span className="wp-move-pill">{mv.name}</span>
               <span>{mv.text}</span>
               <Chevron />
             </button>
@@ -135,6 +128,8 @@ export default function Today() {
   const events = useStore(eventsStore)
   const settings = useStore(settingsStore)
   const modules = enabledModules(settings.enabled)
+  const pulse = useWeekPulse()
+  const pulseById = new Map(pulse.modules.map((m) => [m.id, m]))
 
   const dateLabel = new Date().toLocaleDateString(undefined, {
     weekday: 'long',
@@ -149,7 +144,7 @@ export default function Today() {
         <h1 className="screen-title">Today</h1>
       </div>
 
-      <WeekPulseCard />
+      <WeekPulseCard pulse={pulse} />
 
       {modules.length === 0 && (
         <Empty title="No modules enabled" sub="Turn on the tools you want in the Modules tab." />
@@ -164,8 +159,31 @@ export default function Today() {
             <span className="label" style={{ color: m.accentVar }}>
               {m.name}
             </span>
+            {(() => {
+              const p = pulseById.get(m.id)
+              return p && p.score !== null ? (
+                <span
+                  className={'mw-pct num' + (p.score >= 100 ? ' won' : '')}
+                  style={{ ['--wc' as string]: m.accentVar } as CSSProperties}
+                >
+                  {p.score}%
+                </span>
+              ) : null
+            })()}
             <Chevron />
           </button>
+          {(() => {
+            const p = pulseById.get(m.id)
+            return p && p.score !== null ? (
+              <div
+                className="mw-bar"
+                style={{ ['--wc' as string]: m.accentVar } as CSSProperties}
+                aria-label={`${m.name} week progress`}
+              >
+                <i style={{ width: `${Math.min(100, p.score)}%` }} />
+              </div>
+            ) : null
+          })()}
           <m.Widget />
           {m.QuickActions && (
             <div className="action-row">

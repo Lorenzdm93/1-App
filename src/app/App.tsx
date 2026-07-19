@@ -7,6 +7,7 @@ import { useTheme } from './theme'
 import Today from '../screens/Today'
 import Modules from '../screens/Modules'
 import Settings from '../screens/Settings'
+import One from '../screens/One'
 import Onboarding from '../screens/Onboarding'
 import TabBar from './TabBar'
 import ModuleTabBar from './ModuleTabBar'
@@ -98,6 +99,7 @@ export default function App() {
         {route.name === 'today' && <Today />}
         {route.name === 'modules' && <Modules />}
         {route.name === 'settings' && <Settings />}
+        {route.name === 'one' && <One />}
         {route.name === 'module' && (
           <ModuleScreen id={route.id} tab={route.tab} key={route.id} />
         )}
