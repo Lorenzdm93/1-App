@@ -27,6 +27,14 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9.7 — real glass, and the Profile**
+
+- **Actual translucency.** The chrome read as black because a dark tint over a near-black page *is* black. The recipe changed: a faint white gradient sits over a much lighter surface tint (~52%) with 28 px blur and boosted saturation — content now visibly ghosts through the pill and the floating back button, Hevy-style, in both themes.
+- **A Profile tab** between Modules and Settings: weeks won / attempted, the compounded total ((1+rate)^wins), best week, the 16-week ledger, a link to the 1% engine — and a per-module all-time recap: lifetime kilos lifted, hours focused, minutes breathed, hours fasted, doses logged, best e1RM, each with its weeks-won count, each row opening its module.
+- **One Start everywhere.** GHISA's widget lost its duplicate button — the quick-action chip is the single entry and it opens the chooser on arrival. The template pencil folded into the ⋯ menu ("Edit template", first item).
+- **Sheet-first starts, the GHISA pattern generalised.** RESPIRO's overview shows Continue-with plus one "Choose a different protocol ▾" control that reveals the library on demand. GROVE's Start (in focus mode) opens a duration sheet — preset chips, custom minutes, "▶ Begin · N min" — so the dial never hosts a wall of options.
+- **SANA quick-log, your mental model.** The Today chip reads "Log stack · N left" or "Log doses · N left" and opens a sheet of stacks or of time-of-day slots — one tap takes everything remaining in the group. Which model it uses is chosen in the Stacks tab: **Quick-log method — by stack / by time of day.**
+
 **New in v0.9.6 — lucent chrome, and the machine bends to its owner**
 
 - **The GHISA exercise rows, rebuilt from zero.** A v0.5 base rule still declared `.gh-row` as its own grid, so the new inner wrapper was being crushed into a 26 px first column — the "completely wrong" you saw. The old grid is now structurally dead; the inner owns a clean five-column template (set · prev · kg · reps · check), edge to edge, header on the same rails, the × retired in favour of swipe.

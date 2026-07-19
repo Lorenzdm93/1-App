@@ -6,7 +6,7 @@ import { todayKey, shiftDay } from '../../core/dates'
 import { toast } from '../../core/toast'
 import { Sheet, ConfirmSheet, Empty, Seg, Field, StatBox } from '../../app/ui'
 import {
-  sanaStore, setStackDays, SLOTS, FORMS, STACK_COLORS, STACK_EMOJIS,
+  sanaStore, setStackDays, setLogMethod, SLOTS, FORMS, STACK_COLORS, STACK_EMOJIS,
   dueOn, isTaken, takeDose, takeMany, followedOn, toggleFollow,
   addStack, updateStack, deleteStack, addCompound, linkCompound, unlinkCompound, updateCompound,
   dayCount, historyStats, compoundById,

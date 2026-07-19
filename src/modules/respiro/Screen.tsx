@@ -354,6 +354,7 @@ function ProtocolCard({ p, onOpen }: { p: Protocol; onOpen: () => void }) {
 
 function Library({ onOpen }: { onOpen: (id: string) => void }) {
   const st = useStore(respiroStore)
+  const [browse, setBrowse] = useState(false)
   const last = st.protocolId === 'custom' ? buildCustomProtocol(st.custom) : protocolById(st.protocolId)
   return (
     <>
@@ -368,7 +369,10 @@ function Library({ onOpen }: { onOpen: (id: string) => void }) {
           ▷&nbsp; Begin · {last.suggestedMin} min
         </button>
       </div>
-      {CATEGORIES.map((c) => (
+      <button className="rs-browse" onClick={() => setBrowse((b) => !b)}>
+        {browse ? 'Hide the library ▴' : 'Choose a different protocol ▾'}
+      </button>
+      {browse && CATEGORIES.map((c) => (
         <div key={c.id}>
           <div className="section-label">{c.label}</div>
           {PROTOCOLS.filter((p) => p.category === c.id).map((p) => (

@@ -3889,3 +3889,58 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
 
 /* caliber tabs flex to the chosen count */
 .cb-lifts { grid-template-columns: repeat(var(--n, 4), 1fr); }
+
+/* ============================================================
+   v0.9.7 — real glass · profile · sheet-first starts
+   ============================================================ */
+
+/* Hevy-grade lucency: light tint OVER dark content, heavy blur */
+.tabbar, .tabbar-mod {
+  background:
+    linear-gradient(color-mix(in srgb, #ffffff 7%, transparent), transparent 60%),
+    color-mix(in srgb, var(--surface) 52%, transparent);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border-color: color-mix(in srgb, #ffffff 12%, transparent);
+}
+.mod-head .back {
+  background:
+    linear-gradient(color-mix(in srgb, #ffffff 8%, transparent), transparent 65%),
+    color-mix(in srgb, var(--surface) 50%, transparent);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border-color: color-mix(in srgb, #ffffff 13%, transparent);
+}
+[data-theme='light'] .tabbar,
+[data-theme='light'] .tabbar-mod,
+[data-theme='light'] .mod-head .back {
+  background: color-mix(in srgb, #ffffff 62%, transparent);
+  border-color: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+/* respiro: the browse control */
+.rs-browse {
+  display: block; width: 100%; text-align: center;
+  border: 1px dashed color-mix(in srgb, var(--m-respiro) 40%, var(--line));
+  background: none; color: var(--m-respiro);
+  border-radius: 13px; padding: 12px; margin: 4px 0 10px;
+  font-size: 12.5px; font-weight: 700;
+}
+
+/* grove: duration sheet chips */
+.gv-sheet-presets { display: flex; gap: 8px; flex-wrap: wrap; }
+.gv-sheet-presets .gv-preset { flex: 1; min-width: 56px; }
+
+/* profile */
+.pf-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; }
+.pf-ic {
+  flex: none; width: 34px; height: 34px; border-radius: 11px;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+}
+.pf-main { flex: 1; min-width: 0; }
+.pf-main b { display: block; font-size: 13.5px; letter-spacing: 0.04em; }
+.pf-main span { display: block; font-size: 11.5px; color: var(--faint); margin-top: 2px; }
+.pf-won { flex: none; text-align: right; font-size: 17px; font-weight: 700; color: var(--accent); }
+.pf-won i { display: block; font-style: normal; font-size: 8.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }

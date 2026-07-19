@@ -1,7 +1,8 @@
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
 import { ActionChip } from '../../app/ui'
-import { ghisaStore, startSession } from './model'
+import { ghisaStore } from './model'
+import { uiFlags } from './Screen'
 
 export default function GhisaQuickActions() {
   const st = useStore(ghisaStore)
@@ -10,8 +11,8 @@ export default function GhisaQuickActions() {
       accentVar="var(--m-ghisa)"
       label={st.active ? 'Resume session' : 'Start workout'}
       onClick={() => {
-        if (!st.active) startSession()
-        navigate('/m/ghisa')
+        if (!st.active) uiFlags.openChooser = true
+        navigate(st.active ? '/m/ghisa' : '/m/ghisa/train')
       }}
     />
   )

@@ -9,6 +9,7 @@ export type Route =
   | { name: 'modules' }
   | { name: 'settings' }
   | { name: 'one' }
+  | { name: 'profile' }
   | { name: 'module'; id: string; tab?: string }
 
 export function parseHash(hash: string): Route {
@@ -16,6 +17,7 @@ export function parseHash(hash: string): Route {
   if (path === 'modules') return { name: 'modules' }
   if (path === 'settings') return { name: 'settings' }
   if (path === 'one') return { name: 'one' }
+  if (path === 'profile') return { name: 'profile' }
   const m = path.match(/^m\/([a-z0-9-]+)(?:\/([a-z0-9-]+))?$/)
   if (m) return m[2] ? { name: 'module', id: m[1], tab: m[2] } : { name: 'module', id: m[1] }
   return { name: 'today' }

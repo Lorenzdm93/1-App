@@ -4,7 +4,7 @@ import { useStore } from '../../core/hooks'
 import { eventsStore } from '../../core/events'
 import { dayKey, todayKey, lastNDayKeys } from '../../core/dates'
 import { toast } from '../../core/toast'
-import { ConfirmSheet, Seg, StatBox } from '../../app/ui'
+import { ConfirmSheet, Sheet, Seg, StatBox } from '../../app/ui'
 import { Bars } from '../../app/charts'
 import PlantSVG from './PlantSVG'
 
@@ -155,6 +155,8 @@ function FocusTab() {
   const now = useNow(st.running !== null && st.running.pausedAt === null)
   const [confirmGiveUp, setConfirmGiveUp] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [startSheet, setStartSheet] = useState(false)
+  const [customDraft, setCustomDraft] = useState('')
   const celebrated = useRef<string | null>(null)
 
   useEffect(() => {
@@ -201,20 +203,6 @@ function FocusTab() {
           </button>
         ))}
       </div>
-      {(
-        <div className={'gv-presets' + (st.mode !== 'focus' || running ? ' dim' : '')}>
-          {PRESETS.map((p) => (
-            <button
-              key={p}
-              className={'gv-preset num' + (st.focusMin === p ? ' on' : '')}
-              disabled={st.mode !== 'focus' || running}
-              onClick={() => setFocusMinutes(p)}
-            >
-              {p}m
-            </button>
-          ))}
-        </div>
-      )}
 
       <Dial
         minutes={minutesFor(st, st.mode)}
@@ -249,7 +237,10 @@ function FocusTab() {
           ↺
         </button>
         {!running ? (
-          <button className="btn btn-primary gv-start" onClick={() => start()}>
+          <button
+            className="btn btn-primary gv-start"
+            onClick={() => (st.mode === 'focus' ? setStartSheet(true) : start())}
+          >
             Start
           </button>
         ) : paused ? (
@@ -299,6 +290,43 @@ function FocusTab() {
         <Bars data={perDay} accentVar="var(--m-grove)" />
       </div>
 
+      <Sheet open={startSheet} title="Start a focus session" onClose={() => setStartSheet(false)}>
+        <div className="gv-sheet-presets">
+          {PRESETS.map((p) => (
+            <button
+              key={p}
+              className={'gv-preset num' + (st.focusMin === p ? ' on' : '')}
+              onClick={() => setFocusMinutes(p)}
+            >
+              {p}m
+            </button>
+          ))}
+        </div>
+        <div className="or-window-row" style={{ marginTop: 12 }}>
+          <input
+            className="tinput num"
+            inputMode="numeric"
+            placeholder="custom"
+            value={customDraft}
+            onChange={(e) => {
+              setCustomDraft(e.target.value)
+              const n = parseInt(e.target.value, 10)
+              if (Number.isFinite(n) && n >= 5) setFocusMinutes(n)
+            }}
+          />
+          <b className="num">minutes</b>
+        </div>
+        <button
+          className="btn btn-primary"
+          style={{ width: '100%', marginTop: 16, ['--accent' as string]: 'var(--m-grove-warm)' } as CSSProperties}
+          onClick={() => {
+            setStartSheet(false)
+            start()
+          }}
+        >
+          ▶&nbsp; Begin · {st.focusMin} min
+        </button>
+      </Sheet>
       <ConfirmSheet
         open={confirmGiveUp}
         title="Give up this session?"

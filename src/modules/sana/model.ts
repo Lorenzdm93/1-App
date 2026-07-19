@@ -54,6 +54,8 @@ export interface Stack {
 }
 
 export interface SanaState {
+  /** Quick-log mental model: whole stacks, or time-of-day slots. */
+  logMethod?: 'stack' | 'slot'
   compounds: Compound[]
   stacks: Stack[]
   /** dayKey → stack ids followed that day. Absent day = all stacks. */
@@ -384,4 +386,8 @@ export function weekAdherence(st: SanaState, weekStart: string, today = todayKey
   }
   if (due === 0) return null
   return taken / due
+}
+
+export function setLogMethod(m: 'stack' | 'slot'): void {
+  sanaStore.set((s) => ({ ...s, logMethod: m }))
 }

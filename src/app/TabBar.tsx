@@ -21,6 +21,15 @@ function GridIcon() {
   )
 }
 
+function PersonIcon() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="8.2" r="3.6" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M4.8 20c.9-3.6 3.8-5.4 7.2-5.4s6.3 1.8 7.2 5.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function SlidersIcon() {
   return (
     <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -36,6 +45,7 @@ function SlidersIcon() {
 const TABS = [
   { name: 'today', label: 'Today', path: '/', Icon: RingIcon },
   { name: 'modules', label: 'Modules', path: '/modules', Icon: GridIcon },
+  { name: 'profile', label: 'Profile', path: '/profile', Icon: PersonIcon },
   { name: 'settings', label: 'Settings', path: '/settings', Icon: SlidersIcon },
 ] as const
 
