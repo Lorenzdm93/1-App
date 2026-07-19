@@ -10,6 +10,7 @@ import { oneStore } from '../core/one'
 import { computePulse, nextMoves } from '../core/score'
 import { Chevron, Empty } from '../app/ui'
 import Ring from '../app/Ring'
+import { cadenceStore, recentMoodAvg } from '../modules/cadence/model'
 
 function useWeekPulse() {
   const events = useStore(eventsStore)
@@ -105,6 +106,19 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
               <Chevron />
             </button>
           ))}
+          {(() => {
+            const mood = recentMoodAvg(cadenceStore.get())
+            const gh = pulse.modules.find((m) => m.id === 'ghisa')
+            if (mood !== null && mood <= 2.5 && gh && gh.score !== null && gh.score < 70) {
+              return (
+                <div className="wp-note">
+                  Mood has been low lately and training volume dipped with it — the two usually
+                  travel together. A lighter session still counts; so does saying so in CADENCE.
+                </div>
+              )
+            }
+            return null
+          })()}
           {pulse.modules
             .filter((m) => m.plateauNote)
             .map((m) => (

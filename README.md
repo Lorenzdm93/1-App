@@ -27,6 +27,17 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9.5 — exercise intelligence, and the round closed**
+
+- **GHISA: per-exercise insight pages, with movement.** Tap any exercise name in a live session: a full sheet with a **two-pose animated figure** of the lift (inline SVG morphs — bench, squat, deadlift, pull-up, OHP, row; offline, zero assets), then heaviest weight, best e1RM, best set, sessions, total reps, **PR count and PR history**, session-volume and e1RM trend lines, and for the big four a **percentile strength bar** with the level name, computed against your CALIBER profile. (An existing overview sheet was already routed there — it now serves the rich version.)
+- **GHISA: choose after Start.** "Start workout" opens a chooser sheet — Empty, or any template with its preview — instead of every card shouting Start. Template cards keep pencil and ⋯ for management. Set rows finally **fill the width**: inputs own the flexible space, prev is a small whisper column, header on identical rails.
+- **Sheets always have an exit** — a ✕ in every bottom sheet, and sheets cap at 88% of the viewport with internal scroll, so the backdrop is never the only way out.
+- **Next-move pills are 24 px squircles** — the icon, nothing else (a v0.7 `span { flex: 1 }` was inflating them).
+- **GROVE**: preset chips hold their place permanently (dimmed when not applicable) so the dial never jumps; Start is width-capped so the round buttons stay round; and **Arrange** joined Shuffle — tap one plant, tap another, they swap, with the choice persisting in a layout map.
+- **CADENCE: mood.** A five-face strip above the day's habits (1–5, tap to set, tap again to clear, retro-settable via the pager) — and the first **cross-signal**: when recent mood runs low while training volume dips, Today says so, gently. The personalised advice engine builds on this next.
+- **CALIBER's gold pops** (`#edb54a`) — the audit you asked for found it exactly as you suspected; and long taglines/descriptions now wrap inside the screen instead of vanishing.
+- Deferred to open the next session: the **sample-data loader/remover** and the **RESPIRO Spotify library** — both need the tagged-data discipline done properly.
+
 **New in v0.9.4 — mobile P0, and the round finished**
 
 - **You are no longer stuck in modules.** The app had no notch awareness: on phones the header (and the back button with it) rendered under the status bar. Fixed with `viewport-fit=cover` + safe-area padding top and bottom; the back button grew to a 44 px target; the nav bar slimmed (24 px icons, tighter padding) so content gets the room back.

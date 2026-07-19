@@ -3733,3 +3733,69 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
   border-radius: 999px; padding: 7px 13px; font-size: 11.5px; font-weight: 800;
 }
 .cd-slip.undone { border-color: var(--line); color: var(--dim); background: var(--raised); }
+
+/* ============================================================
+   v0.9.5 — rows breathe · rings that are pills · arrange ·
+             insight sheets · mood · exits everywhere
+   ============================================================ */
+
+/* sheets always escapable */
+.sheet-x {
+  position: absolute; top: 14px; right: 14px;
+  width: 34px; height: 34px; border-radius: 11px;
+  border: 1px solid var(--line-soft); background: var(--raised);
+  color: var(--dim); font-size: 13px;
+}
+.sheet { max-height: 88dvh; overflow-y: auto; }
+
+/* ghisa: inputs own the width — prev is a whisper, not a column-hog */
+.gh-row-inner, .gh-cols {
+  grid-template-columns: 34px 52px minmax(0, 1fr) minmax(0, 1fr) 44px 18px;
+}
+.gh-prevcol { font-size: 10.5px; color: var(--faint); overflow: hidden; white-space: nowrap; }
+.gh-cols span:nth-child(3), .gh-cols span:nth-child(4) { text-align: center; }
+.gh-choose {
+  display: block; width: 100%; text-align: left;
+  border: 1px solid var(--line-soft); border-radius: 14px; background: var(--raised);
+  padding: 12px 14px; margin-top: 10px; color: var(--ink);
+}
+.gh-choose b { display: block; font-size: 14px; }
+.gh-choose span { display: block; font-size: 11.5px; color: var(--faint); margin-top: 3px; line-height: 1.45; }
+.gh-ex-open { background: none; border: none; padding: 0; text-align: left; color: inherit; }
+.gh-ex-open .gh-ex-name, .gh-ex-open { border-bottom: 1px dotted var(--faint); }
+.gh-exd-anim { display: grid; place-items: center; padding: 4px 0 10px; }
+.gh-exd-noanim { font-size: 11px; color: var(--faint); }
+.gh-exanim { filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--m-ghisa) 25%, transparent)); }
+.gh-exd-level { margin-top: 14px; }
+
+/* next moves: a true pill — icon-sized, nothing more */
+.wp-moves .wp-move > span:first-child { flex: 0 0 auto; }
+.wp-ic { flex: 0 0 24px !important; width: 24px; height: 24px; border-radius: 9px; }
+.wp-move > span:not(.wp-ic) { flex: 1; min-width: 0; }
+
+/* grove: round buttons stay round; presets hold their ground */
+.gv-controls { flex-wrap: nowrap; }
+.gv-round { flex: 0 0 52px; }
+.gv-start { flex: 0 1 auto; min-width: 132px; max-width: 190px; }
+.gv-presets { min-height: 34px; }
+.gv-presets.dim { opacity: 0.35; pointer-events: none; }
+.gv-forest-btns { display: flex; gap: 7px; }
+.gv-spot.pickable { cursor: pointer; }
+.gv-spot.pickable :is(svg) { transition: transform 0.15s var(--spring); }
+.gv-spot.picked :is(svg) { transform: scale(1.18); filter: drop-shadow(0 0 8px color-mix(in srgb, var(--m-grove-warm) 70%, transparent)); }
+.gv-arrange-hint { font-size: 11.5px; color: var(--m-grove-warm); margin: 10px 2px 0; }
+
+/* cadence: the mood strip */
+.cd-mood { display: flex; align-items: center; gap: 7px; margin: 2px 0 14px; }
+.cd-mood-k { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin-right: 2px; }
+.cd-mood-btn {
+  flex: 1; height: 42px; border-radius: 13px; font-size: 19px;
+  border: 1px solid var(--line-soft); background: var(--raised);
+  filter: grayscale(0.7); opacity: 0.72; transition: all 0.15s var(--spring);
+}
+.cd-mood-btn.on { filter: none; opacity: 1; border-color: color-mix(in srgb, var(--m-cadence) 55%, var(--line)); transform: scale(1.06); background: color-mix(in srgb, var(--m-cadence) 10%, var(--raised)); }
+
+/* text never leaves the screen */
+.mod-head .titles { min-width: 0; }
+.eyebrow-sub, .sub { white-space: normal; overflow-wrap: anywhere; line-height: 1.4; padding-right: 8px; }
+.guide-p, .rs-foot, .kv .k, .one-status { overflow-wrap: anywhere; }

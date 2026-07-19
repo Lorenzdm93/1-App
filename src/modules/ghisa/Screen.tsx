@@ -6,6 +6,9 @@ import { navigate } from '../../core/router'
 import { toast } from '../../core/toast'
 import { Sheet, ConfirmSheet, Empty, parseNum, StatBox } from '../../app/ui'
 import { Bars, Line } from '../../app/charts'
+import ExerciseSVG, { poseFor } from './ExerciseSVG'
+import { epley, pctForRatio, levelFor } from '../caliber/formulas'
+import { caliberStore } from '../caliber/model'
 import {
   ghisaStore,
   EXERCISES,
@@ -411,7 +414,7 @@ function LiveSession({ session, history }: { session: Session; history: Session[
       </div>
 
       <ExercisePicker open={picker} onClose={() => setPicker(false)} onPick={addExercise} />
-      <ExerciseSheet name={overview} history={history} onClose={() => setOverview(null)} />
+      <ExerciseDetail name={overview} history={[session, ...history]} onClose={() => setOverview(null)} />
 
       <ConfirmSheet
         open={confirmDiscard}
@@ -536,10 +539,11 @@ function Train({ templates }: { templates: Template[] }) {
   const [editing, setEditing] = useState<Template | 'new' | null>(null)
   const [menu, setMenu] = useState<Template | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Template | null>(null)
+  const [chooser, setChooser] = useState(false)
   return (
     <>
-      <button className="btn btn-primary gh-start-hero" onClick={startSession}>
-        ▶&nbsp; Start empty workout
+      <button className="btn btn-primary gh-start-hero" onClick={() => setChooser(true)}>
+        ▶&nbsp; Start workout
       </button>
       <div className="gh-tpl-bar">
         <span className="section-label" style={{ margin: 0 }}>Templates</span>
@@ -553,9 +557,6 @@ function Train({ templates }: { templates: Template[] }) {
           </div>
           <div className="gh-tpl-preview">{t.exercises.map((e) => e.name).join(' · ')}</div>
           <div className="gh-tpl-actions">
-            <button className="btn btn-primary gh-tpl-start" onClick={() => startFromTemplate(t.id)}>
-              ▶&nbsp; Start
-            </button>
             <button className="gh-pencil" onClick={() => setEditing(t)} aria-label={`Edit ${t.name}`}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
@@ -565,6 +566,31 @@ function Train({ templates }: { templates: Template[] }) {
           </div>
         </div>
       ))}
+      <Sheet open={chooser} title="Start workout" onClose={() => setChooser(false)}>
+        <button
+          className="btn btn-primary"
+          style={{ width: '100%' }}
+          onClick={() => {
+            setChooser(false)
+            startSession()
+          }}
+        >
+          Empty workout
+        </button>
+        {templates.map((t) => (
+          <button
+            key={t.id}
+            className="gh-choose"
+            onClick={() => {
+              setChooser(false)
+              startFromTemplate(t.id)
+            }}
+          >
+            <b>{t.name}</b>
+            <span>{t.exercises.map((e) => e.name).join(' · ')}</span>
+          </button>
+        ))}
+      </Sheet>
       <TemplateEditor
         key={editing === null ? 'none' : editing === 'new' ? 'new' : editing.id}
         editing={editing}
@@ -794,5 +820,111 @@ export default function GhisaScreen({ tab = 'train' }: { tab?: string }) {
       {tab === 'history' && <HistoryTab history={st.history} />}
       {tab === 'insights' && <InsightsTab history={st.history} />}
     </>
+  )
+}
+
+/* ---------- per-exercise insight ---------- */
+
+const LIFT_MAP: [RegExp, 'bench' | 'squat' | 'deadlift' | 'pullup'][] = [
+  [/bench/i, 'bench'],
+  [/squat/i, 'squat'],
+  [/deadlift/i, 'deadlift'],
+  [/pull-?up|chin/i, 'pullup'],
+]
+
+function ExerciseDetail({
+  name,
+  history,
+  onClose,
+}: {
+  name: string | null
+  history: Session[]
+  onClose: () => void
+}) {
+  if (name === null) return null
+  const per: { ts: number; vol: number; bestE1: number }[] = []
+  let heaviest = 0
+  let bestE1 = 0
+  let bestSetVol = 0
+  let totalReps = 0
+  const prs: { ts: number; e1: number }[] = []
+  for (const s of [...history].reverse()) {
+    let vol = 0
+    let sessBest = 0
+    for (const ex of s.exercises) {
+      if (ex.name.toLowerCase() !== name.toLowerCase()) continue
+      for (const set of ex.sets) {
+        if (!set.done || set.type === 'warmup') continue
+        vol += set.weight * set.reps
+        totalReps += set.reps
+        heaviest = Math.max(heaviest, set.weight)
+        bestSetVol = Math.max(bestSetVol, set.weight * set.reps)
+        sessBest = Math.max(sessBest, epley(set.weight, set.reps))
+      }
+    }
+    if (vol > 0) {
+      per.push({ ts: s.startTs, vol, bestE1: sessBest })
+      if (sessBest > bestE1 + 0.01) {
+        bestE1 = sessBest
+        prs.push({ ts: s.startTs, e1: sessBest })
+      }
+    }
+  }
+  const lift = LIFT_MAP.find(([re]) => re.test(name))?.[1]
+  const cal = caliberStore.get()
+  const total = lift === 'pullup' ? bestE1 + cal.bodyweight : bestE1
+  const pct = lift && bestE1 > 0 ? pctForRatio(lift, cal.sex, total / cal.bodyweight) : null
+  const level = lift && bestE1 > 0 ? levelFor(lift, cal.sex, total / cal.bodyweight) : null
+  return (
+    <Sheet open title={name} onClose={onClose}>
+      <div className="gh-exd-anim">
+        <ExerciseSVG name={name} size={132} />
+        {!poseFor(name) && <div className="gh-exd-noanim">No movement figure for this one yet.</div>}
+      </div>
+      {per.length === 0 ? (
+        <p className="rs-foot">No completed working sets logged for {name} yet.</p>
+      ) : (
+        <>
+          <div className="ins-grid three">
+            <StatBox label="heaviest" value={`${heaviest} kg`} />
+            <StatBox label="best e1RM" value={`${Math.round(bestE1)} kg`} />
+            <StatBox label="best set" value={`${Math.round(bestSetVol)} kg`} />
+          </div>
+          <div className="ins-grid three" style={{ marginTop: 10 }}>
+            <StatBox label="sessions" value={String(per.length)} />
+            <StatBox label="total reps" value={String(totalReps)} />
+            <StatBox label="PRs" value={String(prs.length)} />
+          </div>
+          {pct !== null && level && (
+            <div className="gh-exd-level">
+              <div className="kv">
+                <span className="k">Strength level · {level.name}</span>
+                <span className="num" style={{ color: 'var(--m-caliber)' }}>{pct}th pct</span>
+              </div>
+              <div className="cb-goalbar"><i style={{ width: `${pct}%` }} /></div>
+            </div>
+          )}
+          {per.length >= 2 && (
+            <>
+              <div className="section-label">Session volume</div>
+              <Line values={per.map((p) => p.vol)} accentVar="var(--m-ghisa)" />
+              <div className="section-label">e1RM trend</div>
+              <Line values={per.map((p) => p.bestE1)} accentVar="var(--m-caliber)" />
+            </>
+          )}
+          {prs.length > 0 && (
+            <>
+              <div className="section-label">PR history</div>
+              {prs.slice(-6).reverse().map((p) => (
+                <div className="kv" key={p.ts}>
+                  <span className="k">{new Date(p.ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: '2-digit' })}</span>
+                  <span className="num">{Math.round(p.e1)} kg e1RM</span>
+                </div>
+              ))}
+            </>
+          )}
+        </>
+      )}
+    </Sheet>
   )
 }

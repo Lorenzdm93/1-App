@@ -8,6 +8,8 @@ import { Sheet, ConfirmSheet, Empty, Seg } from '../../app/ui'
 import {
   cadenceStore,
   activeHabits,
+  setMood,
+  moodOn,
   isChecked,
   addHabit,
   editHabit,
@@ -576,6 +578,19 @@ export default function CadenceScreen({ tab = 'today' }: { tab?: string }) {
             >
               ›
             </button>
+          </div>
+          <div className="cd-mood">
+            <span className="cd-mood-k">Mood</span>
+            {([[1, '😞'], [2, '😕'], [3, '😐'], [4, '🙂'], [5, '😄']] as const).map(([v, em]) => (
+              <button
+                key={v}
+                className={'cd-mood-btn' + (moodOn(st, viewDay) === v ? ' on' : '')}
+                aria-label={`Mood ${v} of 5`}
+                onClick={() => setMood(viewDay, v)}
+              >
+                {em}
+              </button>
+            ))}
           </div>
           {habits.length === 0 ? (
             <Empty title="No habits yet" sub="Small, daily, repeatable — that's where the 1% lives." />

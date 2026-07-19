@@ -50,6 +50,8 @@ export interface GroveState {
   /** Focus sessions completed in the current pomodoro cycle, 0..4. */
   cyclePos: number
   shuffleSeed: number
+  /** Manual placement overrides (0..1 u,v inside the diamond). */
+  layout?: Record<string, { u: number; v: number }>
 }
 
 const DEFAULTS: GroveState = {
@@ -328,4 +330,18 @@ export function jitter(id: string, seed = 0): number {
   let h = seed | 0
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0
   return (((h % 1000) + 1000) % 1000) / 1000
+}
+
+export function plantUV(st: GroveState, id: string): { u: number; v: number } {
+  const o = st.layout?.[id]
+  if (o) return o
+  return { u: 0.08 + 0.84 * jitter(id, st.shuffleSeed), v: 0.08 + 0.84 * jitter(id + 'v', st.shuffleSeed) }
+}
+
+export function swapPlants(a: string, b: string): void {
+  groveStore.set((s) => {
+    const ua = plantUV(s, a)
+    const ub = plantUV(s, b)
+    return { ...s, layout: { ...(s.layout ?? {}), [a]: ub, [b]: ua } }
+  })
 }

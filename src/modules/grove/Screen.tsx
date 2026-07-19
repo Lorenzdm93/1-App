@@ -23,7 +23,7 @@ import {
   maybeComplete, progress, remainingMs,
   addTask, setActiveTask, toggleFinished, removeTask,
   todayStats, focusDayStreak, totalFocusMinutes, unlockedAnimals, nextAnimal,
-  reshuffle, jitter,
+  reshuffle, jitter, plantUV, swapPlants,
   type Plant, type Mode,
 } from './model'
 
@@ -201,12 +201,13 @@ function FocusTab() {
           </button>
         ))}
       </div>
-      {st.mode === 'focus' && !running && (
-        <div className="gv-presets">
+      {(
+        <div className={'gv-presets' + (st.mode !== 'focus' || running ? ' dim' : '')}>
           {PRESETS.map((p) => (
             <button
               key={p}
               className={'gv-preset num' + (st.focusMin === p ? ' on' : '')}
+              disabled={st.mode !== 'focus' || running}
               onClick={() => setFocusMinutes(p)}
             >
               {p}m
@@ -405,6 +406,8 @@ const SPANS: readonly { id: Span; label: string; days: number | null }[] = [
 function ForestTab() {
   const st = useStore(groveStore)
   const [span, setSpan] = useState<Span>('week')
+  const [arrange, setArrange] = useState(false)
+  const [picked, setPicked] = useState<string | null>(null)
   const cutoffDays = SPANS.find((s) => s.id === span)!.days
   const cutoff = cutoffDays === null ? 0 : Date.now() - cutoffDays * 86400_000
   const plants = st.plants.filter((p) => p.ts >= cutoff)
@@ -417,8 +420,7 @@ function ForestTab() {
   const H = 260
   const placed = plants
     .map((p) => {
-      const u = 0.08 + 0.84 * jitter(p.id, st.shuffleSeed)
-      const v = 0.08 + 0.84 * jitter(p.id + 'v', st.shuffleSeed)
+      const { u, v } = plantUV(st, p.id)
       const cx = W / 2 + ((u - v) * W * 0.46)
       const cy = H * 0.14 + ((u + v) / 2) * H * 0.66
       const depth = (u + v) / 2
@@ -441,7 +443,12 @@ function ForestTab() {
           value={span}
           onChange={setSpan}
         />
-        <button className="chip" onClick={reshuffle}>⤨ Shuffle</button>
+        <div className="gv-forest-btns">
+          <button className={'chip' + (arrange ? ' on' : '')} onClick={() => { setArrange((a) => !a); setPicked(null) }}>
+            ✥ Arrange
+          </button>
+          <button className="chip" onClick={reshuffle}>⤨ Shuffle</button>
+        </div>
       </div>
       <div className="card gv-forest-card">
         <div className="gv-forest" style={{ ['--fw' as string]: `${W}px` } as CSSProperties}>
@@ -467,7 +474,20 @@ function ForestTab() {
             </div>
           )}
           {placed.map(({ p, cx, cy, size }) => (
-            <span key={p.id} className="gv-spot" style={{ left: cx, top: cy }}>
+            <span
+              key={p.id}
+              className={'gv-spot' + (arrange ? ' pickable' : '') + (picked === p.id ? ' picked' : '')}
+              style={{ left: cx, top: cy }}
+              onClick={() => {
+                if (!arrange) return
+                if (picked === null) setPicked(p.id)
+                else if (picked === p.id) setPicked(null)
+                else {
+                  swapPlants(picked, p.id)
+                  setPicked(null)
+                }
+              }}
+            >
               <PlantSVG kind={p.kind} size={size} sway={jitter(p.id) * 3} />
             </span>
           ))}
@@ -477,6 +497,9 @@ function ForestTab() {
             </span>
           ))}
         </div>
+        {arrange && (
+          <p className="gv-arrange-hint">Tap one plant, then another — they swap places. Tap Arrange again when done.</p>
+        )}
         <p className="gv-legend">
           Focus grows the forest — <b>&lt;10m</b> shrub · <b>10–19m</b> birch · <b>20–39m</b> pine ·{' '}
           <b>40m+</b> oak. Breaks grow nothing — they're for you, not the grove.

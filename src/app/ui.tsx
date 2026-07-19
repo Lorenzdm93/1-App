@@ -78,6 +78,7 @@ export function Sheet({
       <div className="sheet-backdrop" onClick={onClose} />
       <div className="sheet" role="dialog" aria-label={title}>
         <div className="grab" />
+        <button className="sheet-x" onClick={onClose} aria-label="Close">✕</button>
         <div className="sheet-title">{title}</div>
         <div className="sheet-body">{children}</div>
       </div>

@@ -23,6 +23,8 @@ export interface Habit {
 }
 
 export interface CadenceState {
+  /** 1–5 per dayKey — the day's mood, optional and judgment-free. */
+  moods?: Record<string, number>
   habits: Habit[]
   /** dayKey -> ids of build habits checked that day. */
   checks: Record<string, string[]>
@@ -431,4 +433,24 @@ export function weekAdvice(st: CadenceState, weekStart: string, today = todayKey
   const quit = habits.find((h) => h.type === 'quit' && daysClean(st, h.id, today) < 7)
   if (quit) return `${quit.name}: ${7 - daysClean(st, quit.id, today)} clean days to the 7-day run.`
   return null
+}
+
+export function setMood(day: string, score: number): void {
+  cadenceStore.set((s) => {
+    const moods = { ...(s.moods ?? {}) }
+    if (moods[day] === score) delete moods[day]
+    else moods[day] = Math.min(5, Math.max(1, Math.round(score)))
+    return { ...s, moods }
+  })
+}
+
+export function moodOn(st: CadenceState, day: string): number | null {
+  return st.moods?.[day] ?? null
+}
+
+/** Mean of the most recent `n` logged moods (any days), null if none. */
+export function recentMoodAvg(st: CadenceState, n = 3): number | null {
+  const entries = Object.entries(st.moods ?? {}).sort(([a], [b]) => (a < b ? 1 : -1)).slice(0, n)
+  if (entries.length === 0) return null
+  return entries.reduce((s, [, v]) => s + v, 0) / entries.length
 }
