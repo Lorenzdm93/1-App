@@ -3559,3 +3559,104 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
   background: var(--raised);
   line-height: 1.55;
 }
+
+/* ============================================================
+   v0.9.3 — nav docked · ghisa rows · respiro stage · hints
+   ============================================================ */
+
+/* --- nav: full-width, docked, larger icons, evenly centered --- */
+:root { --tabbar-h: 76px; }
+.tabbar, .tabbar-mod {
+  left: 0; right: 0; bottom: 0;
+  transform: none;
+  width: 100%; max-width: 100%;
+  border-radius: 22px 22px 0 0;
+  border: none;
+  border-top: 1px solid var(--line-soft);
+  padding: 7px 8px calc(env(safe-area-inset-bottom, 0px) + 7px);
+  box-shadow: 0 -14px 34px -18px rgba(0, 0, 0, 0.55);
+}
+.tabbar-inner, .tabbar-mod .tabbar-inner { width: 100%; max-width: var(--col); margin: 0 auto; justify-content: space-around; gap: 0; }
+.tab { flex: 1; min-width: 0; max-width: 118px; padding: 7px 4px 6px; gap: 4px; font-size: 10.5px; }
+.tab svg { width: 26px; height: 26px; }
+.tab.on { background: none; }
+.tab.on::after { content: ''; width: 18px; height: 2.5px; border-radius: 2px; background: var(--accent); margin-top: 1px; }
+.mtab { flex: 1; min-width: 0; max-width: 108px; padding: 7px 4px 6px; gap: 4px; font-size: 10px; }
+.mtab svg { width: 24px; height: 24px; }
+.mtab.on { background: none; color: var(--accent); }
+.mtab.on::after { content: ''; display: block; width: 18px; height: 2.5px; border-radius: 2px; background: var(--accent); margin: 1px auto 0; }
+.tabbar-mod .tabbar-inner { overflow: visible; }
+.frame { padding-bottom: calc(var(--tabbar-h) + 26px); }
+.toast { bottom: calc(var(--tabbar-h) + 14px); }
+
+/* --- next moves: hints, not furniture --- */
+.wp-moves { margin: 4px 2px 18px; }
+.wp-moves-label { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); margin: 0 2px 6px; }
+.wp-moves .wp-move { padding: 9px 2px; font-size: 12.5px; color: var(--dim); border-bottom: 1px solid var(--line-soft); }
+.wp-moves .wp-move:last-of-type { border-bottom: none; }
+.wp-tag {
+  flex: none; align-self: flex-start; margin-top: 1.5px;
+  font-size: 8px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--wc); background: color-mix(in srgb, var(--wc) 14%, transparent);
+  border-radius: 5px; padding: 2.5px 6px;
+}
+
+/* --- ghisa: proportioned grid rows + swipe delete --- */
+.gh-row { position: relative; overflow: hidden; border-radius: 12px; padding: 0; }
+.gh-row-inner {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 62px 62px 44px 20px;
+  gap: 8px; align-items: center;
+  padding: 7px 4px;
+  transition: transform 0.18s var(--ease);
+  background: inherit;
+}
+.gh-row.swiping .gh-row-inner { transition: none; }
+.gh-del-hint {
+  position: absolute; inset: 0 10px 0 auto; display: flex; align-items: center;
+  color: var(--danger); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.gh-type { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; padding: 0; font-size: 12px; }
+.gh-in { width: 100%; text-align: center; padding: 10px 6px; }
+.gh-check { width: 44px; height: 36px; border-radius: 12px; min-width: 0; }
+.gh-x { width: 20px; height: 32px; padding: 0; color: var(--faint); font-size: 15px; background: none; border: none; }
+
+/* --- grove: break mode is cool --- */
+.gv-mode.on.brk { background: var(--gv-break); border-color: var(--gv-break); }
+.gv-dial-wrap.break .gv-dial-time { color: color-mix(in srgb, var(--gv-break) 55%, var(--ink)); }
+
+/* --- respiro: the instrument stage --- */
+.rs-curve-wrap { position: relative; display: grid; place-items: center; padding: 4px 0 0; }
+.rs-curve { width: min(84vw, 300px); height: auto; position: relative; z-index: 1; }
+.rs-curve-glow {
+  position: absolute; width: 240px; height: 240px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--rs-acc) 26%, transparent), transparent 70%);
+  filter: blur(4px);
+  transition: opacity 0.5s ease;
+  opacity: 0.55;
+}
+.rs-curve-wrap.live .rs-curve-glow { animation: rs-breathe-glow 4s ease-in-out infinite; }
+@keyframes rs-breathe-glow { 50% { opacity: 0.95; transform: scale(1.08); } }
+.rs-phaseblock { text-align: center; margin: 10px 0 4px; }
+.rs-phaseblock .rs-phase { display: block; font-family: var(--font-display); font-size: 30px; font-weight: 600; color: var(--rs-acc); }
+.rs-phaseblock .rs-count { display: block; margin-top: 3px; font-size: 13px; color: var(--dim); }
+.rs-durlabel { font-size: 10px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); margin: 14px 0 8px; }
+.rs-durs { display: flex; gap: 8px; flex-wrap: wrap; }
+.rs-dur {
+  border: 1px solid var(--line); border-radius: 12px; background: var(--raised);
+  padding: 9px 14px; font-size: 12.5px; color: var(--dim);
+}
+.rs-dur.on { border-color: var(--rs-acc); color: var(--rs-acc); background: color-mix(in srgb, var(--rs-acc) 10%, var(--raised)); }
+.rs-begin { width: 100%; margin-top: 16px; --accent: var(--rs-acc); }
+
+/* --- sana: highlight, not hide --- */
+.sn-comp.hl {
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--sk) 65%, transparent),
+    0 6px 18px -8px color-mix(in srgb, var(--sk) 30%, transparent);
+}
+.sn-comp.dm { opacity: 0.38; }
+
+/* --- ora: living stage advice --- */
+.or-now { padding: 12px 14px; margin: 12px 0 0; text-align: left; }
+.or-now b { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sc); margin-bottom: 5px; }
+.or-now span { font-size: 12.5px; color: var(--dim); line-height: 1.55; }

@@ -13,7 +13,7 @@ import TabBar from './TabBar'
 import ModuleTabBar from './ModuleTabBar'
 import ModuleSettingsScreen from './ModuleSettingsScreen'
 import { ToastHost, Sheet } from './ui'
-import { introStore, markIntroSeen } from '../core/intro'
+import { introStore, shouldShowIntro, markIntroSeen } from '../core/intro'
 
 function GearIcon({ size = 18 }: { size?: number }) {
   return (
@@ -82,8 +82,8 @@ function ModuleScreen({ id, tab }: { id: string; tab?: string }) {
 }
 
 function ModuleIntro({ mod }: { mod: NonNullable<ReturnType<typeof moduleById>> }) {
-  const intro = useStore(introStore)
-  if (!mod.intro || intro.seen.includes(mod.id)) return null
+  useStore(introStore)
+  if (!mod.intro || !shouldShowIntro(mod.id)) return null
   return (
     <Sheet open title={`Welcome to ${mod.name}`} onClose={() => markIntroSeen(mod.id)}>
       {mod.intro.body.map((p, i) => (

@@ -181,36 +181,28 @@ export function remainingMs(run: Run, now = Date.now()): number {
   return Math.max(0, run.endTs - at)
 }
 
-function completeRun(run: Run, endTs: number): Plant {
-  const kind: PlantKind =
-    run.mode === 'focus' ? kindForFocus(run.minutes) : run.mode === 'short' ? 'flower' : 'fern'
+/** Focus plants and logs; breaks change only the cycle — they grow nothing. */
+function completeRun(run: Run, endTs: number): Plant | null {
+  if (run.mode !== 'focus') {
+    groveStore.set((s) => ({
+      ...s,
+      running: null,
+      mode: 'focus',
+      cyclePos: run.mode === 'long' ? 0 : s.cyclePos,
+    }))
+    return null
+  }
+  const kind = kindForFocus(run.minutes)
   const plant: Plant = { id: uid(), ts: endTs, minutes: run.minutes, kind }
   groveStore.set((s) => {
-    let cyclePos = s.cyclePos
-    let mode: Mode = s.mode
-    let tasks = s.tasks
-    if (run.mode === 'focus') {
-      cyclePos = Math.min(4, s.cyclePos + 1)
-      mode = cyclePos >= 4 ? 'long' : 'short'
-      if (s.activeTaskId) {
-        tasks = s.tasks.map((t) => (t.id === s.activeTaskId ? { ...t, done: t.done + 1 } : t))
-      }
-    } else {
-      mode = 'focus'
-      if (run.mode === 'long') cyclePos = 0
-    }
+    const cyclePos = Math.min(4, s.cyclePos + 1)
+    const mode: Mode = cyclePos >= 4 ? 'long' : 'short'
+    const tasks = s.activeTaskId
+      ? s.tasks.map((t) => (t.id === s.activeTaskId ? { ...t, done: t.done + 1 } : t))
+      : s.tasks
     return { ...s, running: null, mode, cyclePos, tasks, plants: [plant, ...s.plants].slice(0, 800) }
   })
-  if (run.mode === 'focus') {
-    logEvent({
-      module: 'grove',
-      kind: 'focus',
-      ts: endTs,
-      value: run.minutes,
-      unit: 'min',
-      meta: { kind },
-    })
-  }
+  logEvent({ module: 'grove', kind: 'focus', ts: endTs, value: run.minutes, unit: 'min', meta: { kind } })
   return plant
 }
 
@@ -224,15 +216,11 @@ export function maybeComplete(now = Date.now()): Plant | null {
   return completeRun(st.running, st.running.endTs)
 }
 
-/** Skip on a break ends it now — ≥ 1 elapsed minute still plants; less discards. */
-export function skipBreak(now = Date.now()): Plant | null {
+/** Skip on a break ends it now — breaks grow nothing either way. */
+export function skipBreak(now = Date.now()): null {
   const st = groveStore.get()
   if (!st.running || st.running.mode === 'focus') return null
-  const elapsedMin = Math.round((Math.min(now, st.running.endTs) - st.running.startTs) / 60_000)
-  if (elapsedMin >= 1) {
-    return completeRun({ ...st.running, minutes: elapsedMin }, now)
-  }
-  groveStore.set((s) => ({ ...s, running: null, mode: 'focus', cyclePos: s.running?.mode === 'long' ? 0 : s.cyclePos }))
+  completeRun(st.running, now)
   return null
 }
 

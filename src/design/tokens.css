@@ -29,21 +29,22 @@
   --danger: #c0564a;
 
   /* brand ember (buttons, wordmark) */
-  --ember: #d96f45;
-  --ember-soft: rgba(217, 111, 69, 0.13);
+  --ember: #f5701d;
+  --ember-soft: rgba(245, 112, 29, 0.14);
   --btn-ink: #101010;
 
   /* contextual accent — the shell sets it per module */
   --accent: var(--ember);
 
   /* module accents — same souls, lower volume */
-  --m-ghisa: #d96f45;
+  --m-ghisa: #f5701d;
   --m-respiro: #82a893;
   --m-sana: #66aca2;
   --m-caliber: #c7a05e;
   --m-cadence: #93a9c6;
   --m-grove: #7da878;
   --m-ora: #8fb3c7;
+  --gv-break: #8fb8d9;
   --gr-trunk: #7a5a41;
 
   /* RESPIRO protocol palette */
@@ -104,13 +105,14 @@
   --ember-soft: rgba(207, 90, 44, 0.11);
   --btn-ink: #fdfcf9;
 
-  --m-ghisa: #cf5a2c;
+  --m-ghisa: #e05a0e;
   --m-respiro: #47795d;
   --m-sana: #2f8177;
   --m-caliber: #92702f;
   --m-cadence: #4e6c99;
   --m-grove: #4a7d40;
   --m-ora: #4a7189;
+  --gv-break: #4e7fa3;
   --gr-trunk: #6e4f37;
 
   --acc-jade: #47795d;

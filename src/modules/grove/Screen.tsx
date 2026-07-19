@@ -42,6 +42,7 @@ function Dial({
   minutes,
   fraction,
   running,
+  isBreak,
   paused,
   clock,
   sub,
@@ -51,6 +52,7 @@ function Dial({
   minutes: number
   fraction: number // 0..1 remaining
   running: boolean
+  isBreak: boolean
   paused: boolean
   clock: string
   sub: string
@@ -63,7 +65,10 @@ function Dial({
   const C = 2 * Math.PI * R
   const ticks = Array.from({ length: 60 })
   return (
-    <div className={'gv-dial-wrap' + (paused ? ' paused' : '')}>
+    <div
+      className={'gv-dial-wrap' + (paused ? ' paused' : '') + (isBreak ? ' break' : '')}
+      style={{ ['--gv-mode' as string]: isBreak ? 'var(--gv-break)' : 'var(--m-grove-warm)' } as CSSProperties}
+    >
       <svg viewBox="0 0 340 340" className="gv-dial" aria-hidden="true">
         <defs>
           <linearGradient id="gv-bezel" x1="0" y1="0" x2="0" y2="1">
@@ -75,8 +80,8 @@ function Dial({
             <stop offset="100%" stopColor="var(--gv-dial-face)" />
           </radialGradient>
           <linearGradient id="gv-arc-g" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%" stopColor="var(--m-grove-warm, var(--m-caliber))" />
-            <stop offset="100%" stopColor="color-mix(in srgb, var(--m-grove-warm, var(--m-caliber)) 50%, #ffffff)" />
+            <stop offset="0%" stopColor="var(--gv-mode)" />
+            <stop offset="100%" stopColor="color-mix(in srgb, var(--gv-mode) 50%, #ffffff)" />
           </linearGradient>
         </defs>
         <circle cx="170" cy="170" r="163" fill="url(#gv-bezel)" />
@@ -104,7 +109,7 @@ function Dial({
           stroke="url(#gv-arc-g)" strokeWidth="5" strokeLinecap="round"
           strokeDasharray={`${2 * Math.PI * 118 * fraction} ${2 * Math.PI * 118}`}
           transform="rotate(-90 170 170)"
-          style={{ transition: 'stroke-dasharray 0.5s linear', filter: 'drop-shadow(0 0 7px color-mix(in srgb, var(--m-grove-warm) 55%, transparent))' }}
+          style={{ transition: 'stroke-dasharray 0.5s linear', filter: 'drop-shadow(0 0 7px color-mix(in srgb, var(--gv-mode) 55%, transparent))' }}
         />
       </svg>
       <div className="gv-dial-center">
@@ -156,11 +161,7 @@ function FocusTab() {
     const plant = maybeComplete(now)
     if (plant && celebrated.current !== plant.id) {
       celebrated.current = plant.id
-      toast(
-        plant.kind === 'flower' || plant.kind === 'fern'
-          ? 'Break done — back to it'
-          : `${plant.minutes} min focused — a ${plant.kind} joins your grove`,
-      )
+      toast(`${plant.minutes} min focused — a ${plant.kind} joins your grove`)
     }
   }, [now])
 
@@ -192,7 +193,7 @@ function FocusTab() {
         {MODES.map((m) => (
           <button
             key={m.id}
-            className={'gv-mode' + (st.mode === m.id && !running ? ' on' : running && run.mode === m.id ? ' on' : '')}
+            className={'gv-mode' + (st.mode === m.id && !running ? ' on' : running && run.mode === m.id ? ' on' : '') + (m.id !== 'focus' ? ' brk' : '')}
             disabled={running}
             onClick={() => setMode(m.id)}
           >
@@ -218,6 +219,7 @@ function FocusTab() {
         minutes={minutesFor(st, st.mode)}
         fraction={fraction}
         running={running}
+        isBreak={(running ? run.mode : st.mode) !== 'focus'}
         paused={paused === true}
         clock={fmtClock(remaining)}
         sub={sub}
@@ -266,8 +268,8 @@ function FocusTab() {
             if (!run) return
             if (run.mode === 'focus') setConfirmGiveUp(true)
             else {
-              const p = skipBreak(now)
-              toast(p ? 'Break banked early' : 'Break skipped')
+              skipBreak(now)
+              toast('Break skipped — back to focus')
             }
           }}
         >
@@ -476,8 +478,8 @@ function ForestTab() {
           ))}
         </div>
         <p className="gv-legend">
-          Focus grows trees — <b>&lt;10m</b> shrub · <b>10–19m</b> birch · <b>20–39m</b> pine ·{' '}
-          <b>40m+</b> oak. Finished breaks plant <b>flowers</b> (short) and <b>ferns</b> (long).
+          Focus grows the forest — <b>&lt;10m</b> shrub · <b>10–19m</b> birch · <b>20–39m</b> pine ·{' '}
+          <b>40m+</b> oak. Breaks grow nothing — they're for you, not the grove.
         </p>
         <div className="gv-animals">
           {ANIMALS.map((a) => {

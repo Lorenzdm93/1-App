@@ -86,10 +86,8 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
       </div>
 
       {(moves.length > 0 || pulse.modules.some((m) => m.plateauNote)) && (
-        <div className="card">
-          <div className="card-head">
-            <span className="label">{won ? 'Keep or coast' : 'Next moves'}</span>
-          </div>
+        <div className="wp-moves">
+          <div className="wp-moves-label">{won ? 'Keep or coast' : 'Next moves'}</div>
           {moves.map((mv) => (
             <button
               key={mv.id}
@@ -97,7 +95,7 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
               style={{ ['--wc' as string]: mv.accentVar } as CSSProperties}
               onClick={() => navigate('/m/' + mv.id)}
             >
-              <span className="wp-move-pill">{mv.name}</span>
+              <span className="wp-tag">{mv.name}</span>
               <span>{mv.text}</span>
               <Chevron />
             </button>

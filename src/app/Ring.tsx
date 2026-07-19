@@ -41,7 +41,6 @@ export default function Ring({
         <circle
           cx={size / 2} cy={size / 2} r={r}
           fill="none" stroke="var(--ring-track)" strokeWidth={stroke}
-          strokeDasharray={value === null ? '3 7' : undefined}
           strokeLinecap="round"
         />
         {value !== null && (

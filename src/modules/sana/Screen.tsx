@@ -152,7 +152,7 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
   const day = shiftDay(todayKey(), dayOffset)
   const due = dueOn(st, day)
   const focused = focusStack ? st.stacks.find((x) => x.id === focusStack) ?? null : null
-  const visible = focused ? due.filter((d) => focused.compoundIds.includes(d.compound.id)) : due
+  const member = focused ? new Set(focused.compoundIds) : null
   const takenCount = due.filter(({ compound }) => isTaken(st, compound.id, day)).length
   const followed = followedOn(st, day)
   const followedStacks = st.stacks.filter((s) => followed.includes(s.id))
@@ -234,16 +234,16 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
       <p className="rs-foot sn-filter-line" style={{ marginTop: 4 }}>
         {focused ? (
           <>
-            Showing <b style={{ color: focused.color }}>{focused.name}</b> only ·{' '}
-            <button className="linklike" onClick={() => setFocusStack(null)}>show all stacks</button>
+            Highlighting <b style={{ color: focused.color }}>{focused.name}</b> below ·{' '}
+            <button className="linklike" onClick={() => setFocusStack(null)}>clear</button>
           </>
         ) : (
-          <>Tap a stack to see only its doses. Shared compounds are listed once.</>
+          <>Tap a stack to light up its doses below. Shared compounds are listed once.</>
         )}
       </p>
 
       {SLOTS.map((slot) => {
-        const rows = visible.filter((d) => d.compound.slot === slot.id)
+        const rows = due.filter((d) => d.compound.slot === slot.id)
         if (rows.length === 0) return null
         const remaining = rows.filter((r) => !isTaken(st, r.compound.id, day))
         return (
@@ -265,7 +265,11 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
             {rows.map(({ compound, stacks }) => {
               const taken = isTaken(st, compound.id, day)
               return (
-                <div key={compound.id} className={'card sn-comp' + (taken ? ' taken' : '')}>
+                <div
+                  key={compound.id}
+                  className={'card sn-comp' + (taken ? ' taken' : '') + (member ? (member.has(compound.id) ? ' hl' : ' dm') : '')}
+                  style={member && member.has(compound.id) && focused ? ({ ['--sk' as string]: focused.color } as CSSProperties) : undefined}
+                >
                   <span className="sn-comp-glyph"><FormGlyph form={compound.form} /></span>
                   <div className="sn-comp-main">
                     <div className="sn-comp-name">

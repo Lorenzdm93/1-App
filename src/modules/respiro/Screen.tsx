@@ -3,9 +3,9 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
 import { logEvent, eventsStore } from '../../core/events'
-import { formatDuration, dayKey, todayKey, lastNDayKeys } from '../../core/dates'
+import { shiftDay, formatDuration, dayKey, todayKey, lastNDayKeys } from '../../core/dates'
 import { toast } from '../../core/toast'
-import { Toggle, StatBox } from '../../app/ui'
+import { Sheet, Toggle, StatBox } from '../../app/ui'
 import { Bars } from '../../app/charts'
 import {
   PROTOCOLS,
@@ -263,6 +263,70 @@ function Figure({
 
 /* ---------- practice: library ---------- */
 
+/** The pattern, drawn: one full cycle as a curve the dot travels. */
+function BreathCurve({
+  protocol,
+  cycleFrac,
+  running,
+}: {
+  protocol: Protocol
+  cycleFrac: number
+  running: boolean
+}) {
+  const baseRef = useRef<SVGPathElement | null>(null)
+  const [dot, setDot] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const W = 300
+  const H = 190
+  const total = cycleSeconds(protocol)
+  const yFor = (scale: number) => H - 24 - ((scale - 0.55) / 0.5) * (H - 60)
+  let d = ''
+  let x = 8
+  let prevScale = protocol.phases[protocol.phases.length - 1].scale
+  d = `M ${x} ${yFor(prevScale).toFixed(1)}`
+  for (const ph of protocol.phases) {
+    const w = (ph.seconds / total) * (W - 16)
+    if (ph.scale === prevScale) {
+      x += w
+      d += ` L ${x.toFixed(1)} ${yFor(ph.scale).toFixed(1)}`
+    } else {
+      const x1 = x + w * 0.42
+      const x2 = x + w * 0.58
+      const y0 = yFor(prevScale)
+      const y1 = yFor(ph.scale)
+      x += w
+      d += ` C ${x1.toFixed(1)} ${y0.toFixed(1)}, ${x2.toFixed(1)} ${y1.toFixed(1)}, ${x.toFixed(1)} ${y1.toFixed(1)}`
+      prevScale = ph.scale
+    }
+  }
+  useEffect(() => {
+    const el = baseRef.current
+    if (!el) return
+    const len = el.getTotalLength()
+    const p = el.getPointAtLength(Math.min(0.999, Math.max(0, cycleFrac)) * len)
+    setDot({ x: p.x, y: p.y })
+  }, [cycleFrac, protocol.id])
+  return (
+    <div className={'rs-curve-wrap' + (running ? ' live' : '')}>
+      <div className="rs-curve-glow" aria-hidden="true" />
+      <svg viewBox={`0 0 ${W} ${H}`} className="rs-curve" aria-hidden="true">
+        <path ref={baseRef} d={d} fill="none" stroke="var(--line)" strokeWidth="3" strokeLinecap="round" />
+        <path
+          d={d} fill="none" stroke="var(--rs-acc)" strokeWidth="3.5" strokeLinecap="round"
+          pathLength={1}
+          strokeDasharray={`${Math.max(0.001, cycleFrac)} 1`}
+          style={{ filter: 'drop-shadow(0 0 5px color-mix(in srgb, var(--rs-acc) 60%, transparent))' }}
+        />
+        {running && (
+          <>
+            <circle cx={dot.x} cy={dot.y} r="7.5" fill="var(--surface)" stroke="var(--rs-acc)" strokeWidth="2.5" />
+            <circle cx={dot.x} cy={dot.y} r="2.6" fill="var(--rs-acc)" />
+          </>
+        )}
+      </svg>
+    </div>
+  )
+}
+
 function ProtocolCard({ p, onOpen }: { p: Protocol; onOpen: () => void }) {
   return (
     <button
@@ -327,9 +391,13 @@ function Library({ onOpen }: { onOpen: (id: string) => void }) {
 
 function Stage({
   protocolId,
+  plannedMin,
+  onSaved,
   onBack,
 }: {
   protocolId: string
+  plannedMin: number | null
+  onSaved: (s: { name: string; minutes: number; cycles: number; streak: number }) => void
   onBack: () => void
 }) {
   const st = useStore(respiroStore)
@@ -391,11 +459,25 @@ function Stage({
         meta: { protocol: protocol.id },
       })
       if (respiroStore.get().bell) playBell()
-      toast(`${minutes} min logged`)
+      const cycles = Math.max(1, Math.floor(ms / 1000 / cycleSeconds(protocol)))
+      const days = new Set(
+        eventsStore.get().filter((e) => e.module === 'respiro').map((e) => dayKey(e.ts)),
+      )
+      let streak = 0
+      let cursor = todayKey()
+      while (days.has(cursor)) {
+        streak++
+        cursor = shiftDay(cursor, -1)
+      }
+      onSaved({ name: protocol.name, minutes, cycles, streak })
     } else {
       toast('Under 30 s — not logged')
     }
   }
+
+  useEffect(() => {
+    if (running && plannedMin !== null && elapsedSec >= plannedMin * 60) end()
+  }, [running, plannedMin, Math.floor(elapsedSec)])
 
   const custom = st.custom
   const customFields = [
@@ -416,26 +498,26 @@ function Stage({
         className={'card rs-stage' + (running ? ' running' : '')}
         style={{ ['--rs-acc' as string]: protocol.accentVar } as CSSProperties}
       >
-        <Figure
+        <BreathCurve
           protocol={protocol}
-          index={pos.index}
-          progress={progress}
+          cycleFrac={running ? (elapsedSec % cycleSeconds(protocol)) / cycleSeconds(protocol) : 0}
           running={running}
-          scale={pos.phase.scale}
-          seconds={pos.phase.seconds}
-        >
+        />
+        <div className="rs-phaseblock">
           <span className="rs-phase">{running ? pos.phase.label : 'Ready'}</span>
-          <span className="rs-count">{running ? Math.ceil(pos.remaining) : '—'}</span>
-        </Figure>
+          <span className="rs-count num">{running ? `${Math.ceil(pos.remaining)}s` : '—'}</span>
+        </div>
         <div className="rs-dots" aria-hidden="true">
           {protocol.phases.map((_, i) => (
             <span key={i} className={'rs-dot' + (running && i === pos.index ? ' on' : '')} />
           ))}
         </div>
         {running && <div className="rs-cycle num">Cycle {cycle}</div>}
-        <div className="rs-session">
+        <div className="rs-session num">
           {running
-            ? `Session · ${formatDuration(now - startTs)}`
+            ? plannedMin !== null
+              ? `${formatDuration(now - startTs)} · cycle ${cycle} · −${formatDuration(Math.max(0, plannedMin * 60_000 - (now - startTs)))}`
+              : `Session · ${formatDuration(now - startTs)} · cycle ${cycle}`
             : `${protocol.sub} — suggested ${protocol.suggestedMin} min`}
         </div>
       </div>
@@ -496,16 +578,80 @@ function PracticeTab() {
   const st = useStore(respiroStore)
   const [view, setView] = useState<'library' | 'stage'>(st.autostart ? 'stage' : 'library')
   const [stageId, setStageId] = useState(st.protocolId)
-  return view === 'stage' ? (
-    <Stage protocolId={stageId} onBack={() => setView('library')} />
-  ) : (
-    <Library
-      onOpen={(id) => {
-        setStageId(id)
-        selectProtocol(id)
-        setView('stage')
-      }}
-    />
+  const [planned, setPlanned] = useState<number | null>(null)
+  const [pre, setPre] = useState<string | null>(null)
+  const [preDur, setPreDur] = useState(3)
+  const [saved, setSaved] = useState<{ name: string; minutes: number; cycles: number; streak: number } | null>(null)
+  const preProto = pre === null ? null : pre === 'custom' ? buildCustomProtocol(st.custom) : protocolById(pre)
+  return (
+    <>
+      {view === 'stage' ? (
+        <Stage
+          protocolId={stageId}
+          plannedMin={planned}
+          onSaved={(s) => {
+            setSaved(s)
+            setView('library')
+          }}
+          onBack={() => setView('library')}
+        />
+      ) : (
+        <Library
+          onOpen={(id) => {
+            const p = id === 'custom' ? buildCustomProtocol(st.custom) : protocolById(id)
+            setPre(id)
+            setPreDur(p.suggestedMin)
+          }}
+        />
+      )}
+
+      <Sheet open={preProto !== null} title={preProto?.name ?? ''} onClose={() => setPre(null)}>
+        {preProto && (
+          <div style={{ ['--rs-acc' as string]: preProto.accentVar } as CSSProperties}>
+            <p className="guide-p">{preProto.detail}</p>
+            <div className="rs-durlabel">Duration</div>
+            <div className="rs-durs num">
+              {[1, 2, 3, 5, 10].map((m) => (
+                <button
+                  key={m}
+                  className={'rs-dur' + (preDur === m ? ' on' : '')}
+                  onClick={() => setPreDur(m)}
+                >
+                  {m} min
+                </button>
+              ))}
+            </div>
+            <button
+              className="btn btn-primary rs-begin"
+              onClick={() => {
+                const id = pre as string
+                setStageId(id)
+                selectProtocol(id)
+                setPlanned(preDur)
+                setPre(null)
+                setView('stage')
+              }}
+            >
+              ▷&nbsp; Begin
+            </button>
+          </div>
+        )}
+      </Sheet>
+
+      <Sheet open={saved !== null} title="Session saved" onClose={() => setSaved(null)}>
+        {saved && (
+          <>
+            <p className="guide-p">
+              {saved.name} · {saved.minutes} min · {saved.cycles} cycle{saved.cycles === 1 ? '' : 's'}.
+              Current streak: {saved.streak} day{saved.streak === 1 ? '' : 's'}.
+            </p>
+            <button className="btn btn-primary" style={{ width: '100%', marginTop: 10 }} onClick={() => setSaved(null)}>
+              Done
+            </button>
+          </>
+        )}
+      </Sheet>
+    </>
   )
 }
 

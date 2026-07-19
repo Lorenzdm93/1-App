@@ -148,6 +148,12 @@ function TimerTab() {
               {next.name} in {fmtHM(untilNext)}
             </p>
           )}
+          {stage && (
+            <div className="card or-now" style={{ ['--sc' as string]: stage.color } as CSSProperties}>
+              <b>{stage.name} · right now</b>
+              <span>{stage.body}</span>
+            </div>
+          )}
           <button className="btn btn-primary or-cta" onClick={() => setConfirmEnd(true)}>
             End fast
           </button>

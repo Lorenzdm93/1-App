@@ -27,6 +27,17 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9.3 — the response round**
+
+- **Nav, docked.** The bar returns to full screen width, fixed to the bottom edge (rounded top corners, blurred, nothing showing behind), slightly shorter, with 26 px icons evenly distributed and a small accent underline for the active tab — **which now takes the module's color**, in every module.
+- **GHISA.** The orange pops again (`#f5701d` — the muting was mine, the popping is yours). Set rows rebuilt on a fixed grid: square set-number badge, centered inputs, properly spaced check, the × no longer overlapping — and **swipe a row left to delete the set**. Crossed-dumbbell iconography stays.
+- **RESPIRO, the prototype flow.** Tapping a protocol opens the **pre-start sheet** — full description, duration chips (1/2/3/5/10 min), Begin — the deliberate pause before the exercise. The stage now draws **the pattern itself**: the protocol's breath curve (built from each phase's lung-fill scale), a glowing dot traveling it with the traveled portion highlighted in the protocol's color, phase name in serif beneath, and the bottom bar showing elapsed · cycle · −remaining. Sessions **auto-end at the chosen duration** and close with the **Session saved sheet** (name · minutes · cycles · streak).
+- **SANA: highlight, not hide.** Tapping a stack now lights up its compounds in the full list (stack-colored ring) and dims the rest — tap again to clear. And the **library grew to 36 entries** — ashwagandha (with its cycling advice), rhodiola, theanine, caffeine, zinc, K2, selenium, iodine, collagen, glycine, taurine, beta-alanine, citrulline, whey, NAC, CoQ10, curcumin, berberine, electrolytes, probiotics, psyllium and more, each with dose ranges and honest cautions.
+- **GROVE.** Breaks are **light blue** — dial arc, digits tint, and mode pill — focus stays warm amber; and by your ruling **breaks grow nothing**: no flowers, no ferns, the forest is focus-only (short sessions still grow shrubs from 1 minute of honest work… well, from any completed focus session under 10 minutes).
+- **ORA** shows living advice under the running dial — the current stage's physiology line ("Digestion is underway…") in the stage's color, changing as you cross each threshold.
+- **Uniform rings.** The dashed "idle" state read as broken — every ring now has a solid quiet track; "—" in the center is the only idle signal.
+- Settings icon unified (the same gear in the main nav and every module); intro sheets now resurface after 90 days away; next-moves became a light hint block with tinted micro-tags instead of a card impersonating a module.
+
 **New in v0.9.2 — the details round**
 
 - **Navigation fixed and grown up.** The floating pill is now truly centered and can never overflow (the v0.9.1 bar inherited a stray `right: 0` — off-center *and* wide). Tabs are properly sized: 24 px icons, readable labels, real touch targets; module bars scroll horizontally when five tabs won't fit.

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useRef, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { formatDuration } from '../../core/dates'
@@ -220,6 +220,8 @@ function SetRow({
   const [reps, setReps] = useState(set.reps > 0 ? String(set.reps) : '')
   const prevAt = prev[index]
   const empty = set.weight === 0 && set.reps === 0 && !set.done
+  const [dx, setDx] = useState(0)
+  const touchX = useRef<number | null>(null)
 
   function commitField(field: 'weight' | 'reps', raw: string) {
     const n = parseNum(raw)
@@ -252,7 +254,23 @@ function SetRow({
   }
 
   return (
-    <div className={'gh-row' + (set.done ? ' done' : '')}>
+    <div
+      className={'gh-row' + (set.done ? ' done' : '') + (dx < 0 ? ' swiping' : '')}
+      onTouchStart={(e: { touches: { clientX: number }[] }) => {
+        touchX.current = e.touches[0].clientX
+      }}
+      onTouchMove={(e: { touches: { clientX: number }[] }) => {
+        if (touchX.current === null) return
+        setDx(Math.min(0, Math.max(-96, e.touches[0].clientX - touchX.current)))
+      }}
+      onTouchEnd={() => {
+        if (dx < -70) removeSet(exercise.id, set.id)
+        setDx(0)
+        touchX.current = null
+      }}
+    >
+      <span className="gh-del-hint" aria-hidden="true">Delete</span>
+      <div className="gh-row-inner" style={{ transform: `translateX(${dx}px)` }}>
       <button
         className={'gh-type gh-type-' + set.type}
         onClick={() => cycleSetType(exercise.id, set.id)}
@@ -304,6 +322,7 @@ function SetRow({
       >
         ×
       </button>
+      </div>
     </div>
   )
 }

@@ -24,10 +24,11 @@ function GridIcon() {
 function SlidersIcon() {
   return (
     <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <circle cx="9" cy="7" r="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="15" cy="12" r="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="7" cy="17" r="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.9 1.9M7.4 16.6l-1.9 1.9M18.5 18.5l-1.9-1.9M7.4 7.4 5.5 5.5"
+        stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
+      />
     </svg>
   )
 }
