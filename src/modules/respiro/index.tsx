@@ -18,7 +18,7 @@ function Icon({ size = 20 }: { size?: number }) {
 function LeafIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 21C6 16 5 9 12 3c7 6 6 13 0 18z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M12 21C6 16 5 9 12 3c7 6 6 13 0 18z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
       <path d="M12 20V8" stroke="currentColor" strokeWidth="1.4" opacity="0.6" />
     </svg>
   )
@@ -27,7 +27,7 @@ function LeafIcon({ size = 18 }: { size?: number }) {
 function ChartIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 20V12M12 20V6M19 20v-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M5 20V12M12 20V6M19 20v-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   )
 }
@@ -35,9 +35,9 @@ function ChartIcon({ size = 18 }: { size?: number }) {
 function NoteIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M9 18V6l9-2v12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="7" cy="18" r="2.4" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="16" cy="16" r="2.4" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M9 18V6l9-2v12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="7" cy="18" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="16" cy="16" r="2.4" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   )
 }

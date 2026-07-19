@@ -2,9 +2,10 @@ import { navigate, type Route } from '../core/router'
 
 function RingIcon() {
   return (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" opacity="0.5" />
-      <path d="M12 3.5a8.5 8.5 0 0 1 2.2.29" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.4" stroke="currentColor" strokeWidth="1.6" opacity="0.45" />
+      <path d="M12 3.6a8.4 8.4 0 0 1 5.2 1.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="1.9" fill="currentColor" />
     </svg>
   )
 }
@@ -12,10 +13,10 @@ function RingIcon() {
 function GridIcon() {
   return (
     <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3.5" y="3.5" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.7" />
-      <rect x="13.1" y="3.5" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.7" />
-      <rect x="3.5" y="13.1" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.7" />
-      <rect x="13.1" y="13.1" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.7" />
+      <rect x="3.5" y="3.5" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="13.1" y="3.5" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="3.5" y="13.1" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="13.1" y="13.1" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   )
 }
@@ -23,10 +24,10 @@ function GridIcon() {
 function SlidersIcon() {
   return (
     <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <circle cx="9" cy="7" r="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="15" cy="12" r="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="7" cy="17" r="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="9" cy="7" r="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="15" cy="12" r="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="7" cy="17" r="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   )
 }

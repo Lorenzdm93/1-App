@@ -17,10 +17,10 @@ import { ToastHost } from './ui'
 function GearIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.6" />
       <path
         d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.9 1.9M7.4 16.6l-1.9 1.9M18.5 18.5l-1.9-1.9M7.4 7.4 5.5 5.5"
-        stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"
+        stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
       />
     </svg>
   )
@@ -45,7 +45,7 @@ function Wordmark({ name, accent }: { name: string; accent: string }) {
 function BackIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M10 3.5 5.5 8 10 12.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 3.5 5.5 8 10 12.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }

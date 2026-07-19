@@ -18,8 +18,8 @@ function Icon({ size = 20 }: { size?: number }) {
 function TreeIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 3 17 11H7z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <path d="M12 8.5 18.5 17h-13z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M12 3 17 11H7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M12 8.5 18.5 17h-13z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
       <path d="M12 17v4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
     </svg>
   )
@@ -28,8 +28,8 @@ function TreeIcon({ size = 18 }: { size?: number }) {
 function TaskIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" strokeWidth="1.7" />
-      <path d="m8.3 12.2 2.3 2.3 5-5.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" strokeWidth="1.6" />
+      <path d="m8.3 12.2 2.3 2.3 5-5.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }

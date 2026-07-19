@@ -1,88 +1,121 @@
 /* ============================================================
-   1% — design tokens · v0.2
-   Dark is home; light is a first-class instrument finish.
-   Every component reads these variables — themes never touch
-   component CSS. --accent is contextual: the shell sets it per
-   module so entering a module recolors its world.
+   1% — design tokens · v0.9 "medical-grade"
+   Bevel-school dark: near-black depth, soft ambient shadows,
+   muted accents. Module accents are identity; semantic state
+   colors (--good/--mid/--low) say how things are going.
+   Serif display survives only where it earns it: hero numerals
+   and screen titles. Everything else is calm Inter.
    ============================================================ */
 :root {
   color-scheme: dark;
 
-  /* surfaces */
-  --bg: #0b0c0f;
-  --surface: #13151a;
-  --raised: #1a1d24;
-  --line: #2a2f38;
-  --line-soft: #20242c;
+  /* surfaces — depth comes from shadow, not border contrast */
+  --bg: #0a0b0d;
+  --surface: #141619;
+  --raised: #1c1f24;
+  --line: #262a31;
+  --line-soft: #1e2228;
 
-  /* ink */
-  --ink: #ecead9;
-  --dim: #94908a;
-  --faint: #5d5a54;
+  /* ink — white with a breath of warmth */
+  --ink: #f2f2ee;
+  --dim: #9aa0a6;
+  --faint: #5f656d;
 
-  /* accents */
-  --ember: #e8622c;
-  --ember-soft: rgba(232, 98, 44, 0.14);
-  --danger: #c4453b;
-  --btn-ink: #14100c;
+  /* semantic state — muted, never neon */
+  --good: #86b89b;
+  --mid: #d6b371;
+  --low: #cd8b66;
+  --danger: #c0564a;
 
-  /* contextual accent — modules override via the shell */
+  /* brand ember (buttons, wordmark) */
+  --ember: #d96f45;
+  --ember-soft: rgba(217, 111, 69, 0.13);
+  --btn-ink: #101010;
+
+  /* contextual accent — the shell sets it per module */
   --accent: var(--ember);
 
-  /* module accents */
-  --m-ghisa: #e8622c;   /* forged iron ember   */
-  --m-respiro: #7fa98e; /* jade breath         */
-  --m-sana: #5fb0a5;
-  --m-caliber: #c89b4b; /* brass gauge         */
-  --m-cadence: #8fa7c9; /* moon rhythm         */
-  --m-grove: #79a86d;   /* living leaf         */
+  /* module accents — same souls, lower volume */
+  --m-ghisa: #d96f45;
+  --m-respiro: #82a893;
+  --m-sana: #66aca2;
+  --m-caliber: #c7a05e;
+  --m-cadence: #93a9c6;
+  --m-grove: #7da878;
+  --m-ora: #8fb3c7;
   --gr-trunk: #7a5a41;
 
-  /* RESPIRO protocol palette (from the original instrument) */
-  --acc-jade: #7fa98e;
+  /* RESPIRO protocol palette */
+  --acc-jade: #82a893;
   --acc-moon: #9db4d6;
-  --acc-brass: #c89b4b;
-  --acc-coral: #e58a6b;
+  --acc-brass: #c7a05e;
+  --acc-coral: #d98d6c;
 
-  /* shape + type */
-  --radius: 12px;
-  --radius-sm: 8px;
+  /* shape */
+  --radius: 20px;
+  --radius-sm: 13px;
+  --r-pill: 999px;
+
+  /* elevation */
+  --sh-card: 0 1px 0 rgba(255, 255, 255, 0.028) inset, 0 10px 28px -14px rgba(0, 0, 0, 0.55);
+  --sh-float: 0 18px 40px -12px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+
+  /* type */
   --font-display: 'Fraunces', Georgia, serif;
-  --font-ui: 'Archivo', system-ui, -apple-system, sans-serif;
+  --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --t-hero: 56px;
+  --t-title: 30px;
+  --t-card: 15px;
+  --t-body: 13.5px;
+  --t-cap: 11.5px;
+
+  /* motion */
+  --dur-1: 0.18s;
+  --dur-2: 0.32s;
+  --ease: cubic-bezier(0.3, 0.9, 0.35, 1);
+  --spring: cubic-bezier(0.32, 1.35, 0.4, 1);
 
   /* layout */
   --col: 560px;
-  --tabbar-h: 62px;
+  --tabbar-h: 84px;
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --bg: #f3f1ea;
-  --surface: #fbfaf6;
-  --raised: #eae7df;
-  --line: #d3cec2;
-  --line-soft: #dfdbd1;
+  --bg: #f2f1ed;
+  --surface: #fcfbf8;
+  --raised: #edebe5;
+  --line: #dcd8cf;
+  --line-soft: #e5e2da;
 
-  --ink: #17191e;
-  --dim: #6b6659;
-  --faint: #9d978a;
+  --ink: #191b1e;
+  --dim: #676c72;
+  --faint: #9a9fa5;
 
-  --ember: #d9531e;
-  --ember-soft: rgba(217, 83, 30, 0.12);
+  --good: #4a8264;
+  --mid: #a3823f;
+  --low: #a9643c;
   --danger: #b23a31;
+
+  --ember: #cf5a2c;
+  --ember-soft: rgba(207, 90, 44, 0.11);
   --btn-ink: #fdfcf9;
 
-  --m-ghisa: #d9531e;
+  --m-ghisa: #cf5a2c;
   --m-respiro: #47795d;
-  --m-sana: #2c7a6e;
-  --m-caliber: #96702a;
+  --m-sana: #2f8177;
+  --m-caliber: #92702f;
   --m-cadence: #4e6c99;
-  --m-grove: #47773c;
+  --m-grove: #4a7d40;
+  --m-ora: #4a7189;
   --gr-trunk: #6e4f37;
 
   --acc-jade: #47795d;
   --acc-moon: #5677a3;
-  --acc-brass: #96702a;
+  --acc-brass: #92702f;
   --acc-coral: #c2593a;
+
+  --sh-card: 0 1px 0 rgba(255, 255, 255, 0.65) inset, 0 10px 26px -16px rgba(40, 35, 25, 0.35);
+  --sh-float: 0 16px 36px -12px rgba(40, 35, 25, 0.38), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }

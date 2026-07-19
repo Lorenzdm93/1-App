@@ -11,10 +11,10 @@ function Icon({ size = 20 }: { size?: number }) {
       <path
         d="M4 15.5a8 8 0 0 1 16 0"
         stroke="var(--m-caliber)"
-        strokeWidth="1.7"
+        strokeWidth="1.6"
         strokeLinecap="round"
       />
-      <path d="M12 15.5 15.5 9" stroke="var(--m-caliber)" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M12 15.5 15.5 9" stroke="var(--m-caliber)" strokeWidth="1.6" strokeLinecap="round" />
       <circle cx="12" cy="15.5" r="1.7" fill="var(--m-caliber)" />
     </svg>
   )
@@ -23,8 +23,8 @@ function Icon({ size = 20 }: { size?: number }) {
 function TargetIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="12" cy="12" r="3.6" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="12" cy="12" r="3.6" stroke="currentColor" strokeWidth="1.6" />
       <circle cx="12" cy="12" r="1" fill="currentColor" />
     </svg>
   )
@@ -42,8 +42,8 @@ function TrendIcon({ size = 18 }: { size?: number }) {
 function BookIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v15.5H7.5A2.5 2.5 0 0 0 5 21z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <path d="M5 18.5A2.5 2.5 0 0 1 7.5 16H19" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v15.5H7.5A2.5 2.5 0 0 0 5 21z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M5 18.5A2.5 2.5 0 0 1 7.5 16H19" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   )
 }

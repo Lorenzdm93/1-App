@@ -539,8 +539,8 @@ function Train({ templates }: { templates: Template[] }) {
             </button>
             <button className="gh-pencil" onClick={() => setEditing(t)} aria-label={`Edit ${t.name}`}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                <path d="m13.5 6.5 3 3" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                <path d="m13.5 6.5 3 3" stroke="currentColor" strokeWidth="1.6" />
               </svg>
             </button>
           </div>

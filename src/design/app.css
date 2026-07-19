@@ -3234,3 +3234,183 @@ body.rs-running .tabbar {
 @media (prefers-reduced-motion: reduce) {
   .or-dial-stage, .or-stage-dot.on { animation: none; }
 }
+
+/* ============================================================
+   v0.9 — THE RESKIN LAYER · Bevel-school chrome
+   Overrides the primitives; every module block inherits.
+   Depth from shadow, not borders. Sentence case over shouting.
+   Semantic state (--good/--mid/--low) over decorative green.
+   ============================================================ */
+
+body {
+  background:
+    radial-gradient(120% 90% at 50% -10%, color-mix(in srgb, var(--surface) 55%, var(--bg)), var(--bg) 60%);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+.frame { padding: 22px 20px calc(var(--tabbar-h) + 34px); }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- cards: soft ambient depth, room to breathe --- */
+.card {
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: linear-gradient(172deg, var(--surface), color-mix(in srgb, var(--surface) 92%, var(--bg)));
+  box-shadow: var(--sh-card);
+  padding: 18px;
+  margin-bottom: 16px;
+  animation: rise var(--dur-2) var(--ease) both;
+}
+.card.hero { border-radius: 24px; padding: 22px 20px; }
+button.card:active { transform: scale(0.988); transition: transform var(--dur-1) var(--spring); }
+
+/* --- voice: sentence case; caps only where tiny --- */
+.card-head .label {
+  font-size: var(--t-card);
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.section-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--dim);
+  margin: 20px 2px 10px;
+}
+.eyebrow { font-size: 10px; letter-spacing: 0.2em; color: var(--faint); }
+.screen-head { margin: 6px 0 20px; }
+.screen-title { font-size: var(--t-title); font-weight: 600; letter-spacing: -0.01em; }
+.guide-p, .rs-foot { font-size: var(--t-body); line-height: 1.6; }
+
+/* --- controls --- */
+.btn {
+  border-radius: 15px;
+  padding: 13px 18px;
+  font-size: 13.5px;
+  font-weight: 650;
+  transition: transform var(--dur-1) var(--spring), box-shadow var(--dur-1) var(--ease);
+}
+.btn:active { transform: scale(0.965); }
+.btn-primary { box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--accent) 60%, transparent); }
+.chip { border-radius: var(--r-pill); padding: 8px 14px; font-size: 12px; background: var(--raised); border-color: var(--line-soft); }
+.chip.on { background: color-mix(in srgb, var(--accent) 14%, var(--raised)); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.tinput {
+  border-radius: 13px;
+  background: var(--raised);
+  border: 1px solid var(--line-soft);
+  padding: 12px 13px;
+  font-size: 15px;
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.tinput:focus { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); outline: none; }
+.kv .k { font-size: var(--t-body); }
+
+/* --- stat tiles: hero-metric miniatures --- */
+.ins-grid { gap: 10px; }
+.ins-grid .ib, .one-stat {
+  border-radius: 16px;
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+  box-shadow: var(--sh-card);
+}
+.ins-grid .ib .v, .one-stat .v { font-family: var(--font-display); }
+
+/* --- floating pill navigation --- */
+.tabbar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(14px, env(safe-area-inset-bottom, 0px) + 8px);
+  width: auto;
+  max-width: calc(100% - 32px);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: var(--sh-float);
+  padding: 7px;
+}
+.tabbar-inner { display: flex; gap: 4px; border: none; background: none; padding: 0; }
+.tab {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-width: 74px; padding: 8px 14px 7px;
+  border-radius: var(--r-pill);
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--faint); background: none; border: none;
+  transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.tab.on { color: var(--ink); background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.tabbar-mod { padding: 7px; }
+.mtab {
+  border-radius: var(--r-pill);
+  padding: 9px 13px 8px;
+  min-width: 62px;
+  font-size: 10px;
+}
+.mtab.on { background: color-mix(in srgb, var(--accent) 15%, var(--raised)); color: var(--ink); }
+
+/* --- overlays --- */
+.sheet { border-radius: 26px 26px 0 0; box-shadow: var(--sh-float); }
+.toast {
+  bottom: calc(var(--tabbar-h) + 18px);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--raised) 88%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--sh-float);
+  border: 1px solid var(--line-soft);
+  font-size: 13px;
+}
+
+/* --- semantic state: green means going well, everywhere --- */
+.day-dot.on { background: var(--good); border-color: var(--good); }
+.wp-score.won { color: var(--good); }
+.wp-strip .lit, .one-stat.lit .v { color: var(--good); }
+.wp-bar i, .one-bar i {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--good) 45%, var(--raised)), var(--good));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--good) 28%, transparent);
+}
+.wp-spark i.won, .one-spark-col i.won {
+  background: color-mix(in srgb, var(--good) 45%, var(--raised));
+  border-color: color-mix(in srgb, var(--good) 42%, var(--line));
+}
+.wp.won, .one-hero.won { border-color: color-mix(in srgb, var(--good) 32%, var(--line)); }
+.wp.won {
+  background:
+    radial-gradient(120% 140% at 85% -20%, color-mix(in srgb, var(--good) 13%, transparent), transparent 60%),
+    linear-gradient(172deg, var(--surface), color-mix(in srgb, var(--surface) 92%, var(--bg)));
+}
+.one-hero.won .one-score { color: var(--good); text-shadow: 0 0 34px color-mix(in srgb, var(--good) 32%, transparent); }
+.one-rate.on { border-color: var(--good); background: color-mix(in srgb, var(--good) 9%, var(--surface)); }
+.one-rate.on b, .one-rate.on em { color: var(--good); }
+.mw-pct.won { color: var(--good); }
+.gv-task-check.on { background: var(--good); border-color: var(--good); }
+.or-badge.hit { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, var(--line)); }
+.or-bar-col i.hit { background: color-mix(in srgb, var(--good) 55%, var(--raised)); }
+.or-legend i.hit { background: color-mix(in srgb, var(--good) 55%, var(--raised)); }
+.or-note.tip b { color: var(--good); }
+.or-note.care b { color: var(--low); }
+.cb-est-sub .dot.g0 { background: var(--good); }
+.cb-est-sub .dot.g1 { background: var(--mid); }
+.cb-est-sub .dot.g2 { background: var(--low); }
+.sn-week-cell.full i, .sn-heat-cell.full { background: var(--good); box-shadow: none; }
+.sn-month-cell.full { background: color-mix(in srgb, var(--good) 32%, var(--raised)); }
+
+/* --- instrument faces retuned to the deeper bg --- */
+:root { --gv-dial-face: #1d1913; --gv-ground: #1c261b; }
+[data-theme='light'] { --gv-dial-face: #f2ead9; --gv-ground: #dbe4d3; }
+
+/* --- charts breathe --- */
+.chart-labels span { font-size: 9px; color: var(--faint); }
+
+@media (prefers-reduced-motion: reduce) {
+  .card { animation: none; }
+  .btn, .btn:active, button.card:active { transform: none; transition: none; }
+}

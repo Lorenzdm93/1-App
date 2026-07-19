@@ -1,6 +1,6 @@
 /* 1% service worker — network-first for navigation, cache-first for assets.
    Hashed Vite filenames make stale-asset bugs structurally impossible. */
-var CACHE = 'onepercent-v8'
+var CACHE = 'onepercent-v9'
 
 self.addEventListener('install', function () {
   self.skipWaiting()

@@ -7,7 +7,7 @@ import { todayKey } from '../core/dates'
 import { toast } from '../core/toast'
 import { ConfirmSheet, Seg } from '../app/ui'
 
-const APP_VERSION = '0.8.0'
+const APP_VERSION = '0.9.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },

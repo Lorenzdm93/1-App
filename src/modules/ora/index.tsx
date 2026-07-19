@@ -7,9 +7,9 @@ import OraQuickActions from './QuickActions'
 function DialIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M12 3.5V6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <path d="M12 12l3.4-3.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 3.5V6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M12 12l3.4-3.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   )
 }
@@ -17,7 +17,7 @@ function DialIcon({ size = 18 }: { size?: number }) {
 function BodyIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="5" y="4" width="14" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
+      <rect x="5" y="4" width="14" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
       <path d="M9 9h6M9 13h6M9 17h3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   )
@@ -26,7 +26,7 @@ function BodyIcon({ size = 18 }: { size?: number }) {
 function ChartIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 20V11M12 20V5M19 20v-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M5 20V11M12 20V5M19 20v-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   )
 }
@@ -35,7 +35,7 @@ function ListIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="6" cy="6.5" r="2.5" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M12 6.5h7M4 12.5h15M4 18.5h15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M12 6.5h7M4 12.5h15M4 18.5h15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   )
 }

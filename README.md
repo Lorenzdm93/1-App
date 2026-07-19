@@ -27,6 +27,15 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9 — the reskin: medical-grade, Bevel-school**
+
+- **A rebuilt token system.** Near-black depth (`#0a0b0d`), soft ambient card shadows instead of border contrast, generous radii (20–26 px), a disciplined Inter type scale — and the serif display voice kept only where it earns it: hero numerals and screen titles. Module accents survive as identity but at lower volume, harmonised across the set.
+- **A semantic state layer.** `--good / --mid / --low` — muted green, amber, orange — now say *how it's going* everywhere: the week bar, won weeks, day dots, streak heat, confidence dots, goal badges. Green means going well; module colors mean *which instrument*. The two jobs are finally separate.
+- **Floating pill navigation** with backdrop blur — both the main bar and every module's tab bar — labels always visible, active state tinted, sitting above the content like hardware.
+- **Charts, Bevel-style**: smooth Catmull-Rom curves with a soft gradient underlay, a single emphasized last point, thinner quieter bars, tiny axis labels.
+- **Voice**: letter-spaced ALL-CAPS micro-labels retired from section headers in favour of calm sentence case; caps survive only at caption size. Cards rise in with a short spring; buttons compress on press; every motion respects `prefers-reduced-motion`.
+- **One consistent icon family** — the whole set normalised to a 1.6 stroke with round caps, nav icons redrawn.
+
 **New in v0.8 — ORA joins the platform**
 
 - **ORA — fasting, hour by hour.** The full prototype, integrated: a dual-tone dial (fasting arc in steel blue, eating window in amber, live glowing progress), Begin fast with "already fasting? set your start time" (overnight-aware), and the verbose schedule — an **eating Window** that derives the fast around when you actually eat (midnight-safe), a **custom length**, and the daily rhythms 14:10 → OMAD, each with its honest description. **Body** is the stage timeline (Fed → Extended renewal) with Now/Tip/Care callouts and a pulsing glow on wherever you are right now. **Progress** carries streaks, goal-hit rate, longest/average, total hours, recent-fast bars with the goal line, a 17-week consistency heatmap, weight logging with trend, hydration glasses, and ten milestones. **Log** lists every fast, deletable, with its event cleaned up too. Ending early is logged without shame — it's data. The medical disclaimer lives in ORA's settings.
@@ -127,7 +136,7 @@ Everything lives on-device. **Settings → Export** produces one JSON backup cov
 
 ## Roadmap
 
-- **v0.9** — the full-app premium reskin pass; Minim (mood) when its moment comes.
+- **v0.10** — Minim (mood) when its moment comes; deeper per-module polish on the new system.
 - **v1.0** — Capacitor wrap; optional Firebase sync; Health Connect / HealthKit as the universal intake.
 - **Later** — Capacitor wrap for the App Store; reminders/notifications (needs the native shell).
 

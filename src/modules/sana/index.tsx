@@ -8,8 +8,8 @@ import SanaQuickActions from './QuickActions'
 function PillIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3.5" y="9" width="17" height="7" rx="3.5" stroke="currentColor" strokeWidth="1.7" transform="rotate(-35 12 12)" />
-      <path d="M9.2 14.8l5.6-5.6" stroke="currentColor" strokeWidth="1.7" transform="rotate(-35 12 12)" />
+      <rect x="3.5" y="9" width="17" height="7" rx="3.5" stroke="currentColor" strokeWidth="1.6" transform="rotate(-35 12 12)" />
+      <path d="M9.2 14.8l5.6-5.6" stroke="currentColor" strokeWidth="1.6" transform="rotate(-35 12 12)" />
     </svg>
   )
 }
@@ -17,9 +17,9 @@ function PillIcon({ size = 18 }: { size?: number }) {
 function LayersIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="m12 3 9 5-9 5-9-5z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <path d="m4.5 12.5 7.5 4.2 7.5-4.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="m4.5 16.5 7.5 4.2 7.5-4.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
+      <path d="m12 3 9 5-9 5-9-5z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="m4.5 12.5 7.5 4.2 7.5-4.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="m4.5 16.5 7.5 4.2 7.5-4.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
     </svg>
   )
 }
@@ -36,7 +36,7 @@ function BookIcon({ size = 18 }: { size?: number }) {
 function ChartIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 20V10M12 20V5M19 20v-8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M5 20V10M12 20V5M19 20v-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   )
 }
