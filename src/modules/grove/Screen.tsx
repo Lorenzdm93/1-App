@@ -82,12 +82,18 @@ function Dial({
           )
         })}
         <circle cx="110" cy="110" r={R} fill="none" stroke="var(--line)" strokeWidth="6" opacity="0.4" />
+        <defs>
+          <linearGradient id="gv-arc-g" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stopColor="var(--m-grove-warm, var(--m-caliber))" />
+            <stop offset="100%" stopColor="color-mix(in srgb, var(--m-grove-warm, var(--m-caliber)) 50%, #ffffff)" />
+          </linearGradient>
+        </defs>
         <circle
           cx="110" cy="110" r={R} fill="none"
-          stroke="var(--m-grove-warm, var(--m-caliber))" strokeWidth="6" strokeLinecap="round"
+          stroke="url(#gv-arc-g)" strokeWidth="6.5" strokeLinecap="round"
           strokeDasharray={`${C * fraction} ${C}`}
           transform="rotate(-90 110 110)"
-          style={{ transition: 'stroke-dasharray 0.5s linear' }}
+          style={{ transition: 'stroke-dasharray 0.5s linear', filter: 'drop-shadow(0 0 6px color-mix(in srgb, var(--m-grove-warm) 45%, transparent))' }}
         />
       </svg>
       <div className="gv-dial-center">

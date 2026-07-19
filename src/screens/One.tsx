@@ -8,6 +8,7 @@ import { computePulse } from '../core/score'
 import { navigate } from '../core/router'
 import { todayKey } from '../core/dates'
 import { parseNum } from '../app/ui'
+import Ring from '../app/Ring'
 
 const RATES = [
   { r: 0.005, year: '+30% a year' },
@@ -57,15 +58,11 @@ export default function One() {
         </div>
       ) : (
         <div className={'card hero one-hero' + (won ? ' won' : '')}>
-          <div className="one-score-wrap">
-            <span className="one-score num">{pulse.score}</span>
-            <span className="one-score-pct">%</span>
-          </div>
-          <div className="one-bar">
-            <i style={{ width: `${Math.min(100, pulse.score)}%` }} />
-            <em className="one-mark">
-              <b>1% better</b>
-            </em>
+          <div className="one-ring-wrap">
+            <Ring value={Math.min(120, pulse.score)} accent={won ? 'var(--good)' : 'var(--accent)'} size={196} stroke={15}>
+              <span className={'one-ring-v num' + (won ? ' won' : '')}>{pulse.score}<i>%</i></span>
+              <span className="one-ring-k">{won ? 'week won' : 'of 1% better'}</span>
+            </Ring>
           </div>
           <p className="one-status">
             {won

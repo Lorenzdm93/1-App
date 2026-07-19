@@ -3414,3 +3414,87 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
   .card { animation: none; }
   .btn, .btn:active, button.card:active { transform: none; transition: none; }
 }
+
+/* ============================================================
+   v0.9.1 — SHAPES, NOT FINISH · rings, borderless, washes
+   ============================================================ */
+
+/* Cards float on shadow alone; hairlines retired */
+.card { border-color: var(--line-soft); }
+
+/* Sub-surfaces inside cards: tonal, borderless, softly lifted */
+.sn-stackrow, .sn-comp, .sn-stackcard, .sn-follow-row, .sn-lib-row, .sn-ed-comp,
+.or-proto, .or-mile, .or-log, .or-note, .or-stage-card,
+.one-stat, .one-rate, .ins-grid .ib,
+.cb-goal, .cb-mini, .gv-task, .gv-stepper,
+.sn-week-cell, .sn-month-cell {
+  border-color: transparent;
+  background: var(--raised);
+  box-shadow: 0 1px 2px rgba(15, 18, 24, 0.14), 0 6px 16px -10px rgba(15, 18, 24, 0.28);
+}
+[data-theme='light'] .sn-stackrow, [data-theme='light'] .sn-comp, [data-theme='light'] .sn-stackcard,
+[data-theme='light'] .sn-follow-row, [data-theme='light'] .sn-lib-row, [data-theme='light'] .sn-ed-comp,
+[data-theme='light'] .or-proto, [data-theme='light'] .or-mile, [data-theme='light'] .or-log,
+[data-theme='light'] .or-note, [data-theme='light'] .or-stage-card,
+[data-theme='light'] .one-stat, [data-theme='light'] .one-rate, [data-theme='light'] .ins-grid .ib,
+[data-theme='light'] .cb-goal, [data-theme='light'] .cb-mini, [data-theme='light'] .gv-task,
+[data-theme='light'] .sn-week-cell, [data-theme='light'] .sn-month-cell {
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(28, 32, 40, 0.06), 0 8px 20px -12px rgba(28, 32, 40, 0.14);
+}
+.or-proto.on, .one-rate.on { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent) 55%, transparent), var(--sh-card); }
+.one-rate.on { box-shadow: 0 0 0 1.5px var(--good), var(--sh-card); }
+
+/* --- the ring language --- */
+.ring { position: relative; display: grid; place-items: center; }
+.ring svg { display: block; }
+.ring-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 2px; }
+.wp-ring-wrap, .one-ring-wrap { display: grid; place-items: center; padding: 6px 0 2px; }
+.wp-ring-v { font-family: var(--font-display); font-size: 40px; font-weight: 650; line-height: 1; }
+.wp-ring-v i { font-style: normal; font-size: 18px; color: var(--dim); margin-left: 1px; }
+.wp-ring-v.won { color: var(--good); }
+.wp-ring-k { font-size: 10px; font-weight: 600; color: var(--faint); letter-spacing: 0.04em; }
+.one-ring-v { font-family: var(--font-display); font-size: 52px; font-weight: 650; line-height: 1; }
+.one-ring-v i { font-style: normal; font-size: 22px; color: var(--dim); }
+.one-ring-v.won { color: var(--good); }
+.one-ring-k { font-size: 11px; font-weight: 600; color: var(--faint); }
+.wp-coach { margin: 14px 2px 0; font-size: 13px; line-height: 1.6; color: var(--dim); text-align: left; }
+.wp-coach b { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin-bottom: 4px; }
+.wp-strip { justify-content: center; margin-top: 12px; }
+.wp .day-dots { justify-content: center; }
+
+/* module ring row — the dashboard */
+.ring-row {
+  display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 12px; margin: -2px -2px 6px;
+  scrollbar-width: none;
+}
+.ring-row::-webkit-scrollbar { display: none; }
+.ring-item {
+  flex: none; display: flex; flex-direction: column; align-items: center; gap: 7px;
+  background: none; border: none; padding: 6px 7px; color: var(--dim);
+}
+.ring-item:active { transform: scale(0.94); transition: transform var(--dur-1) var(--spring); }
+.ring-item-v { font-size: 14px; font-weight: 700; color: var(--ink); }
+.ring-item-k { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; }
+
+/* immersive accent wash on module screens + heroes */
+.frame { position: relative; }
+.frame::before {
+  content: '';
+  position: fixed; left: 0; right: 0; top: 0; height: 300px;
+  background: radial-gradient(120% 100% at 50% -30%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.frame > * { position: relative; z-index: 1; }
+
+/* numbers carry color (Bevel stat style) */
+.ins-grid .ib .v, .one-stat .v { color: var(--accent); }
+.one-stat.lit .v { color: var(--good); }
+
+/* mini meters retired from card heads — rings own the job */
+.mw-bar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ring svg circle { transition: none !important; }
+}

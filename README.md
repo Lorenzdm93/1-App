@@ -27,6 +27,13 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9.1 — shapes, not finish**
+
+- **The gradient ring gauge is now the platform's hero element.** A shared `Ring` component — two-stop gradient synthesized from any accent, rounded caps, soft glow, sweep-in on mount, dashed idle track. Deployed: Today's hero is the week score as a big ring with a Coaching line under it; below it, **a ring per module** (the Bevel home-row pattern) replaces the invisible thin meters — tap any ring to enter its module. The 1% screen opens on a 196 px ring. ORA's live arc and GROVE's dial joined the gradient family.
+- **Borders retired, tonally.** Sub-surfaces inside cards (stack rows, protocol cards, stat tiles, tasks, milestones…) are now borderless raised surfaces floating on soft shadow — in light theme, pure-white cards on cool `#f3f4f6` with Bevel's visible shadow depth. Hairlines survive only as focus/selection states.
+- **An accent wash** crowns every screen — a fixed radial tint of the current module's color bleeding from the top, so entering GHISA *feels* ember and ORA *feels* steel, the way Bevel's detail pages carry their metric's color field.
+- Stat numbers now carry their accent color; the light theme was rebuilt into the flagship finish (flip it in Settings → instant).
+
 **New in v0.9 — the reskin: medical-grade, Bevel-school**
 
 - **A rebuilt token system.** Near-black depth (`#0a0b0d`), soft ambient card shadows instead of border contrast, generous radii (20–26 px), a disciplined Inter type scale — and the serif display voice kept only where it earns it: hero numerals and screen titles. Module accents survive as identity but at lower volume, harmonised across the set.

@@ -72,13 +72,21 @@ function OraDial({
           transform="rotate(-90 110 110)"
         />
         {running && (
-          <circle
-            cx="110" cy="110" r={R} fill="none"
-            stroke="var(--m-ora)" strokeWidth="9" strokeLinecap="round"
-            strokeDasharray={`${C * fastFrac * progress} ${C}`}
-            transform="rotate(-90 110 110)"
-            className="or-arc-live"
-          />
+          <>
+            <defs>
+              <linearGradient id="or-live-g" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stopColor="var(--m-ora)" />
+                <stop offset="100%" stopColor="color-mix(in srgb, var(--m-ora) 45%, #ffffff)" />
+              </linearGradient>
+            </defs>
+            <circle
+              cx="110" cy="110" r={R} fill="none"
+              stroke="url(#or-live-g)" strokeWidth="9" strokeLinecap="round"
+              strokeDasharray={`${C * fastFrac * progress} ${C}`}
+              transform="rotate(-90 110 110)"
+              className="or-arc-live"
+            />
+          </>
         )}
       </svg>
       <div className="or-dial-center">

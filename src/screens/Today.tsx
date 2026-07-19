@@ -9,6 +9,7 @@ import { todayKey, lastNDayKeys, dayKey } from '../core/dates'
 import { oneStore } from '../core/one'
 import { computePulse, nextMoves } from '../core/score'
 import { Chevron, Empty } from '../app/ui'
+import Ring from '../app/Ring'
 
 function useWeekPulse() {
   const events = useStore(eventsStore)
@@ -44,42 +45,25 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
   return (
     <>
       <button className={'card hero wp wp-tap' + (won ? ' won' : '')} onClick={() => navigate('/one')}>
-        <div className="wp-top">
-          <div className={'wp-score num' + (won ? ' won' : '')}>
-            {pulse.score}
-            <span>%</span>
-          </div>
-          <div className="wp-copy">
-            <b>This week</b>
-            <span>
-              {won
-                ? `${rate * 100}% better than your pace — banked. Anything more is compound interest.`
-                : `of the way to ${rate * 100}% better than your 4-week pace.`}
-            </span>
-          </div>
+        <div className="wp-ring-wrap">
+          <Ring value={Math.min(120, pulse.score)} accent={won ? 'var(--good)' : 'var(--accent)'} size={158} stroke={13}>
+            <span className={'wp-ring-v num' + (won ? ' won' : '')}>{pulse.score}<i>%</i></span>
+            <span className="wp-ring-k">this week</span>
+          </Ring>
         </div>
-        <div className="wp-bar">
-          <i style={{ width: `${Math.min(100, (pulse.score / 100) * 100)}%` }} />
-          <em className="wp-mark" />
-        </div>
+        <p className="wp-coach">
+          <b>Coaching</b>
+          {won
+            ? ` You're ${rate * 100}% past your own pace — the week is banked. Anything more is compound interest.`
+            : ` ${100 - pulse.score}% left to beat your 4-week pace by ${rate * 100}%. The next moves below close it.`}
+        </p>
         <div className="wp-strip num">
           <span>{streak}d streak</span>
           <span>·</span>
           <span>{pulse.wonWeeks} week{pulse.wonWeeks === 1 ? '' : 's'} won</span>
           <span>·</span>
-          <span className="lit">+{pulse.compoundPct.toFixed(1)}% compounded</span>
+          <span className="lit">+{pulse.compoundPct.toFixed(1)}%</span>
         </div>
-        {pulse.spark.length >= 2 && (
-          <div className="wp-spark" aria-label="Weekly scores">
-            {pulse.spark.map((s, i) => (
-              <i
-                key={i}
-                className={s.value >= 100 ? 'won' : ''}
-                style={{ height: `${Math.max(12, Math.min(100, (s.value / 120) * 100))}%` }}
-              />
-            ))}
-          </div>
-        )}
         <div className="day-dots" aria-label="Last seven days">
           {week.map((day) => (
             <span
@@ -88,8 +72,18 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
             />
           ))}
         </div>
-        <span className="wp-open">The full engine ›</span>
       </button>
+
+      <div className="ring-row" aria-label="Modules this week">
+        {pulse.modules.map((m) => (
+          <button key={m.id} className="ring-item" onClick={() => navigate('/m/' + m.id)}>
+            <Ring value={m.score === null ? null : Math.min(120, m.score)} accent={m.accentVar} size={68} stroke={7}>
+              <span className="ring-item-v num">{m.score === null ? '—' : m.score}</span>
+            </Ring>
+            <span className="ring-item-k">{m.name}</span>
+          </button>
+        ))}
+      </div>
 
       {(moves.length > 0 || pulse.modules.some((m) => m.plateauNote)) && (
         <div className="card">
