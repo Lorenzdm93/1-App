@@ -48,6 +48,12 @@ const grove: ModuleDefinition = {
   id: 'grove',
   name: 'GROVE',
   tagline: 'Deep focus grows a forest.',
+  intro: {
+    body: [
+      'A focus timer that grows a forest. Finished sessions plant trees by length; breaks plant flowers and ferns.',
+      'Only focused minutes count toward your week — breaks are scenery, on purpose. Lifetime hours unlock the animals.',
+    ],
+  },
   accentVar: 'var(--m-grove)',
   schemaVersion: 2,
   tabs: [

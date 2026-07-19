@@ -3498,3 +3498,64 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
 @media (prefers-reduced-motion: reduce) {
   .ring svg circle { transition: none !important; }
 }
+
+/* ============================================================
+   v0.9.2 — nav sizing & centering · move pills · bezel dial ·
+             intro sheets · sana focus
+   ============================================================ */
+
+/* the pill bar: truly centered, never overflowing, grown-up size */
+.tabbar {
+  left: 50%;
+  right: auto;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  transform: translateX(-50%);
+  padding: 8px;
+}
+.tabbar-inner { gap: 5px; }
+.tab { min-width: 86px; padding: 10px 16px 9px; font-size: 11.5px; gap: 5px; }
+.tab svg { width: 24px; height: 24px; }
+.tabbar-mod .tabbar-inner { overflow-x: auto; scrollbar-width: none; max-width: calc(100vw - 56px); }
+.tabbar-mod .tabbar-inner::-webkit-scrollbar { display: none; }
+.mtab { min-width: 70px; padding: 10px 15px 9px; font-size: 11px; gap: 5px; }
+.mtab svg { width: 22px; height: 22px; }
+.mtab.on::after { display: none; }
+
+/* next-move pills: badges, not buttons */
+.wp-move { align-items: flex-start; gap: 10px; }
+.wp-move-pill {
+  display: inline-flex;
+  width: max-content;
+  align-self: flex-start;
+  font-size: 8px;
+  padding: 2.5px 6px;
+  letter-spacing: 0.09em;
+  border-radius: 5px;
+  margin-top: 2.5px;
+}
+
+/* grove: the instrument, at instrument scale */
+.gv-dial-wrap { width: min(86vw, 340px); }
+.gv-dial { filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.5)); }
+.gv-dial-time { font-size: 56px; letter-spacing: 0.03em; }
+.gv-start { min-width: 168px; padding: 15px 28px; box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--m-grove-warm) 55%, transparent); }
+.gv-round { width: 52px; height: 52px; }
+
+/* sana: focused stack */
+.sn-stackrow { cursor: pointer; }
+.sn-stackrow.on {
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--sk) 70%, transparent),
+    0 6px 16px -10px rgba(15, 18, 24, 0.28);
+}
+.sn-filter-line b { font-weight: 700; }
+.sn-filter-line .linklike { font-size: inherit; color: var(--dim); }
+
+/* intro sheets */
+.intro-disclaimer {
+  margin-top: 12px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: var(--raised);
+  line-height: 1.55;
+}

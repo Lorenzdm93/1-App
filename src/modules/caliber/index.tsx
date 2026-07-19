@@ -52,6 +52,12 @@ const caliber: ModuleDefinition = {
   id: 'caliber',
   name: 'CALIBER',
   tagline: 'Strength gauge — e1RM and standards per lift.',
+  intro: {
+    body: [
+      'Test rarely, train mostly. Enter one heavy set and CALIBER estimates your 1RM, places it on the percentile scale, and shows the level name.',
+      'Set your aim — top X% — and every lift gets a goal in kilos, plus the exact reps or weight that would prove it.',
+    ],
+  },
   accentVar: 'var(--m-caliber)',
   schemaVersion: 2,
   tabs: [

@@ -148,8 +148,11 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
   const [dayOffset, setDayOffset] = useState(0)
   const [info, setInfo] = useState<Compound | null>(null)
   const [changing, setChanging] = useState(false)
+  const [focusStack, setFocusStack] = useState<string | null>(null)
   const day = shiftDay(todayKey(), dayOffset)
   const due = dueOn(st, day)
+  const focused = focusStack ? st.stacks.find((x) => x.id === focusStack) ?? null : null
+  const visible = focused ? due.filter((d) => focused.compoundIds.includes(d.compound.id)) : due
   const takenCount = due.filter(({ compound }) => isTaken(st, compound.id, day)).length
   const followed = followedOn(st, day)
   const followedStacks = st.stacks.filter((s) => followed.includes(s.id))
@@ -200,7 +203,14 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
         const done = ids.filter((id) => isTaken(st, id, day)).length
         const pct = ids.length > 0 ? (done / ids.length) * 100 : 0
         return (
-          <div key={s.id} className="sn-stackrow" style={{ ['--sk' as string]: s.color } as CSSProperties}>
+          <div
+            key={s.id}
+            className={'sn-stackrow' + (focusStack === s.id ? ' on' : '')}
+            style={{ ['--sk' as string]: s.color } as CSSProperties}
+            role="button"
+            tabIndex={0}
+            onClick={() => setFocusStack((cur) => (cur === s.id ? null : s.id))}
+          >
             <span className="sn-stackrow-emoji">{s.emoji}</span>
             <div className="sn-stackrow-main">
               <div className="sn-stackrow-name">{s.name}</div>
@@ -210,7 +220,8 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
             <button
               className={'sn-stackrow-take' + (done === ids.length && ids.length > 0 ? ' done' : '')}
               aria-label={`Take all of ${s.name}`}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation()
                 const n = takeMany(ids, day)
                 if (n > 0) toast(`${s.name} — ${n} taken`)
               }}
@@ -220,12 +231,19 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
           </div>
         )
       })}
-      <p className="rs-foot" style={{ marginTop: 4 }}>
-        Shared compounds are listed once below — the dots show which stacks they belong to.
+      <p className="rs-foot sn-filter-line" style={{ marginTop: 4 }}>
+        {focused ? (
+          <>
+            Showing <b style={{ color: focused.color }}>{focused.name}</b> only ·{' '}
+            <button className="linklike" onClick={() => setFocusStack(null)}>show all stacks</button>
+          </>
+        ) : (
+          <>Tap a stack to see only its doses. Shared compounds are listed once.</>
+        )}
       </p>
 
       {SLOTS.map((slot) => {
-        const rows = due.filter((d) => d.compound.slot === slot.id)
+        const rows = visible.filter((d) => d.compound.slot === slot.id)
         if (rows.length === 0) return null
         const remaining = rows.filter((r) => !isTaken(st, r.compound.id, day))
         return (

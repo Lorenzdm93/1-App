@@ -40,6 +40,8 @@ export interface ModuleDefinition {
   SettingsExtra?: ComponentType
   /** Registers the module in the weekly 1% engine. */
   weekly?: WeeklyScorer
+  /** First-visit welcome sheet: a few honest paragraphs, plus an optional disclaimer. */
+  intro?: { body: string[]; disclaimer?: string }
 }
 
 export interface WeeklyScorer {

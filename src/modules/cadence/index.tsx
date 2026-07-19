@@ -7,10 +7,7 @@ import Widget from './Widget'
 function Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3" y="13" width="3.4" height="6" rx="1.2" fill="var(--m-cadence)" opacity="0.5" />
-      <rect x="8.6" y="9" width="3.4" height="10" rx="1.2" fill="var(--m-cadence)" opacity="0.75" />
-      <rect x="14.2" y="5" width="3.4" height="14" rx="1.2" fill="var(--m-cadence)" />
-      <circle cx="20.5" cy="6" r="1.6" fill="var(--m-cadence)" />
+      <path d="M2.5 13h3l2.4-6.4 3.4 11 2.6-8.6 1.9 4h5.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -18,8 +15,8 @@ function Icon({ size = 20 }: { size?: number }) {
 function CheckIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="4" y="4" width="16" height="16" rx="5" stroke="currentColor" strokeWidth="1.6" />
-      <path d="m8.5 12 2.4 2.4 4.6-4.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="3.6" y="3.6" width="16.8" height="16.8" rx="5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="m8.4 12.3 2.4 2.4 4.9-5.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -35,11 +32,9 @@ function CalIcon({ size = 18 }: { size?: number }) {
 
 function GridIcon({ size = 18 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      {[0, 1, 2, 3].map((r) =>
-        [0, 1, 2, 3, 4].map((c) => (
-          <rect key={r + '-' + c} x={3.4 + c * 3.7} y={5 + r * 3.7} width="2.5" height="2.5" rx="0.7" fill="currentColor" opacity={(r + c) % 3 === 0 ? 1 : 0.4} />
-        )),
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      {[5, 12, 19].map((y) =>
+        [4, 9.33, 14.66, 20].map((x) => <circle key={x + '-' + y} cx={x} cy={y} r="1.5" />),
       )}
     </svg>
   )
@@ -49,6 +44,12 @@ const cadence: ModuleDefinition = {
   id: 'cadence',
   name: 'CADENCE',
   tagline: 'Daily habits — streaks that compound.',
+  intro: {
+    body: [
+      'Small daily promises, kept visibly. Build habits count checks against a weekly target; quit habits count clean days.',
+      'Tap to check today, page back to fix yesterday. Slips log without drama — the streak just restarts.',
+    ],
+  },
   accentVar: 'var(--m-cadence)',
   schemaVersion: 3,
   tabs: [

@@ -64,36 +64,47 @@ function Dial({
   const ticks = Array.from({ length: 60 })
   return (
     <div className={'gv-dial-wrap' + (paused ? ' paused' : '')}>
-      <svg viewBox="0 0 220 220" className="gv-dial" aria-hidden="true">
-        <circle cx="110" cy="110" r="104" fill="var(--gv-dial-face, var(--raised))" />
-        <circle cx="110" cy="110" r="104" fill="none" stroke="var(--line)" strokeWidth="1.5" />
-        {ticks.map((_, i) => {
-          const a = (i / 60) * 2 * Math.PI - Math.PI / 2
-          const major = i % 5 === 0
-          const r1 = major ? 92 : 95
-          return (
-            <line
-              key={i}
-              x1={110 + r1 * Math.cos(a)} y1={110 + r1 * Math.sin(a)}
-              x2={110 + 99 * Math.cos(a)} y2={110 + 99 * Math.sin(a)}
-              stroke={major ? 'var(--dim)' : 'var(--line)'}
-              strokeWidth={major ? 2 : 1.2}
-            />
-          )
-        })}
-        <circle cx="110" cy="110" r={R} fill="none" stroke="var(--line)" strokeWidth="6" opacity="0.4" />
+      <svg viewBox="0 0 340 340" className="gv-dial" aria-hidden="true">
         <defs>
+          <linearGradient id="gv-bezel" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3d352a" />
+            <stop offset="100%" stopColor="#14110c" />
+          </linearGradient>
+          <radialGradient id="gv-face" cx="50%" cy="38%" r="75%">
+            <stop offset="0%" stopColor="color-mix(in srgb, var(--gv-dial-face) 80%, #4a3f2d)" />
+            <stop offset="100%" stopColor="var(--gv-dial-face)" />
+          </radialGradient>
           <linearGradient id="gv-arc-g" x1="0" y1="1" x2="1" y2="0">
             <stop offset="0%" stopColor="var(--m-grove-warm, var(--m-caliber))" />
             <stop offset="100%" stopColor="color-mix(in srgb, var(--m-grove-warm, var(--m-caliber)) 50%, #ffffff)" />
           </linearGradient>
         </defs>
+        <circle cx="170" cy="170" r="163" fill="url(#gv-bezel)" />
+        <circle cx="170" cy="170" r="163" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" />
+        <circle cx="170" cy="170" r="149" fill="url(#gv-face)" />
+        <circle cx="170" cy="170" r="149" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="2.5" />
+        <circle cx="170" cy="170" r="146" fill="none" stroke="rgba(255,255,255,0.045)" strokeWidth="1" />
+        {ticks.map((_, i) => {
+          const a = (i / 60) * 2 * Math.PI - Math.PI / 2
+          const major = i % 5 === 0
+          const r1 = major ? 130 : 135
+          return (
+            <line
+              key={i}
+              x1={170 + r1 * Math.cos(a)} y1={170 + r1 * Math.sin(a)}
+              x2={170 + 141 * Math.cos(a)} y2={170 + 141 * Math.sin(a)}
+              stroke={major ? 'var(--dim)' : 'var(--line)'}
+              strokeWidth={major ? 2.4 : 1.2}
+            />
+          )
+        })}
+        <circle cx="170" cy="170" r="118" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="5" />
         <circle
-          cx="110" cy="110" r={R} fill="none"
-          stroke="url(#gv-arc-g)" strokeWidth="6.5" strokeLinecap="round"
-          strokeDasharray={`${C * fraction} ${C}`}
-          transform="rotate(-90 110 110)"
-          style={{ transition: 'stroke-dasharray 0.5s linear', filter: 'drop-shadow(0 0 6px color-mix(in srgb, var(--m-grove-warm) 45%, transparent))' }}
+          cx="170" cy="170" r="118" fill="none"
+          stroke="url(#gv-arc-g)" strokeWidth="5" strokeLinecap="round"
+          strokeDasharray={`${2 * Math.PI * 118 * fraction} ${2 * Math.PI * 118}`}
+          transform="rotate(-90 170 170)"
+          style={{ transition: 'stroke-dasharray 0.5s linear', filter: 'drop-shadow(0 0 7px color-mix(in srgb, var(--m-grove-warm) 55%, transparent))' }}
         />
       </svg>
       <div className="gv-dial-center">

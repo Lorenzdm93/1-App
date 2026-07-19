@@ -7,22 +7,29 @@ import QuickActions from './QuickActions'
 
 function Icon({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M2.5 12h19" stroke="var(--m-ghisa)" strokeWidth="1.6" strokeLinecap="round" />
-      <rect x="5" y="7.5" width="3" height="9" rx="1" fill="var(--m-ghisa)" />
-      <rect x="16" y="7.5" width="3" height="9" rx="1" fill="var(--m-ghisa)" />
-      <rect x="2" y="9.5" width="2" height="5" rx="0.8" fill="var(--m-ghisa)" opacity="0.55" />
-      <rect x="20" y="9.5" width="2" height="5" rx="0.8" fill="var(--m-ghisa)" opacity="0.55" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <g transform="rotate(45 12 12)">
+        <rect x="5.2" y="10.9" width="13.6" height="2.2" rx="1.1" />
+        <rect x="2.6" y="8.8" width="2.4" height="6.4" rx="1.1" />
+        <rect x="19" y="8.8" width="2.4" height="6.4" rx="1.1" />
+      </g>
+      <g transform="rotate(-45 12 12)" opacity="0.55">
+        <rect x="5.2" y="10.9" width="13.6" height="2.2" rx="1.1" />
+        <rect x="2.6" y="8.8" width="2.4" height="6.4" rx="1.1" />
+        <rect x="19" y="8.8" width="2.4" height="6.4" rx="1.1" />
+      </g>
     </svg>
   )
 }
 
 function BellIcon({ size = 18 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3.5 12h17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <rect x="5.4" y="8" width="2.8" height="8" rx="1" fill="currentColor" />
-      <rect x="15.8" y="8" width="2.8" height="8" rx="1" fill="currentColor" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <g transform="rotate(45 12 12)">
+        <rect x="5.2" y="10.9" width="13.6" height="2.2" rx="1.1" />
+        <rect x="2.6" y="8.8" width="2.4" height="6.4" rx="1.1" />
+        <rect x="19" y="8.8" width="2.4" height="6.4" rx="1.1" />
+      </g>
     </svg>
   )
 }
@@ -30,8 +37,9 @@ function BellIcon({ size = 18 }: { size?: number }) {
 function ClockIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M12 7.5V12l3 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4.6 5v4h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4.9 9a8 8 0 1 1-.6 4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M12 8.2V12l2.6 1.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -49,6 +57,12 @@ const ghisa: ModuleDefinition = {
   id: 'ghisa',
   name: 'GHISA',
   tagline: 'Workout log — sets, volume, iron discipline.',
+  intro: {
+    body: [
+      'GHISA logs the work: sets, kilos, honest volume. Start empty or from a template — the rest timer and PR flags run themselves.',
+      'Every finished session feeds your week\'s 1% as training volume. The log is the coach.',
+    ],
+  },
   accentVar: 'var(--m-ghisa)',
   schemaVersion: 4,
   tabs: [

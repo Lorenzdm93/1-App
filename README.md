@@ -27,6 +27,15 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9.2 — the details round**
+
+- **Navigation fixed and grown up.** The floating pill is now truly centered and can never overflow (the v0.9.1 bar inherited a stray `right: 0` — off-center *and* wide). Tabs are properly sized: 24 px icons, readable labels, real touch targets; module bars scroll horizontally when five tabs won't fit.
+- **First-visit welcome sheets, platform-wide.** Every module now greets you once (prototype-style): what it does in two honest paragraphs, plus the medical disclaimer where one belongs (SANA, ORA). Stored per module; never shown again.
+- **The prototype icon family.** GHISA's crossed dumbbells, SANA's tilted capsule mark with the calendar-check / layers / framed-bars / open-book tabs, CADENCE's waveform, ORA's stopwatch, RESPIRO's breath-waves — redrawn from the prototype screenshots.
+- **SANA: tap a stack, see its doses.** Tapping a stack row on Today filters the slot lists to that stack only (outlined in its color), with "show all stacks" one tap away — exactly the prototype's promise line.
+- **GROVE: the prototype instrument.** The dial rebuilt at 340-scale with the layered bezel (gradient rim, radial face, inset shadow rings), ticks inside the rim, and the thin glowing amber arc riding just inside them — recovered from the prototype's own markup.
+- Next-move module pills shrunk to true badges.
+
 **New in v0.9.1 — shapes, not finish**
 
 - **The gradient ring gauge is now the platform's hero element.** A shared `Ring` component — two-stop gradient synthesized from any accent, rounded caps, soft glow, sweep-in on mount, dashed idle track. Deployed: Today's hero is the week score as a big ring with a Coaching line under it; below it, **a ring per module** (the Bevel home-row pattern) replaces the invisible thin meters — tap any ring to enter its module. The 1% screen opens on a 196 px ring. ORA's live arc and GROVE's dial joined the gradient family.

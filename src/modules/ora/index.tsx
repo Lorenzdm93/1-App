@@ -7,9 +7,10 @@ import OraQuickActions from './QuickActions'
 function DialIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M12 3.5V6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M12 12l3.4-3.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="13.2" r="7.8" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M10 2.6h4M12 2.6v2.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M12 13.2 15 10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M18.6 5.6l1.4 1.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   )
 }
@@ -34,8 +35,9 @@ function ChartIcon({ size = 18 }: { size?: number }) {
 function ListIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="6" cy="6.5" r="2.5" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M12 6.5h7M4 12.5h15M4 18.5h15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="6.4" cy="6.6" r="2.9" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M6.4 5.2v1.5l1 .8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M12.4 6.6H20M4 12.6h16M4 18.4h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   )
 }
@@ -44,6 +46,14 @@ const ora: ModuleDefinition = {
   id: 'ora',
   name: 'ORA',
   tagline: 'Fasting, hour by hour',
+  intro: {
+    body: [
+      'Fasting, hour by hour: pick a daily rhythm, a custom length, or an eating window — the dial tracks you to the second.',
+      'Body shows what\'s happening inside at every stage. Ending early still logs: it\'s data, not failure.',
+    ],
+    disclaimer:
+      'ORA is not medical advice. Do not fast — and talk to a doctor first — if you are pregnant, under 18, underweight, have a history of disordered eating, or take medication affecting blood sugar or blood pressure.',
+  },
   accentVar: 'var(--m-ora)',
   Icon: DialIcon,
   schemaVersion: 1,
