@@ -18,5 +18,8 @@ export function moduleById(id: string): ModuleDefinition | undefined {
 }
 
 export function enabledModules(enabledIds: readonly string[]): ModuleDefinition[] {
-  return MODULES.filter((m) => enabledIds.includes(m.id))
+  // The enabled array is ordered — the user's arrangement is the truth.
+  return enabledIds
+    .map((id) => MODULES.find((m) => m.id === id))
+    .filter((m): m is ModuleDefinition => m !== undefined)
 }

@@ -50,3 +50,7 @@ export function setTheme(theme: Theme): void {
 export function completeOnboarding(enabled: string[]): void {
   settingsStore.set((s) => ({ ...s, enabled, onboarded: true }))
 }
+
+export function setModuleOrder(ids: string[]): void {
+  settingsStore.set((st) => ({ ...st, enabled: ids.filter((id) => st.enabled.includes(id)) }))
+}

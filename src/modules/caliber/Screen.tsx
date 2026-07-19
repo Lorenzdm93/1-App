@@ -144,6 +144,27 @@ function TestTab() {
               }} />
           </Field>
         </div>
+        <div className="kv" style={{ marginTop: 12 }}>
+          <span className="k">Your lifts <span className="hint">· tap to include — chase only what your body agrees to</span></span>
+        </div>
+        <div className="chips">
+          {LIFTS.map((l) => {
+            const on = st.lifts.includes(l.id)
+            return (
+              <button
+                key={l.id}
+                className={'chip' + (on ? ' on' : '')}
+                onClick={() => {
+                  const next = on ? st.lifts.filter((x) => x !== l.id) : [...st.lifts, l.id]
+                  if (next.length === 0) return
+                  patchCaliber({ lifts: next, liftId: next.includes(st.liftId) ? st.liftId : next[0] })
+                }}
+              >
+                {l.name}
+              </button>
+            )
+          })}
+        </div>
         <div className="cb-profile-line num">
           {bmi !== null && <>BMI <b>{bmi}</b> · </>}
           goals set for top <b>{aimTop}%</b> of adult {st.sex === 'm' ? 'men' : 'women'} at <b>{bwN ?? st.bodyweight} kg</b>
@@ -151,8 +172,8 @@ function TestTab() {
       </div>
 
       <div className="card">
-        <div className="cb-lifts">
-          {LIFTS.map((l) => (
+        <div className="cb-lifts" style={{ ['--n' as string]: String(LIFTS.filter((l) => st.lifts.includes(l.id)).length) } as CSSProperties}>
+          {LIFTS.filter((l) => st.lifts.includes(l.id)).map((l) => (
             <button key={l.id}
               className={'cb-lift' + (l.id === st.liftId ? ' on' : '')}
               onClick={() => patchCaliber({ liftId: l.id })}>
@@ -253,7 +274,7 @@ function TestTab() {
             <span className="label" style={{ color: 'var(--m-caliber)' }}>Goals · top {aimTop}% · {bwN} kg</span>
           </div>
           <div className="cb-goals">
-            {LIFTS.map((l) => {
+            {LIFTS.filter((l) => st.lifts.includes(l.id)).map((l) => {
               const total = goalTotalKg(l.id, st.sex, bwN, aimTop)
               const v = l.bw ? Math.max(0, roundTo(total - bwN, 0.5)) : total
               return (
@@ -365,7 +386,7 @@ function StandardsTab() {
               <span key={p} className={p === aimPct ? 'aim' : ''}>{p}th{p === aimPct ? ' · aim' : ''}</span>
             ))}
           </div>
-          {LIFTS.map((l) => {
+          {LIFTS.filter((l) => st.lifts.includes(l.id)).map((l) => {
             const pr = st.prs[l.id]?.e1rm
             return (
               <div className="cb-tbl-row" key={l.id}>

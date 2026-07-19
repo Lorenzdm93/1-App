@@ -25,6 +25,8 @@ export interface CaliberState {
   tests: Record<string, TestEntry[]>
   /** The aim: "top X%". 30 = stronger than 70% of the population. */
   aimTop: number
+  /** Which lifts this lifter actually chases — no squat for a bad back is a valid life. */
+  lifts: string[]
 }
 
 const DEFAULTS: CaliberState = {
@@ -37,6 +39,7 @@ const DEFAULTS: CaliberState = {
   prs: {},
   tests: {},
   aimTop: 30,
+  lifts: ['bench', 'squat', 'deadlift', 'pullup'],
 }
 
 import { PERCENTILES } from './formulas'
@@ -50,7 +53,7 @@ interface V2Extras {
  * percentile — the old target maps to the percentile its threshold sat on.
  */
 export function migrateCaliber(data: unknown, fromVersion: number): CaliberState {
-  if ((fromVersion === 1 || fromVersion === 2) && data !== null && typeof data === 'object') {
+  if (fromVersion >= 1 && fromVersion <= 3 && data !== null && typeof data === 'object') {
     const d = data as Partial<CaliberState> & V2Extras
     const prs = d.prs && typeof d.prs === 'object' ? d.prs : {}
     let tests: Record<string, TestEntry[]> = d.tests && typeof d.tests === 'object' ? d.tests : {}
@@ -78,12 +81,15 @@ export function migrateCaliber(data: unknown, fromVersion: number): CaliberState
       prs,
       tests,
       aimTop,
+      lifts: Array.isArray((d as { lifts?: unknown }).lifts)
+        ? ((d as { lifts: string[] }).lifts)
+        : DEFAULTS.lifts,
     }
   }
   return DEFAULTS
 }
 
-export const caliberStore = createPersistedStore<CaliberState>('caliber', DEFAULTS, 3, migrateCaliber)
+export const caliberStore = createPersistedStore<CaliberState>('caliber', DEFAULTS, 4, migrateCaliber)
 
 export function patchCaliber(patch: Partial<CaliberState>): void {
   caliberStore.set((s) => ({ ...s, ...patch }))

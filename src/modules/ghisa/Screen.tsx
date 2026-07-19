@@ -9,6 +9,8 @@ import { Bars, Line } from '../../app/charts'
 import ExerciseSVG, { poseFor } from './ExerciseSVG'
 import { epley, pctForRatio, levelFor } from '../caliber/formulas'
 import { caliberStore } from '../caliber/model'
+export const uiFlags = { openChooser: false }
+
 import {
   ghisaStore,
   EXERCISES,
@@ -540,6 +542,12 @@ function Train({ templates }: { templates: Template[] }) {
   const [menu, setMenu] = useState<Template | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Template | null>(null)
   const [chooser, setChooser] = useState(false)
+  useEffect(() => {
+    if (uiFlags.openChooser) {
+      uiFlags.openChooser = false
+      setChooser(true)
+    }
+  }, [])
   return (
     <>
       <button className="btn btn-primary gh-start-hero" onClick={() => setChooser(true)}>

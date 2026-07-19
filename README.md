@@ -27,6 +27,14 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.9.6 — lucent chrome, and the machine bends to its owner**
+
+- **The GHISA exercise rows, rebuilt from zero.** A v0.5 base rule still declared `.gh-row` as its own grid, so the new inner wrapper was being crushed into a 26 px first column — the "completely wrong" you saw. The old grid is now structurally dead; the inner owns a clean five-column template (set · prev · kg · reps · check), edge to edge, header on the same rails, the × retired in favour of swipe.
+- **Hevy-school lucent chrome.** The back button floats — fixed top-left, circular, heavily blurred and translucent, following you down any scroll, always reachable. The nav returned to a **floating translucent pill** (this supersedes the docked bar): strong backdrop blur, and the active tab wrapped in an accent **bubble** with its own soft glow — the Hevy profile-tab feel.
+- **The widget behaves.** GHISA's Today card is one stat line and one **Start workout** pill; tapping it lands in GHISA *with the chooser sheet already open* — empty or template, decided in one place.
+- **CALIBER is modular inside.** OHP and Row are back; the profile gained **Your lifts** — toggle any of the six, and the lift tabs, goals grid, and standards table all follow. No squat for a bad back is a valid configuration, not an error state.
+- **Drag your modules.** On the Modules screen, hold the ⠿ grip and drag — the order persists and **Today follows it**, because the enabled list is now the ordered truth (`enabledModules` maps your arrangement, not the registry's).
+
 **New in v0.9.5 — exercise intelligence, and the round closed**
 
 - **GHISA: per-exercise insight pages, with movement.** Tap any exercise name in a live session: a full sheet with a **two-pose animated figure** of the lift (inline SVG morphs — bench, squat, deadlift, pull-up, OHP, row; offline, zero assets), then heaviest weight, best e1RM, best set, sessions, total reps, **PR count and PR history**, session-volume and e1RM trend lines, and for the big four a **percentile strength bar** with the level name, computed against your CALIBER profile. (An existing overview sheet was already routed there — it now serves the rich version.)

@@ -17,6 +17,8 @@ export const LIFTS: readonly Lift[] = [
   { id: 'squat', name: 'Squat' },
   { id: 'deadlift', name: 'Deadlift' },
   { id: 'pullup', name: 'Pull-up', bw: true },
+  { id: 'ohp', name: 'OHP' },
+  { id: 'row', name: 'Row' },
 ]
 
 export function liftById(id: string): Lift {

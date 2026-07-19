@@ -1,6 +1,7 @@
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
-import { ghisaStore, startFromTemplate, sessionSets, sessionVolume } from './model'
+import { ghisaStore, sessionSets, sessionVolume } from './model'
+import { uiFlags } from './Screen'
 
 export default function GhisaWidget() {
   const st = useStore(ghisaStore)
@@ -19,22 +20,15 @@ export default function GhisaWidget() {
           Last: <b className="num">{Math.round(sessionVolume(last)).toLocaleString()} kg</b> · {new Date(last.endTs ?? last.startTs).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
         </div>
       )}
-      {st.templates.length > 0 && (
-        <div className="gh-w-tpls">
-          {st.templates.slice(0, 3).map((t) => (
-            <button
-              key={t.id}
-              className="gh-w-tpl"
-              onClick={() => {
-                startFromTemplate(t.id)
-                navigate('/m/ghisa')
-              }}
-            >
-              ▶ {t.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <button
+        className="gh-w-start"
+        onClick={() => {
+          uiFlags.openChooser = true
+          navigate('/m/ghisa/train')
+        }}
+      >
+        ▶&nbsp; Start workout
+      </button>
     </>
   )
 }
