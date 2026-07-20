@@ -54,6 +54,12 @@ import {
   type SetType,
   type Template,
   type TemplateExercise,
+  EXERCISE_DB,
+  exerciseInfo,
+  setSetType,
+  exerciseUsage,
+  sessionSummary,
+  type SessionSummary,
 } from './model'
 
 const TYPE_BADGE: Record<SetType, string> = { normal: '', warmup: 'W', drop: 'D', fail: 'F' }
@@ -226,6 +232,7 @@ function SetRow({
   const prevAt = prev[index]
   const empty = set.weight === 0 && set.reps === 0 && !set.done
   const [dx, setDx] = useState(0)
+  const [typeMenu, setTypeMenu] = useState(false)
   const touchX = useRef<number | null>(null)
   const rowRef = useRef<HTMLDivElement | null>(null)
 
@@ -279,13 +286,37 @@ function SetRow({
     >
       <span className="gh-del-hint" aria-hidden="true">Delete</span>
       <div ref={rowRef} className="gh-row-inner" style={{ transform: `translateX(${dx}px)` }}>
-      <button
-        className={'gh-type gh-type-' + set.type}
-        onClick={() => cycleSetType(exercise.id, set.id)}
-        aria-label="Change set type"
-      >
-        {TYPE_BADGE[set.type] || index + 1}
-      </button>
+      <span className="gh-typewrap">
+        <button
+          className={'gh-type gh-type-' + set.type}
+          onClick={() => setTypeMenu((v) => !v)}
+          aria-label="Change set type"
+          aria-expanded={typeMenu}
+        >
+          {TYPE_BADGE[set.type] || index + 1}
+        </button>
+        {typeMenu && (
+          <>
+            <span className="gh-typescrim" onClick={() => setTypeMenu(false)} />
+            <span className="gh-typemenu" role="menu">
+              {([['normal', String(index + 1), 'Normal'], ['warmup', 'W', 'Warmup'], ['drop', 'D', 'Drop set'], ['fail', 'F', 'Failure']] as const).map(([t, badge, label]) => (
+                <button
+                  key={t}
+                  role="menuitem"
+                  className={'gh-typeopt t-' + t + (set.type === t ? ' on' : '')}
+                  onClick={() => {
+                    setSetType(exercise.id, set.id, t)
+                    setTypeMenu(false)
+                  }}
+                >
+                  <i>{badge}</i>
+                  {label}
+                </button>
+              ))}
+            </span>
+          </>
+        )}
+      </span>
       <span className="gh-prevcol num">
         {prevAt ? `${prevAt.weight}×${prevAt.reps}` : '—'}
         {set.done && set.type !== 'warmup' && prevMax > 0 && set.weight > prevMax && (
@@ -335,7 +366,7 @@ function SetRow({
   )
 }
 
-function LiveSession({ session, history }: { session: Session; history: Session[] }) {
+function LiveSession({ session, history, onFinish }: { session: Session; history: Session[]; onFinish: (s: SessionSummary) => void }) {
   const now = useNow(true)
   const [picker, setPicker] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
@@ -410,8 +441,10 @@ function LiveSession({ session, history }: { session: Session; history: Session[
         <button
           className="btn btn-primary"
           onClick={() => {
+            const summary = sessionSummary(session, history)
             const done = finishSession()
-            toast(done ? 'Workout logged' : 'Empty session discarded')
+            if (done) onFinish(summary)
+            else toast('Empty session discarded')
           }}
         >
           Finish workout
@@ -473,7 +506,10 @@ function TemplateEditor({
         />
         {exercises.map((x, i) => (
           <div className="gh-tpl-row" key={x.name + i}>
-            <span className="nm">{x.name}</span>
+            <span className="nmw">
+              <span className="nm">{x.name}</span>
+              <i className="nms">{exerciseInfo(x.name).muscle} · {x.targetSets} sets{x.targetReps && x.targetReps.length > 0 ? ' · ' + x.targetReps.join('\u00b7') : ''}</i>
+            </span>
             <span className="ctrl num">
               <button onClick={() => bump(i, -1)} aria-label="Fewer sets">−</button>
               {x.targetSets}
@@ -842,8 +878,14 @@ function RunningBanner({ session }: { session: Session }) {
 
 export default function GhisaScreen({ tab = 'train' }: { tab?: string }) {
   const st = useStore(ghisaStore)
+  const [celebrate, setCelebrate] = useState<SessionSummary | null>(null)
   if (st.active && tab === 'train') {
-    return <LiveSession session={st.active} history={st.history} />
+    return (
+      <>
+        <LiveSession session={st.active} history={st.history} onFinish={setCelebrate} />
+        <FinishSheet summary={celebrate} onClose={() => setCelebrate(null)} />
+      </>
+    )
   }
   return (
     <>
@@ -851,6 +893,110 @@ export default function GhisaScreen({ tab = 'train' }: { tab?: string }) {
       {tab === 'train' && <Train templates={st.templates} />}
       {tab === 'history' && <HistoryTab history={st.history} />}
       {tab === 'insights' && <InsightsTab history={st.history} />}
+      {tab === 'exercises' && <ExercisesTab history={st.history} />}
+      <FinishSheet summary={celebrate} onClose={() => setCelebrate(null)} />
+    </>
+  )
+}
+
+/* ---------- finish celebration ---------- */
+
+function FinishSheet({ summary, onClose }: { summary: SessionSummary | null; onClose: () => void }) {
+  if (summary === null) return null
+  return (
+    <Sheet open title="Workout logged" onClose={onClose}>
+      <div className="gh-fin">
+        <div className="gh-confetti" aria-hidden="true">
+          {Array.from({ length: 18 }).map((_, i) => (
+            <i key={i} className={'c' + (i % 6)} style={{ left: `${(i * 53) % 100}%`, animationDelay: `${(i % 9) * 0.09}s` }} />
+          ))}
+        </div>
+        <div className="gh-fin-hero">Nice work. 💪</div>
+        <div className="gh-fin-line">That's another brick on the wall — the volume is banked.</div>
+        <div className="ins-grid gh-fin-grid">
+          <div className="ins-box"><div className="v num">{Math.round(summary.volume).toLocaleString()}</div><div className="k">volume kg</div></div>
+          <div className="ins-box"><div className="v num">{summary.sets}</div><div className="k">sets done</div></div>
+          <div className="ins-box"><div className="v num">{summary.reps}</div><div className="k">total reps</div></div>
+          <div className="ins-box"><div className="v num">{summary.prs.length}</div><div className="k">PRs</div></div>
+        </div>
+        {summary.prs.length > 0 && (
+          <div className="gh-fin-prs">🏆 New weight PR{summary.prs.length > 1 ? 's' : ''}: {summary.prs.join(', ')}</div>
+        )}
+        <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }} onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </Sheet>
+  )
+}
+
+/* ---------- exercises tab ---------- */
+
+const MUSCLES = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'] as const
+
+function ExercisesTab({ history }: { history: Session[] }) {
+  const [q, setQ] = useState('')
+  const [muscle, setMuscle] = useState<string>('All')
+  const [detail, setDetail] = useState<string | null>(null)
+  const usage = exerciseUsage(history)
+
+  const used = [...usage.entries()]
+    .map(([name, u]) => ({ ...exerciseInfo(name), ...u }))
+    .filter((e) => (muscle === 'All' || e.muscle === muscle) && e.name.toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => b.lastTs - a.lastTs || b.sets - a.sets)
+
+  const usedNames = new Set(used.map((e) => e.name.toLowerCase()))
+  const library = EXERCISE_DB
+    .filter((e) => !usage.has(e.name) && !usedNames.has(e.name.toLowerCase()))
+    .filter((e) => (muscle === 'All' || e.muscle === muscle) && e.name.toLowerCase().includes(q.toLowerCase()))
+
+  return (
+    <>
+      <input
+        className="tinput gx-search"
+        placeholder="Search exercises"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
+      <div className="gx-muscles">
+        {MUSCLES.map((m) => (
+          <button key={m} className={'gx-mchip' + (m === muscle ? ' on' : '')} onClick={() => setMuscle(m)}>
+            {m}
+          </button>
+        ))}
+      </div>
+      {used.length > 0 && (
+        <>
+          <div className="gx-k">Your exercises</div>
+          <div className="card gx-card">
+            {used.map((e) => (
+              <button key={e.name} className="gx-row" onClick={() => setDetail(e.name)}>
+                <span className="gx-nm">
+                  <b>{e.name}</b>
+                  <i>{e.muscle} · {e.equipment} · {e.sets} sets logged</i>
+                </span>
+                <span className="gx-chev" aria-hidden="true">›</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="gx-k">Library</div>
+      <div className="card gx-card">
+        {library.map((e) => (
+          <button key={e.name} className="gx-row" onClick={() => setDetail(e.name)}>
+            <span className="gx-nm">
+              <b>{e.name}</b>
+              <i>{e.muscle} · {e.equipment}</i>
+            </span>
+            <span className="gx-chev" aria-hidden="true">›</span>
+          </button>
+        ))}
+        {library.length === 0 && used.length === 0 && (
+          <div className="w-line" style={{ padding: 12 }}>Nothing matches — clear the search or filter.</div>
+        )}
+      </div>
+      <ExerciseDetail name={detail} history={history} onClose={() => setDetail(null)} />
     </>
   )
 }

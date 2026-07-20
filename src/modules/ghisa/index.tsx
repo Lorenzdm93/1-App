@@ -62,6 +62,14 @@ function SparkIcon({ size = 18 }: { size?: number }) {
   )
 }
 
+function LibIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+      <path d="M4.5 4.5v15M9 4.5v15M13.5 5.5v13M18.5 7.5 20 19" />
+    </svg>
+  )
+}
+
 const ghisa: ModuleDefinition = {
   id: 'ghisa',
   name: 'GHISA',
@@ -78,6 +86,7 @@ const ghisa: ModuleDefinition = {
     { id: 'train', label: 'Train', Icon: BellIcon },
     { id: 'history', label: 'History', Icon: ClockIcon },
     { id: 'insights', label: 'Insights', Icon: SparkIcon },
+    { id: 'exercises', label: 'Exercises', Icon: LibIcon },
   ],
   Icon,
   Screen,

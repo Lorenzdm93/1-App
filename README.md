@@ -27,6 +27,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.10.1 — GHISA, prototype-true**
+
+The set number is now the control it deserved: a wide badge that opens a **Hevy-style pop-up menu** — Normal / Warmup / Drop / Failure, each color-coded (W amber, D violet, F red) — instead of blind cycling. Finishing a workout earns a **celebration sheet with confetti**: volume banked, sets, total reps, and any **weight PRs** called out by name. A fourth tab, **Exercises**, lands with search and muscle filters — *Your exercises* on top (most recent first, with lifetime set counts), the full library beneath, every row opening the per-exercise page (best set, e1RM trend, volume, PR history). The template editor rows grew a muscle · sets · reps subtitle — pick movements and rep schemes there; weight stays where it belongs, in the session. Module tab icons now light **module-accent when active** (platform-wide), GHISA's ember is the prototype's `#f97316`, and the swipe-to-delete keeps its full-red, commit-at-half physics.
+
 **New in v0.10.0 — CADENCE, prototype-true**
 
 The whole module rebuilt against the Cadence prototype, and three bugs owned. The invisible check circle wasn't hidden — it was painted with tokens that don't exist (`--line-strong`, `--ok`), so the border computed to transparent; every cadence style now lives in one consolidated CSS layer where nine generational layers used to fight. The teal "Add habit" button was escaping too: sheets portal to `<body>`, outside the module's accent scope — the shell now mirrors the active module's accent onto `:root`, so dialogs keep their module's color everywhere.

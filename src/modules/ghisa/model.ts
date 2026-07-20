@@ -796,3 +796,124 @@ export function duplicateTemplate(templateId: string): void {
     return { ...s, templates: [...s.templates, copy] }
   })
 }
+
+/* ---------- v0.10.1: exercise library + set typing + summaries ---------- */
+
+export interface ExerciseInfo { name: string; muscle: string; equipment: string }
+
+/** Prototype library — muscle · equipment per movement. Unknown names fall back to Other. */
+export const EXERCISE_DB: readonly ExerciseInfo[] = [
+  { name: 'Bench Press', muscle: 'Chest', equipment: 'Barbell' },
+  { name: 'Incline Bench Press', muscle: 'Chest', equipment: 'Barbell' },
+  { name: 'Dumbbell Bench Press', muscle: 'Chest', equipment: 'Dumbbell' },
+  { name: 'Chest Flies', muscle: 'Chest', equipment: 'Cable' },
+  { name: 'Cable Chest Fly', muscle: 'Chest', equipment: 'Cable' },
+  { name: 'Dip', muscle: 'Chest', equipment: 'Bodyweight' },
+  { name: 'Deadlift', muscle: 'Back', equipment: 'Barbell' },
+  { name: 'Barbell Row', muscle: 'Back', equipment: 'Barbell' },
+  { name: 'Dumbbell Row', muscle: 'Back', equipment: 'Dumbbell' },
+  { name: 'Seated Cable Row', muscle: 'Back', equipment: 'Cable' },
+  { name: 'Lat Pulldown', muscle: 'Back', equipment: 'Cable' },
+  { name: 'Pull-up', muscle: 'Back', equipment: 'Bodyweight' },
+  { name: 'Face Pull', muscle: 'Back', equipment: 'Cable' },
+  { name: 'Squat', muscle: 'Legs', equipment: 'Barbell' },
+  { name: 'Back Squat', muscle: 'Legs', equipment: 'Barbell' },
+  { name: 'Front Squat', muscle: 'Legs', equipment: 'Barbell' },
+  { name: 'Romanian Deadlift', muscle: 'Legs', equipment: 'Barbell' },
+  { name: 'Leg Press', muscle: 'Legs', equipment: 'Machine' },
+  { name: 'Leg Curl', muscle: 'Legs', equipment: 'Machine' },
+  { name: 'Leg Extension', muscle: 'Legs', equipment: 'Machine' },
+  { name: 'Bulgarian Split Squat', muscle: 'Legs', equipment: 'Dumbbell' },
+  { name: 'Walking Lunge', muscle: 'Legs', equipment: 'Dumbbell' },
+  { name: 'Hip Thrust', muscle: 'Legs', equipment: 'Barbell' },
+  { name: 'Calf Raise', muscle: 'Legs', equipment: 'Machine' },
+  { name: 'Standing Calf Raise', muscle: 'Legs', equipment: 'Machine' },
+  { name: 'Overhead Press', muscle: 'Shoulders', equipment: 'Barbell' },
+  { name: 'Dumbbell Shoulder Press', muscle: 'Shoulders', equipment: 'Dumbbell' },
+  { name: 'Lateral Raise', muscle: 'Shoulders', equipment: 'Dumbbell' },
+  { name: 'Rear Delt Fly', muscle: 'Shoulders', equipment: 'Dumbbell' },
+  { name: 'Upright Row', muscle: 'Shoulders', equipment: 'Cable' },
+  { name: 'Biceps Curl', muscle: 'Arms', equipment: 'Dumbbell' },
+  { name: 'Barbell Curl', muscle: 'Arms', equipment: 'Barbell' },
+  { name: 'Hammer Curl', muscle: 'Arms', equipment: 'Dumbbell' },
+  { name: 'Preacher Curl', muscle: 'Arms', equipment: 'Machine' },
+  { name: 'Triceps Pushdown', muscle: 'Arms', equipment: 'Cable' },
+  { name: 'Skull Crusher', muscle: 'Arms', equipment: 'Barbell' },
+  { name: 'Overhead Triceps Extension', muscle: 'Arms', equipment: 'Cable' },
+  { name: 'Plank', muscle: 'Core', equipment: 'Bodyweight' },
+  { name: 'Cable Crunch', muscle: 'Core', equipment: 'Cable' },
+  { name: 'Hanging Leg Raise', muscle: 'Core', equipment: 'Bodyweight' },
+  { name: 'Ab Wheel Rollout', muscle: 'Core', equipment: 'Bodyweight' },
+]
+
+export function exerciseInfo(name: string): ExerciseInfo {
+  const hit = EXERCISE_DB.find((e) => e.name.toLowerCase() === name.toLowerCase())
+  return hit ?? { name, muscle: 'Other', equipment: 'Custom' }
+}
+
+/** Direct set-type assignment — the Hevy-style menu, not a blind cycle. */
+export function setSetType(exerciseId: string, setId: string, type: SetType): void {
+  ghisaStore.set((st) => {
+    if (!st.active) return st
+    return {
+      ...st,
+      active: {
+        ...st.active,
+        exercises: st.active.exercises.map((ex) =>
+          ex.id !== exerciseId
+            ? ex
+            : { ...ex, sets: ex.sets.map((s) => (s.id === setId ? { ...s, type } : s)) },
+        ),
+      },
+    }
+  })
+}
+
+/** Lifetime usage per exercise name: working sets + last trained ts. */
+export function exerciseUsage(history: Session[]): Map<string, { sets: number; lastTs: number }> {
+  const m = new Map<string, { sets: number; lastTs: number }>()
+  for (const s of history) {
+    for (const ex of s.exercises) {
+      const n = ex.sets.filter((x) => x.done && x.type !== 'warmup').length
+      if (n === 0) continue
+      const cur = m.get(ex.name) ?? { sets: 0, lastTs: 0 }
+      m.set(ex.name, { sets: cur.sets + n, lastTs: Math.max(cur.lastTs, s.startTs) })
+    }
+  }
+  return m
+}
+
+export interface SessionSummary { volume: number; reps: number; sets: number; prs: string[] }
+
+/** Totals for the closing celebration; PRs = exercises whose heaviest set beat all history. */
+export function sessionSummary(s: Session, history: Session[]): SessionSummary {
+  let volume = 0
+  let reps = 0
+  let sets = 0
+  const prs: string[] = []
+  const prevBest = new Map<string, number>()
+  for (const h of history) {
+    if (h === s) continue
+    for (const ex of h.exercises) {
+      for (const x of ex.sets) {
+        if (!x.done || x.type === 'warmup') continue
+        const k = ex.name.toLowerCase()
+        if (x.weight > (prevBest.get(k) ?? 0)) prevBest.set(k, x.weight)
+      }
+    }
+  }
+  for (const ex of s.exercises) {
+    let top = 0
+    for (const x of ex.sets) {
+      if (!x.done) continue
+      reps += x.reps
+      sets++
+      if (x.type !== 'warmup') {
+        volume += x.weight * x.reps
+        if (x.weight > top) top = x.weight
+      }
+    }
+    if (top > 0 && top > (prevBest.get(ex.name.toLowerCase()) ?? 0)) prs.push(ex.name)
+  }
+  return { volume, reps, sets, prs }
+}
