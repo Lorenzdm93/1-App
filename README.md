@@ -27,6 +27,14 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.10.2 — GHISA, rebuilt from the prototype**
+
+GHISA is gone and rewritten from the ground up against the standalone prototype — not patched, rebuilt. The forged-iron dark theme now renders pixel-faithful (its own `--g-*` palette: `#0B0C0E` ground, ember `#F97316`, chalk text), and light mode maps the same layout onto app tokens. The module is now four tabs mirroring the prototype exactly — **Home** (period stats, 8-week volume bars, streak, recent, resume-in-progress), **Train** (start empty or from a template, full template editor with per-exercise set steppers), **History** (every session, tap for the set-by-set breakdown with per-set e1RM and PR flags), **Exercises** (searchable library + muscle filters, custom exercises, per-exercise detail with heaviest / best-1RM / most-reps / sessions and a 1RM-vs-Volume progression chart).
+
+The live workout is the prototype's: Prev-value tap-to-fill, set-type cycling (Normal / Warm-up / Drop / Failure), supersets, an auto **rest timer** with ±15s and skip, live **PR detection** (weight / 1RM / reps, warm-ups excluded), and a **1RM calculator** (Epley) in the header. Finishing shows the trophy summary with any personal records and all-time volume PRs. Charts are hand-rolled SVG (no chart dependency); icons are local strokes.
+
+Your existing GHISA history is **migrated, not discarded** — old name-based sessions and templates resolve onto the library (unknown movements become tagged customs, muscle inferred), so nothing you logged is lost. Finished sessions still feed the weekly 1% as training volume.
+
 **New in v0.10.1 — GHISA, prototype-true**
 
 The set number is now the control it deserved: a wide badge that opens a **Hevy-style pop-up menu** — Normal / Warmup / Drop / Failure, each color-coded (W amber, D violet, F red) — instead of blind cycling. Finishing a workout earns a **celebration sheet with confetti**: volume banked, sets, total reps, and any **weight PRs** called out by name. A fourth tab, **Exercises**, lands with search and muscle filters — *Your exercises* on top (most recent first, with lifetime set counts), the full library beneath, every row opening the per-exercise page (best set, e1RM trend, volume, PR history). The template editor rows grew a muscle · sets · reps subtitle — pick movements and rep schemes there; weight stays where it belongs, in the session. Module tab icons now light **module-accent when active** (platform-wide), GHISA's ember is the prototype's `#f97316`, and the swipe-to-delete keeps its full-red, commit-at-half physics.

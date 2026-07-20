@@ -3,8 +3,8 @@ import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import Screen from './Screen'
 import Widget from './Widget'
-import QuickActions from './QuickActions'
 
+/* The forged dumbbell — GHISA's mark. */
 function Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -24,15 +24,21 @@ function Icon({ size = 20 }: { size?: number }) {
   )
 }
 
-function BellIcon({ size = 18 }: { size?: number }) {
+function HomeIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 10.5 12 3l9 7.5M5 9.5V20h5v-6h4v6h5V9.5" />
+    </svg>
+  )
+}
+
+function DumbIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <g transform="rotate(45 12 12)">
         <rect x="6.8" y="10.9" width="10.4" height="2.2" rx="1.1" />
         <rect x="4.6" y="8.6" width="2.4" height="6.8" rx="1.1" />
         <rect x="17" y="8.6" width="2.4" height="6.8" rx="1.1" />
-        <rect x="2.9" y="10.1" width="1.5" height="3.8" rx="0.75" />
-        <rect x="19.6" y="10.1" width="1.5" height="3.8" rx="0.75" />
       </g>
       <g transform="rotate(-45 12 12)">
         <rect x="6.8" y="10.9" width="10.4" height="2.2" rx="1.1" />
@@ -49,15 +55,6 @@ function ClockIcon({ size = 18 }: { size?: number }) {
       <path d="M4.6 5v4h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M4.9 9a8 8 0 1 1-.6 4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       <path d="M12 8.2V12l2.6 1.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function SparkIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 19V9M12 19V4M19 19v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="12" cy="4" r="1.6" fill="currentColor" />
     </svg>
   )
 }
@@ -81,17 +78,16 @@ const ghisa: ModuleDefinition = {
     ],
   },
   accentVar: 'var(--m-ghisa)',
-  schemaVersion: 4,
+  schemaVersion: 5,
   tabs: [
-    { id: 'train', label: 'Train', Icon: BellIcon },
+    { id: 'home', label: 'Home', Icon: HomeIcon },
+    { id: 'train', label: 'Train', Icon: DumbIcon },
     { id: 'history', label: 'History', Icon: ClockIcon },
-    { id: 'insights', label: 'Insights', Icon: SparkIcon },
-    { id: 'exercises', label: 'Exercises', Icon: LibIcon },
+    { id: 'library', label: 'Exercises', Icon: LibIcon },
   ],
   Icon,
   Screen,
   Widget,
-  QuickActions,
   weekly: {
     label: 'volume',
     unit: 'kg',

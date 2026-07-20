@@ -1,19 +1,9 @@
-import { useStore } from '../../core/hooks'
-import { navigate } from '../../core/router'
-import { ActionChip } from '../../app/ui'
-import { ghisaStore } from './model'
-import { uiFlags } from './Screen'
-
-export default function GhisaQuickActions() {
-  const st = useStore(ghisaStore)
-  return (
-    <ActionChip
-      accentVar="var(--m-ghisa)"
-      label={st.active ? 'Resume session' : 'Start workout'}
-      onClick={() => {
-        if (!st.active) uiFlags.openChooser = true
-        navigate(st.active ? '/m/ghisa' : '/m/ghisa/train')
-      }}
-    />
-  )
-}
+/**
+ * Retired in v0.10.2. GHISA was rebuilt 1:1 from the standalone prototype,
+ * whose Train screen carries its own start/resume affordance — the module
+ * no longer registers a dashboard QuickActions chip.
+ *
+ * This file is intentionally inert: the GitHub Pages web-UI deploy can't
+ * delete files, so an empty valid module is left in place. Nothing imports it.
+ */
+export {}

@@ -1,23 +1,40 @@
 import { useStore } from '../../core/hooks'
-import { ghisaStore, sessionSets, sessionVolume } from './model'
+import { navigate } from '../../core/router'
+import { ghisaStore, fmtVol, periodStart, weekStreak } from './model'
 
+/** Compact Today-dashboard card: this week's volume + week streak, or a nudge to start. */
 export default function GhisaWidget() {
   const st = useStore(ghisaStore)
+  const weekStart = periodStart('week')
+  const thisWeek = st.workouts.filter((w) => w.startedAt >= weekStart)
+  const vol = thisWeek.reduce((a, w) => a + w.volume, 0)
+  const sets = thisWeek.reduce((a, w) => a + w.sets, 0)
+  const streak = weekStreak(st.workouts)
+
   if (st.active) {
     return (
-      <div className="w-line">
-        Workout in progress — <b className="num">{sessionSets(st.active)} sets · {Math.round(sessionVolume(st.active)).toLocaleString()} kg</b>
+      <button className="gw-line" onClick={() => navigate('/m/ghisa/train')}>
+        Workout in progress — tap to resume.
+      </button>
+    )
+  }
+
+  if (thisWeek.length === 0) {
+    return (
+      <div className="gw-wrap">
+        <div className="gw-line">No sessions logged this week yet.</div>
+        {streak > 0 && <div className="gw-sub num">{streak}-week streak on the line — don't break it.</div>}
       </div>
     )
   }
-  const last = st.history[0]
+
   return (
-    <>
-      {last && (
-        <div className="w-line">
-          Last: <b className="num">{Math.round(sessionVolume(last)).toLocaleString()} kg</b> · {new Date(last.endTs ?? last.startTs).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
-        </div>
-      )}
-    </>
+    <div className="gw-wrap">
+      <div className="gw-stats">
+        <span className="gw-stat"><b className="num">{fmtVol(vol)}</b><i>kg this week</i></span>
+        <span className="gw-stat"><b className="num">{thisWeek.length}</b><i>{thisWeek.length === 1 ? 'session' : 'sessions'}</i></span>
+        <span className="gw-stat"><b className="num">{sets}</b><i>sets</i></span>
+      </div>
+    </div>
   )
 }
