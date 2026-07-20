@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import { useRoute, navigate } from '../core/router'
 import { moduleById } from '../core/registry'
@@ -54,6 +55,13 @@ function BackIcon() {
 
 function ModuleScreen({ id, tab }: { id: string; tab?: string }) {
   const mod = moduleById(id)
+  // Sheets portal to <body>, escaping .mod-scope — mirror the accent onto :root
+  // so module dialogs (and their primary buttons) keep the module's color.
+  useEffect(() => {
+    if (!mod) return
+    document.documentElement.style.setProperty('--accent', mod.accentVar)
+    return () => document.documentElement.style.removeProperty('--accent')
+  }, [mod])
   if (!mod) {
     navigate('/')
     return null

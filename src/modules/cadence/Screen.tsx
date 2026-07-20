@@ -1,183 +1,367 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
-import { lastNDayKeys, todayKey, shiftDay } from '../../core/dates'
-import { StatBox } from '../../app/ui'
+import { navigate } from '../../core/router'
+import { todayKey, shiftDay, lastNDayKeys } from '../../core/dates'
 import { toast } from '../../core/toast'
-import { Sheet, ConfirmSheet, Empty, Seg } from '../../app/ui'
+import { Sheet, ConfirmSheet, Empty, Field, StatBox } from '../../app/ui'
 import {
   cadenceStore,
   activeHabits,
+  habitById,
+  isChecked,
+  isScheduled,
+  statusOf,
+  scheduleLabel,
   setMood,
   moodOn,
-  isChecked,
+  MOOD_FACES,
   addHabit,
   editHabit,
   archiveHabit,
-  toggleCheck,
   setCheck,
+  setSlip,
   habitStreak,
-  logSlip,
-  undoTodaySlip,
-  slipDays,
+  bestBuildStreak,
   daysClean,
+  bestClean,
+  strength,
+  nextMilestone,
+  MS_QUIT,
+  rangeStat,
+  dayIntensity,
   monthGrid,
   monthDayKey,
-  dayCompletion,
-  weekStartKey,
-  weekDayKeys,
-  countInWeek,
-  weekStreak,
   monthInsights,
+  monthMoodAvg,
+  yearWeeks,
   yearInsights,
   EMOJI_PRESETS,
+  PRESETS,
   PALETTE,
   type Habit,
   type HabitType,
+  type YearCell,
 } from './model'
 
-function accent(h: Habit): CSSProperties {
-  return { ['--h-acc' as string]: h.color } as CSSProperties
+/* Cross-tab handoff: Month/Year cells open their day in Today. Consumed on mount. */
+let pendingDay: string | null = null
+function openDayInToday(day: string): void {
+  pendingDay = day
+  navigate('/m/cadence/today')
 }
 
-/* ---------- weekly ring ---------- */
+const DOW_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MON_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+]
 
-function WeekRing({ count, target }: { count: number; target: number }) {
-  const r = 14
-  const C = 2 * Math.PI * r
-  const frac = Math.min(1, count / target)
+function hc(h: Habit): CSSProperties {
+  return { ['--hc' as string]: h.color } as CSSProperties
+}
+
+function CheckGlyph() {
   return (
-    <span className="cdh-ring" aria-label={`${count} of ${target} this week`}>
-      <svg viewBox="0 0 36 36" aria-hidden="true">
-        <circle cx="18" cy="18" r={r} fill="none" stroke="var(--line)" strokeWidth="3" />
-        <circle
-          cx="18"
-          cy="18"
-          r={r}
-          fill="none"
-          stroke="var(--h-acc, var(--m-cadence))"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeDasharray={`${frac * C} ${C - frac * C}`}
-          transform="rotate(-90 18 18)"
-        />
-      </svg>
-      <span className="n num">{count}</span>
-    </span>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
   )
 }
 
-/* ---------- today rows ---------- */
+/* ---------- Today: ring summary ---------- */
 
-function WeekDots({ habitId }: { habitId: string }) {
+function RingCard({ viewDay }: { viewDay: string }) {
   const st = useStore(cadenceStore)
-  const today = todayKey()
-  const days = weekDayKeys(weekStartKey(today))
-  return (
-    <span className="cdh-week" aria-hidden="true">
-      {days.map((day) => (
-        <span
-          key={day}
-          className={
-            'cdh-wdot' +
-            (isChecked(st, habitId, day) ? ' on' : '') +
-            (slipDays(st, habitId).includes(day) ? ' slip' : '') +
-            (day === today ? ' today' : '') +
-            (day > today ? ' future' : '')
-          }
-        />
-      ))}
-    </span>
+  const habits = activeHabits(st)
+  const sched = habits.filter(
+    (h) => h.type === 'build' && viewDay >= h.startDate && isScheduled(h, viewDay),
   )
-}
-
-function BuildRow({ habit, day, onManage }: { habit: Habit; day: string; onManage: () => void }) {
-  const st = useStore(cadenceStore)
-  const done = isChecked(st, habit.id, day)
-  const daily = habit.targetPerWeek === 7
-  const count = countInWeek(st, habit.id, weekStartKey(todayKey()))
-  const streakLabel = daily
-    ? `${habitStreak(st, habit.id)}d`
-    : `${weekStreak(st, habit.id)}w`
+  const doneCt = sched.filter((h) => isChecked(st, h.id, viewDay)).length
+  const slips = habits.filter(
+    (h) => h.type === 'quit' && (st.slips[h.id] ?? []).includes(viewDay),
+  ).length
+  const pct = sched.length > 0 ? doneCt / sched.length : 0
+  const allDone = sched.length > 0 && doneCt === sched.length && slips === 0
+  const R = 20
+  const C = 2 * Math.PI * R
+  const headline =
+    sched.length > 0
+      ? doneCt === sched.length
+        ? 'All done 🎉'
+        : `${doneCt} of ${sched.length} done`
+      : 'No scheduled habits'
+  const subline =
+    slips > 0
+      ? `${slips} slip${slips > 1 ? 's' : ''} logged ${viewDay === todayKey() ? 'today' : 'this day'}`
+      : allDone
+        ? 'Great consistency today'
+        : 'Tap a circle to check off'
   return (
-    <div className="cdh-row" style={accent(habit)}>
-      <button
-        className={'cdh-tile' + (done ? ' done' : '')}
-        onClick={() => setCheck(habit.id, day, !done)}
-        aria-label={(done ? 'Uncheck ' : 'Check ') + habit.name}
-        aria-pressed={done}
-      >
-        <span className="em" aria-hidden="true">{habit.emoji}</span>
-        <span className="tick" aria-hidden="true">✓</span>
-      </button>
-      <button className="cdh-info" onClick={onManage}>
-        <span className="cdh-name">{habit.name}</span>
-        <span className="cdh-sub">
-          {streakLabel} streak
-          {!daily && ` · ${count}/${habit.targetPerWeek} this week`}
-          {habit.cue ? ` · ${habit.cue}` : ''}
-        </span>
-        <WeekDots habitId={habit.id} />
-      </button>
-      <button
-        className={'cdh-checkbtn' + (done ? ' on' : '')}
-        onClick={() => setCheck(habit.id, day, !done)}
-        aria-label={(done ? 'Uncheck ' : 'Check ') + habit.name}
-      >
-        ✓
-      </button>
+    <div className={'cd-ringcard' + (allDone ? ' done' : '')}>
+      <span className="cd-ring" aria-hidden="true">
+        <svg width="46" height="46" viewBox="0 0 46 46">
+          <circle cx="23" cy="23" r={R} stroke="var(--ring-track)" strokeWidth="5" fill="none" />
+          <circle
+            cx="23" cy="23" r={R}
+            stroke="var(--accent)" strokeWidth="5" fill="none" strokeLinecap="round"
+            strokeDasharray={String(C)} strokeDashoffset={String(C * (1 - pct))}
+            transform="rotate(-90 23 23)"
+            style={{ transition: 'stroke-dashoffset 0.5s var(--ease)' }}
+          />
+        </svg>
+        <i className="num">{sched.length > 0 ? Math.round(pct * 100) : '—'}</i>
+      </span>
+      <span className="cd-ringtxt">
+        <b>{headline}</b>
+        <span>{subline}</span>
+      </span>
     </div>
   )
 }
 
-function QuitRow({
+/* ---------- Today: habit cards ---------- */
+
+function MiniStrip({ habit, endDay }: { habit: Habit; endDay: string }) {
+  const st = useStore(cadenceStore)
+  return (
+    <span className="cd-mini" aria-hidden="true">
+      {Array.from({ length: 7 }, (_, i) => {
+        const day = shiftDay(endDay, i - 6)
+        const s = statusOf(st, habit, day)
+        const cls =
+          s === 'done' || s === 'clean' ? ' on' : s === 'slip' ? ' slip' : s === 'off' ? ' off' : s === 'pre' ? ' pre' : ''
+        return <i key={day} className={'m' + cls + (day === endDay ? ' now' : '')} />
+      })}
+    </span>
+  )
+}
+
+function HabitCard({
   habit,
+  viewDay,
   onManage,
-  onSlip,
 }: {
   habit: Habit
+  viewDay: string
   onManage: () => void
-  onSlip: () => void
 }) {
   const st = useStore(cadenceStore)
+  const today = todayKey()
+  const isBuild = habit.type === 'build'
+  const offDay = isBuild && !isScheduled(habit, viewDay)
+  const preDay = viewDay < habit.startDate
+  const done = isBuild && isChecked(st, habit.id, viewDay)
+  const slipped = !isBuild && (st.slips[habit.id] ?? []).includes(viewDay)
+  const badge = scheduleLabel(habit)
   const clean = daysClean(st, habit.id)
-  const slippedToday = slipDays(st, habit.id).includes(todayKey())
+  const str = strength(st, habit.id)
+  const ms = !isBuild && !slipped ? nextMilestone(clean, MS_QUIT) : null
+
   return (
-    <div className={'cdh-row' + (slippedToday ? ' slipped' : '')} style={accent(habit)}>
-      <span className="cdh-tile quit" aria-hidden="true">
-        <span className="em">{habit.emoji}</span>
-      </span>
-      <button className="cdh-info" onClick={onManage}>
-        <span className="cdh-name">{habit.name}</span>
-        <span className="cdh-sub">{habit.cue ?? 'clean days'}</span>
-        <span className={'cdh-clean num' + (slippedToday ? ' slipped' : '')}>
-          {slippedToday ? <>0 <i>· slipped today</i></> : <>{clean} <i>{clean === 1 ? 'day clean' : 'days clean'}</i></>}
-        </span>
+    <div className={'cd-card' + (offDay || preDay ? ' muted' : '')} style={hc(habit)}>
+      <span className="cd-accbar" aria-hidden="true" />
+      <button className="cd-emoji" onClick={onManage} aria-label={`Open ${habit.name}`}>
+        {habit.emoji}
       </button>
-      {slippedToday ? (
-        <button className="cd-slip undone" onClick={() => undoTodaySlip(habit.id)}>
-          Undo
-        </button>
-      ) : (
-        <button className="cd-slip" onClick={onSlip}>
-          Slip
-        </button>
-      )}
+      <button className="cd-mid" onClick={onManage}>
+        <span className="cd-name">
+          {habit.name}
+          {!isBuild && <i className="cd-badge quit">quit</i>}
+          {badge && <i className="cd-badge">{badge}</i>}
+          {offDay && <i className="cd-badge">rest day</i>}
+        </span>
+        {habit.cue && <span className="cd-cue">{habit.cue}</span>}
+        <span className="cd-meta">
+          {isBuild ? (
+            <span className="cd-streakline">
+              🔥 <b className="num">{habitStreak(st, habit.id)}</b>{' '}
+              {habitStreak(st, habit.id) === 1 ? 'day' : 'days'}
+            </span>
+          ) : (
+            <span className="cd-streakline">
+              Best clean <b className="num">{bestClean(st, habit.id)}</b>d
+            </span>
+          )}
+          <span className="cd-strength">
+            Strength <i className="cd-sbar"><i style={{ width: `${str}%` }} /></i>{' '}
+            <b className="num">{str}</b>
+          </span>
+        </span>
+        <MiniStrip habit={habit} endDay={viewDay} />
+      </button>
+      <span className="cd-right">
+        {isBuild ? (
+          <button
+            className={'cd-check' + (done ? ' on' : '')}
+            disabled={preDay}
+            onClick={() => setCheck(habit.id, viewDay, !done)}
+            aria-pressed={done}
+            aria-label={(done ? 'Uncheck ' : 'Check off ') + habit.name}
+          >
+            <CheckGlyph />
+          </button>
+        ) : (
+          <span className="cd-quitctl">
+            <span className="cd-cleannum num">
+              {slipped ? 0 : clean}
+              <small> {(slipped ? 0 : clean) === 1 ? 'day clean' : 'days clean'}</small>
+            </span>
+            <button
+              className={'cd-slipbtn' + (slipped ? ' active' : '')}
+              disabled={preDay}
+              aria-pressed={slipped}
+              onClick={() => {
+                setSlip(habit.id, viewDay, !slipped)
+                if (!slipped && viewDay === today) {
+                  toast(`${habit.name} — slip logged. Clean days reset; the record stays honest.`)
+                }
+              }}
+            >
+              {slipped ? 'Slipped ✓' : 'Log slip'}
+            </button>
+            {ms !== null && (
+              <span className="cd-nextms">
+                {ms - clean} day{ms - clean === 1 ? '' : 's'} to {ms}
+              </span>
+            )}
+          </span>
+        )}
+      </span>
     </div>
   )
 }
 
-/* ---------- month ---------- */
+/* ---------- Today view ---------- */
+
+function TodayView({ onAdd, onManage }: { onAdd: () => void; onManage: (h: Habit) => void }) {
+  const st = useStore(cadenceStore)
+  const [viewDay, setViewDay] = useState<string>(() => {
+    const p = pendingDay
+    pendingDay = null
+    return p ?? todayKey()
+  })
+  const today = todayKey()
+  const isToday = viewDay === today
+  const habits = activeHabits(st)
+  const ordered = [...habits].sort((a, b) => {
+    const as = viewDay >= a.startDate && isScheduled(a, viewDay) ? 0 : 1
+    const bs = viewDay >= b.startDate && isScheduled(b, viewDay) ? 0 : 1
+    return as - bs
+  })
+  const d = new Date(viewDay + 'T12:00:00')
+
+  return (
+    <>
+      <div className="cd-dayhead">
+        <button className="cd-dnav" onClick={() => setViewDay((v) => shiftDay(v, -1))} aria-label="Previous day">‹</button>
+        <span className="cd-dwrap">
+          <i className="dow">{DOW_SHORT[d.getDay()]}, {MON_SHORT[d.getMonth()]} {d.getDate()}</i>
+          <b className="date">{isToday ? 'Today' : `${MONTHS[d.getMonth()]} ${d.getDate()}`}</b>
+        </span>
+        <button
+          className="cd-dnav"
+          onClick={() => setViewDay((v) => shiftDay(v, 1))}
+          disabled={isToday}
+          aria-label="Next day"
+        >
+          ›
+        </button>
+        {!isToday && (
+          <button className="cd-jump" onClick={() => setViewDay(today)}>Jump to today</button>
+        )}
+      </div>
+
+      {habits.length > 0 && <RingCard viewDay={viewDay} />}
+
+      <div className="cd-mood">
+        <span className="cd-mood-k">
+          Mood
+          {(() => {
+            const vals = Object.entries(st.moods ?? {})
+              .sort(([a], [b]) => (a < b ? 1 : -1))
+              .slice(0, 7)
+              .map(([, v]) => v)
+            if (vals.length === 0) return null
+            const avg = vals.reduce((s, v) => s + v, 0) / vals.length
+            return <i className="cd-mood-avg">{MOOD_FACES[Math.round(avg) - 1]} 7d</i>
+          })()}
+        </span>
+        {MOOD_FACES.map((em, i) => (
+          <button
+            key={em}
+            className={'cd-mood-btn' + (moodOn(st, viewDay) === i + 1 ? ' on' : '')}
+            aria-label={`Mood ${i + 1} of 5`}
+            onClick={() => setMood(viewDay, i + 1)}
+          >
+            {em}
+          </button>
+        ))}
+      </div>
+
+      {habits.length === 0 ? (
+        <Empty title="No habits yet" sub="Small, daily, repeatable — that's where the 1% lives." />
+      ) : (
+        <div className="cd-cards">
+          {ordered.map((h) => (
+            <HabitCard key={h.id} habit={h} viewDay={viewDay} onManage={() => onManage(h)} />
+          ))}
+        </div>
+      )}
+
+      {!isToday && habits.length > 0 && (
+        <p className="rs-foot">
+          Filling in a past day — checks carry that day's own timestamp, so streaks stay honest.
+        </p>
+      )}
+
+      <button className="cd-addbtn" onClick={onAdd}>
+        <i aria-hidden="true">＋</i> Add habit
+      </button>
+    </>
+  )
+}
+
+/* ---------- Month view ---------- */
+
+function intensityLevel(r: number | null): number | null {
+  if (r === null) return null
+  if (r <= 0) return 0
+  if (r >= 1) return 4
+  if (r >= 0.75) return 3
+  if (r >= 0.5) return 2
+  return 1
+}
+
+function Legend() {
+  return (
+    <div className="cd-legend" aria-hidden="true">
+      Less
+      {[0, 1, 2, 3, 4].map((l) => (
+        <i key={l} className={'lc l' + l} />
+      ))}
+      More
+    </div>
+  )
+}
+
+function stripCellClass(s: ReturnType<typeof statusOf>): string {
+  if (s === 'done' || s === 'clean') return ' on'
+  if (s === 'slip') return ' slip'
+  if (s === 'off') return ' off'
+  if (s === 'pre' || s === 'future') return ' pre'
+  return ''
+}
 
 function MonthView() {
   const st = useStore(cadenceStore)
   const now = new Date()
   const [ym, setYm] = useState<{ y: number; m: number }>({ y: now.getFullYear(), m: now.getMonth() })
-  const [backfill, setBackfill] = useState<string | null>(null)
   const grid = monthGrid(ym.y, ym.m)
   const today = todayKey()
-  const builds = activeHabits(st).filter((h) => h.type === 'build')
-  const label = new Date(ym.y, ym.m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  const habits = activeHabits(st)
+  const isCurrent = ym.y === now.getFullYear() && ym.m === now.getMonth()
 
   function move(delta: number) {
     setYm(({ y, m }) => {
@@ -187,347 +371,525 @@ function MonthView() {
   }
 
   const ins = monthInsights(st, grid)
+  const moodAvg = monthMoodAvg(st, grid)
+  const aKey = monthDayKey(grid, 1)
+  const bKey = monthDayKey(grid, grid.days)
+
   return (
     <>
-      <div className="ins-grid">
-        <StatBox label="avg completion" value={`${ins.avgCompletion}%`} />
-        <StatBox label="check-ins" value={String(ins.checkIns)} />
-        <StatBox label="active habits" value={String(ins.activeBuilds)} />
-        <StatBox
-          label="most consistent"
-          value={ins.mostConsistent ? `${ins.mostConsistent.pct}%` : '—'}
-          sub={ins.mostConsistent ? ins.mostConsistent.name : undefined}
-        />
-      </div>
-      <div className="card">
-        <div className="cd-month-head">
-          <button onClick={() => move(-1)} aria-label="Previous month">‹</button>
-          <span>{label}</span>
-          <button onClick={() => move(1)} aria-label="Next month">›</button>
-        </div>
-        <div className="cd-month-grid">
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-            <span className="cd-dow" key={i}>{d}</span>
-          ))}
-          {Array.from({ length: grid.leadingBlanks }).map((_, i) => (
-            <span key={'b' + i} />
-          ))}
-          {Array.from({ length: grid.days }).map((_, i) => {
-            const day = monthDayKey(grid, i + 1)
-            const ratio = dayCompletion(st, day)
-            const future = day > today
-            const level = ratio === 0 ? 0 : ratio < 0.34 ? 1 : ratio < 0.67 ? 2 : ratio < 1 ? 3 : 4
-            const slipped = activeHabits(st).some((h) => (st.slips[h.id] ?? []).includes(day))
-            return (
-              <button
-                key={day}
-                className={
-                  'cd-day l' + level + (slipped ? ' slip' : '') + (day === today ? ' today' : '') + (future ? ' future' : '')
-                }
-                disabled={future}
-                onClick={() => setBackfill(day)}
-                aria-label={`Edit ${day}`}
-              >
-                {i + 1}
-              </button>
-            )
-          })}
-        </div>
-        <div className="cd-heat-label">Tap any past day to fill in what you did.</div>
+      <div className="cd-secnav">
+        <button className="cd-dnav" onClick={() => move(-1)} aria-label="Previous month">‹</button>
+        <b className="cd-seclabel">{MONTHS[ym.m]} {ym.y}</b>
+        <button className="cd-dnav" onClick={() => move(1)} disabled={isCurrent} aria-label="Next month">›</button>
       </div>
 
-      <Sheet
-        open={backfill !== null}
-        title={
-          backfill
-            ? new Date(backfill + 'T12:00:00').toLocaleDateString(undefined, {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })
-            : ''
-        }
-        onClose={() => setBackfill(null)}
-      >
-        {backfill && builds.length === 0 && (
-          <Empty title="No build habits" sub="Backfilling applies to build habits." />
-        )}
-        {backfill &&
-          builds.map((h) => {
-            const done = isChecked(st, h.id, backfill)
-            return (
-              <div className="cd-row" key={h.id} style={accent(h)}>
-                <button
-                  className={'cd-check' + (done ? ' done' : '')}
-                  onClick={() => setCheck(h.id, backfill, !done)}
-                >
-                  {h.emoji}
-                </button>
-                <span className="cd-info">
-                  <span className="cd-name">{h.name}</span>
-                </span>
-              </div>
-            )
-          })}
-      </Sheet>
+      <div className="ins-grid">
+        <StatBox label="avg completion" value={ins.avgCompletion !== null ? `${ins.avgCompletion}%` : '—'} />
+        <StatBox label="active habits" value={String(ins.activeHabits)} />
+        <StatBox
+          label="most consistent"
+          value={ins.mostConsistent ? `${ins.mostConsistent.emoji} ${ins.mostConsistent.pct}%` : '—'}
+          sub={ins.mostConsistent ? ins.mostConsistent.name : undefined}
+        />
+        <StatBox label="avg mood" value={moodAvg !== null ? `${MOOD_FACES[Math.round(moodAvg) - 1]} ${moodAvg}` : '—'} />
+      </div>
+
+      {habits.length === 0 ? (
+        <Empty title="No habits yet" sub="Add some from the Today tab — the month fills in as you do." />
+      ) : (
+        <>
+          <div className="card">
+            <div className="cd-divider">Overall — daily completion</div>
+            <div className="cd-cal">
+              {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((d) => (
+                <span className="cd-caldow" key={d}>{d}</span>
+              ))}
+              {Array.from({ length: grid.leadingBlanks }).map((_, i) => (
+                <span key={'b' + i} className="cd-calcell blank" />
+              ))}
+              {Array.from({ length: grid.days }).map((_, i) => {
+                const day = monthDayKey(grid, i + 1)
+                const future = day > today
+                const lvl = future ? null : intensityLevel(dayIntensity(st, day))
+                return (
+                  <button
+                    key={day}
+                    className={
+                      'cd-calcell' +
+                      (lvl !== null ? ' l' + lvl : '') +
+                      (day === today ? ' today' : '') +
+                      (future ? ' future' : '')
+                    }
+                    disabled={future}
+                    onClick={() => openDayInToday(day)}
+                    aria-label={`Open ${day}`}
+                  >
+                    <i className="cd-calnum num">{i + 1}</i>
+                  </button>
+                )
+              })}
+            </div>
+            <Legend />
+          </div>
+
+          <div className="card">
+            <div className="cd-divider">By habit</div>
+            {habits.map((h) => {
+              const s = rangeStat(st, h, aKey, bKey)
+              const isBuild = h.type === 'build'
+              const streak = isBuild ? habitStreak(st, h.id) : daysClean(st, h.id)
+              return (
+                <div className="cd-hrow" key={h.id} style={hc(h)}>
+                  <span className="cd-hlead">
+                    <i className="cd-he">{h.emoji}</i>
+                    <span className="cd-hmeta">
+                      <b className="cd-hn">{h.name}</b>
+                      <i className="cd-hsub">{!isBuild ? 'quit' : scheduleLabel(h) ?? 'daily'}</i>
+                    </span>
+                  </span>
+                  <span className="cd-strip">
+                    {Array.from({ length: grid.days }).map((_, i) => {
+                      const day = monthDayKey(grid, i + 1)
+                      const status = statusOf(st, h, day)
+                      const dead = status === 'pre' || status === 'future'
+                      return (
+                        <button
+                          key={day}
+                          className={'sc' + stripCellClass(status) + (day === today ? ' today' : '')}
+                          disabled={dead}
+                          aria-label={`${h.name} · ${day}`}
+                          onClick={() => {
+                            if (isBuild) setCheck(h.id, day, !isChecked(st, h.id, day))
+                            else setSlip(h.id, day, !(st.slips[h.id] ?? []).includes(day))
+                          }}
+                        />
+                      )
+                    })}
+                  </span>
+                  <span className="cd-hstats">
+                    <span className="hs">
+                      <b className="n num">{s.rate !== null ? `${s.rate}%` : '—'}</b>
+                      <i className="l">this month</i>
+                    </span>
+                    <span className="hs">
+                      <b className="n num">{streak}</b>
+                      <i className="l">{isBuild ? 'streak' : 'days clean'}</i>
+                    </span>
+                  </span>
+                </div>
+              )
+            })}
+            <p className="cd-hint">Tap any cell to fill in or correct a past day. Tap a calendar day to open it.</p>
+          </div>
+        </>
+      )}
     </>
   )
 }
 
-/* ---------- year ---------- */
+/* ---------- Year view ---------- */
 
-const YEAR_DAYS = 371 // 53 weeks
-
-function YearGrid({ habit }: { habit: Habit }) {
-  const st = useStore(cadenceStore)
-  const scroller = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (scroller.current) scroller.current.scrollLeft = scroller.current.scrollWidth
-  }, [])
+function Heatmap({
+  weeks,
+  cell,
+  scrollToToday,
+}: {
+  weeks: YearCell[][]
+  cell: (day: string) => { cls?: string; bg?: string } | null
+  scrollToToday: boolean
+}) {
+  const wrap = useRef<HTMLDivElement>(null)
   const today = todayKey()
-  const days = lastNDayKeys(YEAR_DAYS)
-  const pad = (7 - (YEAR_DAYS % 7)) % 7
-  const cells: (string | null)[] = [...Array.from({ length: pad }, () => null), ...days]
-  const slips = new Set(slipDays(st, habit.id))
+  useEffect(() => {
+    const node = wrap.current
+    if (!node || !scrollToToday) return
+    const idx = weeks.findIndex((wk) => wk.some((c) => c.key === today))
+    if (idx >= 0 && node.scrollWidth > node.clientWidth) {
+      node.scrollLeft = Math.max(0, idx * 14 - node.clientWidth * 0.6)
+    }
+  }, [weeks, scrollToToday, today])
+
+  const labels: { left: number; text: string }[] = []
+  let lastMonth = -1
+  weeks.forEach((wk, i) => {
+    const first = wk.find((c) => c.inYear)
+    if (!first) return
+    const mo = Number(first.key.slice(5, 7)) - 1
+    if (mo !== lastMonth) {
+      labels.push({ left: i * 14, text: MON_SHORT[mo] })
+      lastMonth = mo
+    }
+  })
+
   return (
-    <div className="card" style={accent(habit)}>
-      <div className="cd-year-head">
-        <span className="cd-name">
-          {habit.emoji} {habit.name}
-        </span>
-        <span className="cd-streak num">
-          {habit.type === 'build'
-            ? habit.targetPerWeek === 7
-              ? `${habitStreak(st, habit.id)}d streak`
-              : `${weekStreak(st, habit.id)}w streak`
-            : `${daysClean(st, habit.id)}d clean`}
-        </span>
+    <div className="cd-heatwrap" ref={wrap}>
+      <div className="cd-heatmonths" aria-hidden="true">
+        {labels.map((l) => (
+          <span key={l.text + l.left} style={{ left: l.left }}>{l.text}</span>
+        ))}
       </div>
-      <div className="cd-year-scroll" ref={scroller}>
-        <div className="cd-year-grid">
-          {cells.map((day, i) => {
-            if (day === null) return <span key={'p' + i} className="cd-ycell blank" />
-            const cls =
-              habit.type === 'build'
-                ? isChecked(st, habit.id, day)
-                  ? ' on'
-                  : ''
-                : slips.has(day)
-                  ? ' slip'
-                  : ''
-            return <span key={day} className={'cd-ycell' + cls + (day === today ? ' today' : '')} />
-          })}
+      <div className="cd-heatbody">
+        <div className="cd-heatdays" aria-hidden="true">
+          {['', 'T', '', 'T', '', 'S', ''].map((t, i) => (
+            <span key={i}>{t}</span>
+          ))}
+        </div>
+        <div className="cd-heat">
+          {weeks.map((wk, wi) => (
+            <div className="cd-hcol" key={wi}>
+              {wk.map((c) => {
+                if (!c.inYear) return <i key={c.key} className="cd-hc ghost" />
+                const r = cell(c.key)
+                const style = r?.bg ? ({ background: r.bg } as CSSProperties) : undefined
+                return (
+                  <button
+                    key={c.key}
+                    className={'cd-hc' + (r?.cls ?? '') + (c.key === today ? ' today' : '')}
+                    style={style}
+                    disabled={c.key > today}
+                    onClick={() => openDayInToday(c.key)}
+                    aria-label={`Open ${c.key}`}
+                  />
+                )
+              })}
+            </div>
+          ))}
         </div>
       </div>
     </div>
   )
 }
 
+function YearView() {
+  const st = useStore(cadenceStore)
+  const nowYear = new Date().getFullYear()
+  const [year, setYear] = useState(nowYear)
+  const habits = activeHabits(st)
+  const weeks = yearWeeks(year)
+  const today = todayKey()
+  const yi = yearInsights(st, year)
+  const aKey = `${year}-01-01`
+  const bKey = `${year}-12-31`
+
+  return (
+    <>
+      <div className="cd-secnav">
+        <button className="cd-dnav" onClick={() => setYear((y) => y - 1)} aria-label="Previous year">‹</button>
+        <b className="cd-seclabel">{year}</b>
+        <button className="cd-dnav" onClick={() => setYear((y) => y + 1)} disabled={year >= nowYear} aria-label="Next year">›</button>
+      </div>
+
+      <div className="ins-grid">
+        <StatBox label="check-ins" value={String(yi.checkIns)} />
+        <StatBox label="best streak" value={`${yi.bestStreak}d`} />
+        <StatBox label="active days" value={String(yi.activeDays)} />
+        <StatBox label="avg mood" value={yi.avgMood !== null ? `${MOOD_FACES[Math.round(yi.avgMood) - 1]} ${yi.avgMood}` : '—'} />
+      </div>
+
+      {habits.length === 0 ? (
+        <Empty title="Nothing to map yet" sub="The year view fills as you do." />
+      ) : (
+        <>
+          <div className="card">
+            <div className="cd-divider">Everything — consistency across the year</div>
+            <Heatmap
+              weeks={weeks}
+              scrollToToday={year === nowYear}
+              cell={(day) => {
+                if (day > today) return null
+                const lvl = intensityLevel(dayIntensity(st, day))
+                return lvl !== null ? { cls: ' l' + lvl } : null
+              }}
+            />
+            <Legend />
+          </div>
+
+          <div className="card">
+            <div className="cd-divider">By habit</div>
+            {habits.map((h) => {
+              const s = rangeStat(st, h, aKey, bKey)
+              const best = h.type === 'build' ? bestBuildStreak(st, h.id) : bestClean(st, h.id)
+              return (
+                <div className="cd-yhrow" key={h.id} style={hc(h)}>
+                  <div className="cd-yhhead">
+                    <i className="cd-he">{h.emoji}</i>
+                    <b className="cd-hn">
+                      {h.name}
+                      {h.type === 'quit' && <i className="cd-badge quit">quit</i>}
+                    </b>
+                    <span className="cd-yst">
+                      <span>Rate <b className="num">{s.rate !== null ? `${s.rate}%` : '—'}</b></span>
+                      <span>Best <b className="num">{best}</b>d</span>
+                      <span>Strength <b className="num">{strength(st, h.id)}</b></span>
+                    </span>
+                  </div>
+                  <Heatmap
+                    weeks={weeks}
+                    scrollToToday={year === nowYear}
+                    cell={(day) => {
+                      const status = statusOf(st, h, day)
+                      if (status === 'pre' || status === 'future') return null
+                      if (status === 'done' || status === 'clean') return { bg: h.color }
+                      if (status === 'slip') return { cls: ' slip' }
+                      if (status === 'off') return { cls: ' off' }
+                      return { cls: ' miss' }
+                    }}
+                  />
+                </div>
+              )
+            })}
+            <p className="cd-hint">Each square is a day — swipe sideways for the whole year. Tap a square to open that day.</p>
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
 /* ---------- habit form (add + edit) ---------- */
+
+const DAY_CHIPS: { dow: number; label: string }[] = [
+  { dow: 1, label: 'Mon' }, { dow: 2, label: 'Tue' }, { dow: 3, label: 'Wed' },
+  { dow: 4, label: 'Thu' }, { dow: 5, label: 'Fri' }, { dow: 6, label: 'Sat' }, { dow: 0, label: 'Sun' },
+]
 
 function HabitForm({
   mode,
   habit,
-  open,
   onClose,
 }: {
   mode: 'add' | 'edit'
   habit?: Habit
-  open: boolean
   onClose: () => void
 }) {
   const [name, setName] = useState(habit?.name ?? '')
-  const [emoji, setEmoji] = useState<string>(habit?.emoji ?? EMOJI_PRESETS[0])
+  const [emoji, setEmoji] = useState<string>(habit?.emoji ?? '✅')
   const [color, setColor] = useState<string>(habit?.color ?? PALETTE[0])
   const [type, setType] = useState<HabitType>(habit?.type ?? 'build')
   const [cue, setCue] = useState(habit?.cue ?? '')
-  const [target, setTarget] = useState<number>(habit?.targetPerWeek ?? 7)
+  const [schedMode, setSchedMode] = useState<'daily' | 'days'>(habit?.schedule.mode ?? 'daily')
+  const [days, setDays] = useState<number[]>(
+    habit?.schedule.mode === 'days' ? [...habit.schedule.days] : [1, 2, 3, 4, 5],
+  )
+  const [startDate, setStartDate] = useState<string>(habit?.startDate ?? todayKey())
+  const isQuit = type === 'quit'
 
   function commit() {
     if (!name.trim()) {
-      toast('Give the habit a name')
+      toast('Give your habit a name first.')
       return
     }
+    if (!isQuit && schedMode === 'days' && days.length === 0) {
+      toast('Pick at least one day.')
+      return
+    }
+    const schedule =
+      isQuit || schedMode === 'daily'
+        ? ({ mode: 'daily' } as const)
+        : ({ mode: 'days', days: [...days].sort((a, b) => a - b) } as const)
     if (mode === 'add') {
-      addHabit({ name, emoji, color, type, cue, targetPerWeek: target })
-      toast('Habit added')
+      addHabit({ name, emoji, color, type, schedule, startDate, cue })
+      toast(`${emoji} “${name.trim()}” added.`)
     } else if (habit) {
-      editHabit(habit.id, { name, emoji, color, cue, targetPerWeek: target })
+      editHabit(habit.id, { name, emoji, color, type, schedule, startDate, cue })
       toast('Habit updated')
     }
     onClose()
   }
 
   return (
-    <Sheet open={open} title={mode === 'add' ? 'New habit' : 'Edit habit'} onClose={onClose}>
+    <Sheet open title={mode === 'add' ? 'New habit' : 'Edit habit'} onClose={onClose}>
       {mode === 'add' && (
-        <div className="cd-quick">
-          <div className="cd-quick-label">Quick start <span>— tap to prefill</span></div>
-          <div className="cd-quick-k">Build</div>
-          <div className="cd-quick-row">
-            {([['💪','Workout'],['🏃','Run'],['📚','Read'],['🧘','Meditate'],['💧','Drink water'],['✍️','Journal'],['🥦','Eat vegetables'],['🌱','Stretch'],['😴','Sleep by 11pm'],['💊','Vitamins']] as const).map(([em, nm]) => (
-              <button key={nm} className="cd-quick-chip" onClick={() => { setName(nm); setEmoji(em); setType('build') }}>
-                {em} {nm}
-              </button>
-            ))}
-          </div>
-          <div className="cd-quick-k">Quit</div>
-          <div className="cd-quick-row">
-            {([['🚬','No smoking'],['🍺','No alcohol'],['📵','No doomscrolling'],['🍬','No sugar'],['🎮','No gaming'],['☕','No caffeine'],['🍔','No junk food'],['💸','No impulse buys']] as const).map(([em, nm]) => (
-              <button key={nm} className="cd-quick-chip" onClick={() => { setName(nm); setEmoji(em); setType('quit') }}>
-                {em} {nm}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      {mode === 'add' ? (
-        <Seg<HabitType>
-          options={[
-            { id: 'build', label: 'Build' },
-            { id: 'quit', label: 'Quit' },
-          ]}
-          value={type}
-          onChange={setType}
-        />
-      ) : null}
-      <input
-        className="tinput"
-        placeholder={type === 'build' ? 'e.g. Read 10 pages' : 'e.g. No cigarettes'}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        style={{ marginTop: 12 }}
-      />
-      <input
-        className="tinput"
-        placeholder="Cue (optional) — e.g. after morning coffee"
-        value={cue}
-        onChange={(e) => setCue(e.target.value)}
-        style={{ marginTop: 10 }}
-      />
-      {type === 'build' && (
         <>
-          <div className="section-label" style={{ marginTop: 14 }}>
-            Days per week
-          </div>
-          <div className="cd-target-row">
-            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-              <button
-                key={n}
-                className={'cd-target' + (n === target ? ' on' : '')}
-                onClick={() => setTarget(n)}
-                aria-pressed={n === target}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
+          <Field label="Quick start — tap to prefill">
+            <div className="cd-qk">Build</div>
+            <div className="cd-qchips">
+              {PRESETS.build.map(([em, nm]) => (
+                <button key={nm} className="cd-qchip" onClick={() => { setName(nm); setEmoji(em); setType('build') }}>
+                  {em} {nm}
+                </button>
+              ))}
+            </div>
+            <div className="cd-qk">Quit</div>
+            <div className="cd-qchips">
+              {PRESETS.quit.map(([em, nm]) => (
+                <button key={nm} className="cd-qchip q" onClick={() => { setName(nm); setEmoji(em); setType('quit') }}>
+                  {em} {nm}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <div className="cd-divider">or set up your own</div>
         </>
       )}
-      <div className="cd-emoji-grid">
-        {EMOJI_PRESETS.map((em) => (
-          <button key={em} className={'cd-emoji' + (em === emoji ? ' on' : '')} onClick={() => setEmoji(em)}>
-            {em}
+
+      <Field label="Type">
+        <div className="cd-typeseg">
+          <button className={'opt' + (!isQuit ? ' sel' : '')} onClick={() => setType('build')}>
+            <b>🎯 Build</b>
+            <i>Do it — check off each day</i>
           </button>
-        ))}
-      </div>
-      <div className="cd-colors">
-        {PALETTE.map((c) => (
-          <button
-            key={c}
-            className={'cd-color' + (c === color ? ' on' : '')}
-            style={{ background: c }}
-            onClick={() => setColor(c)}
-            aria-label={`Color ${c}`}
-          />
-        ))}
-      </div>
-      <button className="btn btn-primary" onClick={commit}>
+          <button className={'opt q' + (isQuit ? ' sel' : '')} onClick={() => setType('quit')}>
+            <b>🚫 Quit</b>
+            <i>Avoid it — count days clean</i>
+          </button>
+        </div>
+      </Field>
+
+      <Field label="Name">
+        <input
+          className="tinput"
+          placeholder={isQuit ? 'e.g. No smoking' : 'e.g. Morning workout'}
+          value={name}
+          maxLength={60}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </Field>
+
+      <Field label="Icon">
+        <div className="cd-emoji-grid">
+          {EMOJI_PRESETS.map((em) => (
+            <button key={em} className={'eg' + (em === emoji ? ' sel' : '')} onClick={() => setEmoji(em)}>
+              {em}
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      <Field label="Color">
+        <div className="cd-swatches">
+          {PALETTE.map((c) => (
+            <button
+              key={c}
+              className={'sw' + (c === color ? ' sel' : '')}
+              style={{ background: c }}
+              onClick={() => setColor(c)}
+              aria-label={`Color ${c}`}
+            />
+          ))}
+        </div>
+      </Field>
+
+      {!isQuit && (
+        <Field label="Repeat">
+          <div className="cd-minitabs">
+            <button className={schedMode === 'daily' ? 'on' : ''} onClick={() => setSchedMode('daily')}>Every day</button>
+            <button className={schedMode === 'days' ? 'on' : ''} onClick={() => setSchedMode('days')}>Specific days</button>
+          </div>
+          {schedMode === 'days' && (
+            <div className="cd-days">
+              {DAY_CHIPS.map(({ dow, label }) => (
+                <button
+                  key={dow}
+                  className={'dp' + (days.includes(dow) ? ' on' : '')}
+                  aria-pressed={days.includes(dow)}
+                  onClick={() =>
+                    setDays((d) => (d.includes(dow) ? d.filter((x) => x !== dow) : [...d, dow]))
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </Field>
+      )}
+
+      <Field label={isQuit ? 'Quit date' : 'Start date'}>
+        <input
+          className="tinput"
+          type="date"
+          value={startDate}
+          max={todayKey()}
+          onChange={(e) => { if (e.target.value) setStartDate(e.target.value) }}
+        />
+        <p className="cd-hint">
+          {isQuit ? 'The day you quit — your clean streak counts from here.' : "Days before this aren't counted."}
+        </p>
+      </Field>
+
+      <Field label="Cue / reminder (optional)">
+        <input
+          className="tinput"
+          placeholder={isQuit ? 'e.g. When I crave it, I drink water instead' : 'e.g. After I make coffee, I meditate for 10 min'}
+          value={cue}
+          maxLength={140}
+          onChange={(e) => setCue(e.target.value)}
+        />
+        <p className="cd-hint">A specific “when/where” cue makes habits far more likely to stick.</p>
+      </Field>
+
+      <button className="btn btn-primary cd-commit" onClick={commit}>
         {mode === 'add' ? 'Add habit' : 'Save changes'}
       </button>
     </Sheet>
   )
 }
 
-/* ---------- manage ---------- */
+/* ---------- manage sheet ---------- */
 
 function ManageSheet({ habit, onClose }: { habit: Habit | null; onClose: () => void }) {
   const st = useStore(cadenceStore)
   const [confirmArchive, setConfirmArchive] = useState(false)
   const [editing, setEditing] = useState(false)
   if (habit === null) return null
-  const isBuild = habit.type === 'build'
-  const live = st.habits.find((h) => h.id === habit.id) ?? habit
+  const live = habitById(st, habit.id) ?? habit
+  const isBuild = live.type === 'build'
   return (
     <>
-      <Sheet open={!editing} title={`${live.emoji} ${live.name}`} onClose={onClose}>
-        <div style={accent(live)}>
-          <div className="cd-heat" aria-label="Last eight weeks">
-            {lastNDayKeys(56).map((day) => {
-              const on = isBuild ? isChecked(st, live.id, day) : false
-              const slip = !isBuild && slipDays(st, live.id).includes(day)
-              return (
-                <span
-                  key={day}
-                  className={
-                    'cd-heat-cell' + (on ? ' on' : '') + (slip ? ' slip' : '') + (day === todayKey() ? ' today' : '')
-                  }
-                />
-              )
-            })}
-          </div>
-          <div className="cd-heat-label">
-            Last 8 weeks — {isBuild ? 'checked days' : 'slips'} · today outlined
-          </div>
-          <div className="kv">
-            <span className="k">{isBuild ? (live.targetPerWeek === 7 ? 'Current streak' : 'Week streak') : 'Days clean'}</span>
-            <span className="num">
-              {isBuild
-                ? live.targetPerWeek === 7
-                  ? `${habitStreak(st, live.id)} days`
-                  : `${weekStreak(st, live.id)} weeks`
-                : `${daysClean(st, live.id)} days`}
-            </span>
-          </div>
-          {isBuild && (
+      {!editing && (
+        <Sheet open title={`${live.emoji} ${live.name}`} onClose={onClose}>
+          <div style={hc(live)}>
+            <div className="cd-heat8" aria-label="Last eight weeks">
+              {lastNDayKeys(56).map((day) => {
+                const s = statusOf(st, live, day)
+                const style =
+                  s === 'done' || s === 'clean' ? ({ background: live.color } as CSSProperties) : undefined
+                return <i key={day} className={'hc' + stripCellClass(s) + (day === todayKey() ? ' today' : '')} style={style} />
+              })}
+            </div>
+            <p className="cd-hint">Last 8 weeks — today outlined.</p>
             <div className="kv">
-              <span className="k">Weekly target</span>
-              <span className="num">
-                {countInWeek(st, live.id, weekStartKey(todayKey()))}/{live.targetPerWeek}
+              <span className="k">{isBuild ? 'Current streak' : 'Days clean'}</span>
+              <span className="num">{isBuild ? `${habitStreak(st, live.id)} days` : `${daysClean(st, live.id)} days`}</span>
+            </div>
+            <div className="kv">
+              <span className="k">Best {isBuild ? 'streak' : 'clean run'}</span>
+              <span className="num">{isBuild ? bestBuildStreak(st, live.id) : bestClean(st, live.id)} days</span>
+            </div>
+            <div className="kv">
+              <span className="k">Strength</span>
+              <span className="num">{strength(st, live.id)} / 100</span>
+            </div>
+            <div className="kv">
+              <span className="k">Schedule</span>
+              <span>{isBuild ? scheduleLabel(live) ?? 'Every day' : 'Every day'}</span>
+            </div>
+            {live.cue && (
+              <div className="kv">
+                <span className="k">Cue</span>
+                <span>{live.cue}</span>
+              </div>
+            )}
+            <div className="kv">
+              <span className="k">{isBuild ? 'Started' : 'Quit date'}</span>
+              <span>
+                {new Date(live.startDate + 'T12:00:00').toLocaleDateString(undefined, {
+                  day: 'numeric', month: 'short', year: 'numeric',
+                })}
               </span>
             </div>
-          )}
-          {live.cue && (
-            <div className="kv">
-              <span className="k">Cue</span>
-              <span>{live.cue}</span>
+            <div className="btn-row" style={{ marginTop: 14 }}>
+              <button className="btn btn-danger" onClick={() => setConfirmArchive(true)}>Archive</button>
+              <button className="btn btn-ghost" onClick={() => setEditing(true)}>Edit</button>
             </div>
-          )}
-          <div className="kv">
-            <span className="k">Started</span>
-            <span>
-              {new Date(live.createdTs).toLocaleDateString(undefined, {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
-            </span>
           </div>
-          <div className="btn-row" style={{ marginTop: 14 }}>
-            <button className="btn btn-danger" onClick={() => setConfirmArchive(true)}>
-              Archive
-            </button>
-            <button className="btn btn-ghost" onClick={() => setEditing(true)}>
-              Edit
-            </button>
-          </div>
-        </div>
-      </Sheet>
+        </Sheet>
+      )}
       {editing && (
         <HabitForm
           mode="edit"
           habit={live}
-          open
           onClose={() => {
             setEditing(false)
             onClose()
@@ -554,137 +916,20 @@ function ManageSheet({ habit, onClose }: { habit: Habit | null; onClose: () => v
 /* ---------- screen ---------- */
 
 export default function CadenceScreen({ tab = 'today' }: { tab?: string }) {
-  const st = useStore(cadenceStore)
-  const habits = activeHabits(st)
   const [adding, setAdding] = useState(false)
-  const [dayOffset, setDayOffset] = useState(0)
-  const viewDay = shiftDay(todayKey(), dayOffset)
-  const pagerLabel =
-    dayOffset === 0
-      ? 'Today'
-      : dayOffset === -1
-        ? 'Yesterday'
-        : new Date(viewDay + 'T12:00:00').toLocaleDateString(undefined, {
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short',
-          })
   const [managing, setManaging] = useState<Habit | null>(null)
-  const [slipping, setSlipping] = useState<Habit | null>(null)
 
   return (
     <>
-      {tab === 'today' && (
-        <>
-          <div className="cd-pager">
-            <button onClick={() => setDayOffset((o) => o - 1)} aria-label="Previous day">‹</button>
-            <span className="cd-pager-label">{pagerLabel}</span>
-            <button
-              onClick={() => setDayOffset((o) => Math.min(0, o + 1))}
-              disabled={dayOffset === 0}
-              aria-label="Next day"
-            >
-              ›
-            </button>
-          </div>
-          <div className="cd-mood">
-            <span className="cd-mood-k">
-              Mood
-              {(() => {
-                const vals = Object.entries(st.moods ?? {})
-                  .sort(([a], [b]) => (a < b ? 1 : -1))
-                  .slice(0, 7)
-                  .map(([, v]) => v)
-                if (vals.length === 0) return null
-                const avg = vals.reduce((s, v) => s + v, 0) / vals.length
-                return <i className="cd-mood-avg">{['😞', '😕', '😐', '🙂', '😄'][Math.round(avg) - 1]} 7d</i>
-              })()}
-            </span>
-            {([[1, '😞'], [2, '😕'], [3, '😐'], [4, '🙂'], [5, '😄']] as const).map(([v, em]) => (
-              <button
-                key={v}
-                className={'cd-mood-btn' + (moodOn(st, viewDay) === v ? ' on' : '')}
-                aria-label={`Mood ${v} of 5`}
-                onClick={() => setMood(viewDay, v)}
-              >
-                {em}
-              </button>
-            ))}
-          </div>
-          {habits.length === 0 ? (
-            <Empty title="No habits yet" sub="Small, daily, repeatable — that's where the 1% lives." />
-          ) : (
-            habits.map((h) =>
-              h.type === 'build' ? (
-                <BuildRow key={h.id} habit={h} day={viewDay} onManage={() => setManaging(h)} />
-              ) : dayOffset === 0 ? (
-                <QuitRow
-                  key={h.id}
-                  habit={h}
-                  onManage={() => setManaging(h)}
-                  onSlip={() => {
-                    logSlip(h.id)
-                    toast(`${h.name} — slip logged. Clean days reset; the record stays honest.`)
-                  }}
-                />
-              ) : null,
-            )
-          )}
-          {dayOffset < 0 && (
-            <p className="rs-foot">
-              Filling in {pagerLabel.toLowerCase()} — events carry that day's timestamp, so streaks
-              stay honest. Quit habits log slips only on the day itself.
-            </p>
-          )}
-          <div style={{ marginTop: 12 }}>
-            <button className="btn btn-ghost" onClick={() => setAdding(true)}>
-              Add habit
-            </button>
-          </div>
-        </>
-      )}
-
+      {tab === 'today' && <TodayView onAdd={() => setAdding(true)} onManage={setManaging} />}
       {tab === 'month' && <MonthView />}
+      {tab === 'year' && <YearView />}
 
-      {tab === 'year' &&
-        (habits.length === 0 ? (
-          <Empty title="Nothing to map yet" sub="The year view fills as you do." />
-        ) : (
-          <>
-            {(() => {
-              const yi = yearInsights(st)
-              return (
-                <div className="ins-grid">
-                  <StatBox label="active days" value={String(yi.activeDays)} sub="last 365" />
-                  <StatBox label="check-ins" value={String(yi.checkIns)} />
-                  <StatBox label="best streak" value={`${yi.bestStreak}d`} />
-                  <StatBox label="habits tracked" value={String(yi.habitsTracked)} />
-                </div>
-              )
-            })()}
-            {habits.map((h) => (
-              <YearGrid key={h.id} habit={h} />
-            ))}
-          </>
-        ))}
-
-      {adding && <HabitForm mode="add" open onClose={() => setAdding(false)} />}
+      {adding && <HabitForm mode="add" onClose={() => setAdding(false)} />}
       <ManageSheet
         habit={managing}
         onClose={() => setManaging(null)}
         key={managing ? managing.id : 'none'}
-      />
-      <ConfirmSheet
-        open={slipping !== null}
-        title={slipping ? `Log a slip — ${slipping.name}?` : ''}
-        body="No judgment. The counter resets to zero and the climb starts again."
-        actionLabel="Log slip"
-        danger
-        onConfirm={() => {
-          if (slipping) logSlip(slipping.id)
-          toast('Slip logged — day zero')
-        }}
-        onClose={() => setSlipping(null)}
       />
     </>
   )

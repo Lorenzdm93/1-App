@@ -4,10 +4,17 @@ import type { ModuleDefinition } from '../../core/types'
 import Screen from './Screen'
 import Widget from './Widget'
 
+/** The prototype's waveform mark — the Cadence logo, unboxed. */
 function Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M2.5 13h3l2.4-6.4 3.4 11 2.6-8.6 1.9 4h5.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M2 13c2.2 0 2.2-8 4.4-8s2.2 14 4.4 14 2.2-11 4.4-11 1.6 5 4.4 5"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }
@@ -46,12 +53,12 @@ const cadence: ModuleDefinition = {
   tagline: 'Daily habits — streaks that compound.',
   intro: {
     body: [
-      'Small daily promises, kept visibly. Build habits count checks against a weekly target; quit habits count clean days.',
+      'Small daily promises, kept visibly. Build habits repeat every day or on the weekdays you choose; quit habits count days clean from your quit date.',
       'Tap to check today, page back to fix yesterday. Slips log without drama — the streak just restarts.',
     ],
   },
   accentVar: 'var(--m-cadence)',
-  schemaVersion: 3,
+  schemaVersion: 4,
   tabs: [
     { id: 'today', label: 'Today', Icon: CheckIcon },
     { id: 'month', label: 'Month', Icon: CalIcon },
