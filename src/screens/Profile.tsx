@@ -6,7 +6,7 @@ import { oneStore } from '../core/one'
 import { eventsStore } from '../core/events'
 import { Bars } from '../app/charts'
 import { StatBox } from '../app/ui'
-import { ghisaStore, sessionVolume } from '../modules/ghisa/model'
+import { ghisaStore } from '../modules/ghisa/model'
 import { oraStore, oraStats } from '../modules/ora/model'
 import type { CSSProperties } from 'react'
 import { caliberStore } from '../modules/caliber/model'
@@ -35,7 +35,7 @@ export default function Profile() {
   const compound = Math.round((Math.pow(1 + one.rate, won) - 1) * 100)
 
   const gh = ghisaStore.get()
-  const lifetimeVolume = Math.round(gh.history.reduce((s, x) => s + sessionVolume(x), 0))
+  const lifetimeVolume = Math.round(gh.workouts.reduce((s, w) => s + w.volume, 0))
   const ora = oraStats(oraStore.get().fasts)
   const cal = caliberStore.get()
   const bestE1 = Math.round(
