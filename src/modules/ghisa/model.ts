@@ -159,6 +159,26 @@ const LIB_ROWS: [string, string, string, string, string][] = [
   ['cable-crunch', 'Cable Crunch', 'Core', 'Cable', 'Kneel with hips still, crunch the ribs toward the pelvis, resist the way back up.'],
   ['hanging-leg-raise', 'Hanging Leg Raise', 'Core', 'Bodyweight', 'Dead hang, no swing — raise the legs by curling the pelvis up.'],
   ['ab-wheel', 'Ab Wheel Rollout', 'Core', 'Bodyweight', 'Braced and hollow, roll out only as far as the back stays flat, pull back with the abs.'],
+  ['t-bar-row', 'T-Bar Row', 'Back', 'Barbell', 'Chest up over the pad or hinged, pull the handle to the sternum, squeeze the mid-back.'],
+  ['chest-supported-row', 'Chest-Supported Row', 'Back', 'Machine', 'Chest glued to the pad, pull elbows back, no lower-back involvement at all.'],
+  ['good-morning', 'Good Morning', 'Legs', 'Barbell', 'Bar on the back, soft knees, hinge until the hamstrings load, stand by driving the hips.'],
+  ['hack-squat', 'Hack Squat', 'Legs', 'Machine', 'Back flat on the pad, lower deep, drive through mid-foot without the heels lifting.'],
+  ['goblet-squat', 'Goblet Squat', 'Legs', 'Dumbbell', 'Dumbbell at the chest, elbows inside the knees at the bottom, stay tall and sit deep.'],
+  ['sumo-deadlift', 'Sumo Deadlift', 'Legs', 'Barbell', 'Wide stance, toes out, grip inside the knees, wedge the hips down and push the floor apart.'],
+  ['seated-calf-raise', 'Seated Calf Raise', 'Legs', 'Machine', 'Pad on the knees, full stretch at the bottom, pause, press to tip-toes.'],
+  ['machine-chest-press', 'Machine Chest Press', 'Chest', 'Machine', 'Handles at mid-chest height, press to lockout, resist all the way back to a stretch.'],
+  ['pec-deck', 'Pec Deck Fly', 'Chest', 'Machine', 'Elbows slightly bent on the pads, squeeze the arms together, open slow to a stretch.'],
+  ['cable-lateral-raise', 'Cable Lateral Raise', 'Shoulders', 'Cable', 'Cable behind the body, raise to shoulder height leading with the elbow, lower slow.'],
+  ['barbell-shrug', 'Barbell Shrug', 'Back', 'Barbell', 'Arms straight, shrug the shoulders straight up to the ears, pause, lower fully.'],
+  ['arnold-press', 'Arnold Press', 'Shoulders', 'Dumbbell', 'Start palms facing you, rotate out as you press overhead, reverse on the way down.'],
+  ['close-grip-bench', 'Close-Grip Bench Press', 'Arms', 'Barbell', 'Grip just inside shoulders, elbows tucked, bar to the lower chest, press with the triceps.'],
+  ['concentration-curl', 'Concentration Curl', 'Arms', 'Dumbbell', 'Elbow braced on the inner thigh, curl without moving the upper arm, squeeze hard.'],
+  ['incline-db-curl', 'Incline Dumbbell Curl', 'Arms', 'Dumbbell', 'Lie back on an incline, arms hanging, curl from a full stretch without swinging.'],
+  ['decline-bench', 'Decline Bench Press', 'Chest', 'Barbell', 'Slight decline, bar to the lower chest, press up and slightly back — no bouncing.'],
+  ['chin-up', 'Chin-Up', 'Back', 'Bodyweight', 'Underhand grip, dead hang, pull the chin over the bar, control the descent fully.'],
+  ['back-extension', 'Back Extension', 'Core', 'Bodyweight', 'Hips on the pad, hinge down long, rise to a straight line — no hyperextending.'],
+  ['crunch', 'Crunch', 'Core', 'Bodyweight', 'Lower back stays down, curl the ribs toward the pelvis, exhale hard at the top.'],
+  ['lying-leg-raise', 'Lying Leg Raise', 'Core', 'Bodyweight', 'Hands under the hips, legs straight, raise by curling the pelvis, lower without arching.'],
 ]
 
 export const LIB: Exercise[] = LIB_ROWS.map(([id, name, muscle, equipment, cue]) => ({
@@ -569,7 +589,7 @@ export function migrateGhisa(data: unknown, _fromVersion: number): GhisaState {
   }
 }
 
-export const ghisaStore = createPersistedStore<GhisaState>('ghisa', defaults(), 7, migrateGhisa)
+export const ghisaStore = createPersistedStore<GhisaState>('ghisa', defaults(), 8, migrateGhisa)
 
 /** Ephemeral UI channel — lets the dashboard open the live workout screen. Never persisted. */
 export const ghisaUi = createStore<{ liveOpen: boolean }>({ liveOpen: false })

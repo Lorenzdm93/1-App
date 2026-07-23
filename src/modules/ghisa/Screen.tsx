@@ -8,6 +8,7 @@ import type { ReactNode, CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
 import { mediaUrls } from './media'
+import { runFinishIntegrations, type IntegrationResult } from './integrations'
 import {
   ghisaStore,
   ghisaUi,
@@ -266,7 +267,8 @@ function ExMedia({ exerciseId, name, size = 44, animate = false, onClick }: {
 function GBarChart({ data }: { data: { label: string; vol: number; ts?: number }[] }) {
   const W = 320
   const H = 150
-  const pad = { t: 6, b: 18, l: 4, r: 4 }
+  const dense = data.length > 12
+  const pad = { t: 6, b: dense ? 30 : 18, l: 4, r: 4 }
   const max = Math.max(1, ...data.map((d) => d.vol))
   const iw = (W - pad.l - pad.r) / data.length
   const bw = Math.min(26, iw * 0.62)
@@ -276,15 +278,18 @@ function GBarChart({ data }: { data: { label: string; vol: number; ts?: number }
         const h = Math.max(d.vol > 0 ? 3 : 0, ((H - pad.t - pad.b) * d.vol) / max)
         const x = pad.l + i * iw + (iw - bw) / 2
         const y = H - pad.b - h
-        return <rect key={i} x={x} y={y} width={bw} height={h} rx={5} className="bar" />
+        return <rect key={i} x={x} y={y} width={bw} height={h} rx={5} className="bar"
+          style={{ animationDelay: `${Math.min(i * 22, 500)}ms` }} />
       })}
-      {data.length > 12 && data.every((d) => typeof d.ts === 'number')
+      {dense && data.every((d) => typeof d.ts === 'number')
         ? data.map((d, i) => {
             const m = new Date(d.ts as number).getMonth()
             const prev = i > 0 ? new Date(data[i - 1].ts as number).getMonth() : -1
             if (m === prev) return null
+            const lx = pad.l + i * iw + iw / 2
             return (
-              <text key={'t' + i} x={pad.l + i * iw + iw / 2} y={H - 5} textAnchor="middle" className="lbl">
+              <text key={'t' + i} x={lx} y={H - 4} textAnchor="end" className="lbl"
+                transform={`rotate(-32 ${lx} ${H - 4})`}>
                 {new Date(d.ts as number).toLocaleDateString('en-GB', { month: 'short' })}
               </text>
             )
@@ -301,7 +306,7 @@ function GBarChart({ data }: { data: { label: string; vol: number; ts?: number }
 function GAreaChart({ data, fmt }: { data: { label: string; value: number }[]; fmt?: (v: number) => string }) {
   const W = 320
   const H = 160
-  const pad = { t: 10, b: 18, l: 8, r: 8 }
+  const pad = { t: 10, b: data.length > 6 ? 32 : 18, l: 8, r: 8 }
   const gid = useRef('g' + Math.random().toString(36).slice(2, 8)).current
   const vals = data.map((d) => d.value)
   const min = Math.min(...vals)
@@ -312,6 +317,7 @@ function GAreaChart({ data, fmt }: { data: { label: string; value: number }[]; f
   const line = data.map((d, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(d.value).toFixed(1)}`).join(' ')
   const area = `${line} L${x(data.length - 1).toFixed(1)},${H - pad.b} L${x(0).toFixed(1)},${H - pad.b} Z`
   const step = Math.max(1, Math.ceil(data.length / 5))
+  const angled = data.length > 6
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="none" className="gh2-chart" role="img" aria-label="Progression">
       <defs>
@@ -320,12 +326,15 @@ function GAreaChart({ data, fmt }: { data: { label: string; value: number }[]; f
           <stop offset="100%" stopColor="#F97316" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={area} fill={`url(#${gid})`} />
-      <path d={line} className="line" fill="none" />
-      <circle cx={x(data.length - 1)} cy={y(data[data.length - 1].value)} r="3.4" className="dot" />
+      <g className="gh2-chartreveal">
+        <path d={area} fill={`url(#${gid})`} />
+        <path d={line} className="line" fill="none" />
+        <circle cx={x(data.length - 1)} cy={y(data[data.length - 1].value)} r="3.4" className="dot" />
+      </g>
       {data.map((d, i) =>
         i % step === 0 ? (
-          <text key={i} x={x(i)} y={H - 5} textAnchor="middle" className="lbl">{d.label}</text>
+          <text key={i} x={x(i)} y={H - 5} textAnchor={angled ? 'end' : 'middle'} className="lbl"
+            transform={angled ? `rotate(-32 ${x(i)} ${H - 5})` : undefined}>{d.label}</text>
         ) : null,
       )}
       <text x={W - pad.r} y={pad.t + 6} textAnchor="end" className="lbl hi tnum">
@@ -702,7 +711,7 @@ function LiveWorkout({ active, workouts, onMinimize, onFinished, onStartRest }: 
 
 /* --------------------------- summary sheet --------------------------- */
 
-function SummarySheet({ summary, onClose }: { summary: FinishResult | null; onClose: () => void }) {
+function SummarySheet({ summary, onClose }: { summary: (FinishResult & { integ?: IntegrationResult }) | null; onClose: () => void }) {
   if (!summary) return null
   const w = summary.workout
   return (
@@ -716,6 +725,16 @@ function SummarySheet({ summary, onClose }: { summary: FinishResult | null; onCl
           <StatCard label="Reps" value={w.reps} />
           <StatCard label="Volume" value={fmtVol(w.volume)} sub="kg" />
         </div>
+        {summary.integ && (summary.integ.caliberPRs.length > 0 || summary.integ.cadenceMarked.length > 0) && (
+          <div className="gh2-integ">
+            {summary.integ.caliberPRs.map((l) => (
+              <div key={l} className="row"><i>→</i> CALIBER: new <b>{l.toUpperCase()}</b> PR logged</div>
+            ))}
+            {summary.integ.cadenceMarked.map((n) => (
+              <div key={n} className="row"><i>→</i> CADENCE: "{n}" checked for today</div>
+            ))}
+          </div>
+        )}
         {(w.prCount > 0 || summary.volumePR) && (
           <div className="gh2-goldnote">
             <ISparkles size={16} />
@@ -1447,7 +1466,7 @@ function ExerciseDetail({ st, exerciseId, onClose }: { st: GhisaState; exerciseI
                 </div>
               </div>
               <div style={{ height: 160 }}>
-                <GAreaChart
+                <GAreaChart key={(exerciseId ?? '') + metric}
                   data={sessions.map((s) => ({ label: s.label, value: metric === 'vol' ? s.vol : s.e1rm }))}
                   fmt={metric === 'vol' ? fmtVol : undefined} />
               </div>
@@ -1523,7 +1542,7 @@ export default function GhisaScreen({ tab = 'home' }: { tab?: string }) {
   const liveOpen = useStore(ghisaUi).liveOpen
   const setLiveOpen = (v: boolean) => ghisaUi.set({ liveOpen: v })
   const [rest, setRest] = useState<RestState | null>(null)
-  const [summary, setSummary] = useState<FinishResult | null>(null)
+  const [summary, setSummary] = useState<(FinishResult & { integ?: IntegrationResult }) | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [calcOpen, setCalcOpen] = useState(false)
 
@@ -1541,7 +1560,8 @@ export default function GhisaScreen({ tab = 'home' }: { tab?: string }) {
   function handleFinished(r: FinishResult) {
     setLiveOpen(false)
     setRest(null)
-    setSummary(r)
+    const integ = runFinishIntegrations(r.workout)
+    setSummary({ ...r, integ })
     navigate('/m/ghisa/home')
   }
 

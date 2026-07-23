@@ -4746,3 +4746,38 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
   border-color: color-mix(in srgb, #F87171 28%, var(--g-border));
 }
 .gh2-tplbtns .start { height: 48px; border-radius: 13px; }
+
+/* ============================================================
+   v0.10.5 — GHISA: chart motion, angled labels, integrations
+   ============================================================ */
+
+/* prototype-style draw-in: area+line+dot revealed left -> right */
+@keyframes gh2-wipe {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 -2% 0 0); }
+}
+.gh2-chartreveal { animation: gh2-wipe 0.9s cubic-bezier(0.25, 0.7, 0.3, 1) both; }
+
+/* bars grow from the baseline, gently staggered */
+@keyframes gh2-bargrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+.gh2-chart .bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: gh2-bargrow 0.5s cubic-bezier(0.25, 0.7, 0.3, 1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gh2-chartreveal, .gh2-chart .bar { animation: none; }
+}
+
+/* cross-module lines in the finish summary */
+.gh2-integ {
+  margin-top: 14px; padding: 12px 14px; border-radius: 12px; text-align: left;
+  background: var(--g-surface); border: 1px solid var(--g-border);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.gh2-integ .row { font-size: 13px; font-weight: 600; color: var(--g-text); }
+.gh2-integ .row i { font-style: normal; color: var(--g-ember); margin-right: 4px; }
+.gh2-integ .row b { color: var(--g-ember); }

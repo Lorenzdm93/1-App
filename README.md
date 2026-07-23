@@ -27,6 +27,14 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.10.5 — GHISA: living charts, module talk, 60 exercises**
+
+The per-exercise progression chart now **draws itself left to right** on open and on every 1RM ↔ Volume switch — the prototype's animation, rebuilt in raw SVG (clip-path reveal, ~0.9 s). Bars grow from the baseline with a light stagger, everywhere. Dense chart labels (6-month, year, long histories) sit at a **–32° angle** so months never collide. Tabs reordered: **Exercises before Profile** — Profile now sits second from the right, beside the gear.
+
+First **inter-module conversations**: finishing a workout hands your best session e1RM to **CALIBER** for its six standard lifts (bench, squat, deadlift, OHP, row, pull-up) — only when it beats CALIBER's stored PR, so its test history stays honest; pull-up pushes only when Measures knows your bodyweight, since CALIBER's pull-up standard is bodyweight-based. And any **CADENCE** build habit that reads as training — name matching workout/gym/train/palestra/allenamento or a 💪/🏋️ emoji — gets **checked off automatically** for the day. Both run fault-isolated in `ghisa/integrations.ts`: if a sibling module ever breaks, the workout still saves. The finish summary lists what happened ("→ CALIBER: new BENCH PR logged", "→ CADENCE: 'Workout' checked").
+
+The library grew to **60 movements** (T-Bar Row, Good Morning, Hack Squat, Goblet Squat, Sumo Deadlift, Arnold Press, Close-Grip Bench, Chin-Up, Pec Deck…), each with a coaching cue and a photo mapping — schema v8 folds them into existing installs. Re-run `node scripts/verify-ghisa-media.mjs` to validate the 20 new image mappings.
+
 **New in v0.10.4 — GHISA polish + platform gear**
 
 The 1% overview grows a **Start workout** chip under GHISA: tap it for a small routine menu — your templates plus an empty session — and you land straight in the live workout (it reads *Resume workout* when one is running). The Profile chart's 6-month and year views now label **month boundaries only** (Feb · Mar · Apr), so nothing crams. Exercise pages gained a **one-line coaching cue** for all 40 library movements (setup + execution, ember-edged card) and the demo photo is now **tappable — opens a full-size loop** in a lightbox; list thumbnails got more breathing room from the text. The Train cards' pen and trash are now proper 48 px bordered buttons (trash in warning red with its own tint) with cleaner lucide glyphs. And platform-wide: the Settings tab's sun-like asterisk is finally a **real gear**, in every module and the core app.
