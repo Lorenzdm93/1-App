@@ -1,427 +1,484 @@
-import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+/**
+ * GROVE — prototype-faithful rebuild inside the 1% shell.
+ * Brass focus / eucalyptus breaks, machined bezel dial, one-off round
+ * lengths, cycle dots, keyboard control, a grove that grows in real time,
+ * and an isometric forest with drag, swap, shuffle and roaming companions.
+ * Kept from the app: 4-tab structure, breaks-grow-nothing, continuous
+ * placement. All classes gv2-*.
+ */
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode, CSSProperties, PointerEvent as RPointerEvent } from 'react'
 import { useStore } from '../../core/hooks'
-import { eventsStore } from '../../core/events'
-import { dayKey, todayKey, lastNDayKeys } from '../../core/dates'
 import { toast } from '../../core/toast'
-import { ConfirmSheet, Sheet, Seg, StatBox } from '../../app/ui'
-import { Bars } from '../../app/charts'
-import PlantSVG from './PlantSVG'
-
-function useNow(active: boolean): number {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    if (!active) return
-    const t = setInterval(() => setNow(Date.now()), 500)
-    return () => clearInterval(t)
-  }, [active])
-  return now
-}
+import { dayKey, todayKey } from '../../core/dates'
 import {
-  groveStore, MODES, PRESETS, ANIMALS,
-  minutesFor, setMode, setFocusMinutes, start, pause, resume, reset, giveUp, skipBreak,
-  maybeComplete, progress, remainingMs,
-  addTask, setActiveTask, toggleFinished, removeTask,
-  todayStats, focusDayStreak, totalFocusMinutes, unlockedAnimals, nextAnimal,
-  reshuffle, jitter, plantUV, swapPlants,
-  type Plant, type Mode,
+  groveStore,
+  minutesFor,
+  setMode,
+  setRoundMinutes,
+  setModeDefault,
+  updateFlow,
+  start,
+  pause,
+  resume,
+  reset,
+  giveUp,
+  maybeComplete,
+  skipPhase,
+  progress,
+  remainingMs,
+  addTask,
+  setActiveTask,
+  toggleFinished,
+  removeTask,
+  reshuffle,
+  plantUV,
+  swapPlants,
+  movePlant,
+  kindForFocus,
+  todayStats,
+  focusDayStreak,
+  totalFocusMinutes,
+  unlockedAnimals,
+  nextAnimal,
+  seedDemo,
+  removeDemo,
+  hasDemo,
+  resetAll,
+  migrateGrove,
+  ANIMALS,
+  MODES,
+  MODE_PRESETS,
+  type GroveState,
+  type Mode,
+  type CompletionEvent,
 } from './model'
+import { ArtDefs, PlantInner, PlantSprite, AnimalSprite, type AnimalId } from './Art'
 
 const MODE_LABEL: Record<Mode, string> = { focus: 'Focus', short: 'Short break', long: 'Long break' }
 
 function fmtClock(ms: number): string {
-  const total = Math.max(0, Math.ceil(ms / 1000))
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${String(s).padStart(2, '0')}`
+  const s = Math.max(0, Math.ceil(ms / 1000))
+  return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0')
 }
 
-/* ---------- the dial ---------- */
+function useNow(active: boolean, everyMs = 250): number {
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    if (!active) return
+    const t = setInterval(() => setNow(Date.now()), everyMs)
+    return () => clearInterval(t)
+  }, [active, everyMs])
+  return now
+}
 
-function Dial({
-  minutes,
-  fraction,
-  running,
-  isBreak,
-  paused,
-  clock,
-  sub,
-  hint,
-  onEditMinutes,
-}: {
-  minutes: number
-  fraction: number // 0..1 remaining
-  running: boolean
-  isBreak: boolean
-  paused: boolean
-  clock: string
-  sub: string
-  hint: string | null
-  onEditMinutes: ((m: number) => void) | null
-}) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(String(minutes))
-  const R = 88
-  const C = 2 * Math.PI * R
-  const ticks = Array.from({ length: 60 })
+/* ------------------------- signals (chime, notify) ------------------------- */
+
+let AC: AudioContext | null = null
+export function primeAudio(): void {
+  const st = groveStore.get()
+  if (!AC && st.settings.sound) {
+    try {
+      AC = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    } catch { /* no audio available */ }
+  }
+  if (AC && AC.state === 'suspended') void AC.resume()
+}
+function chime(kind: 'focus' | 'break'): void {
+  if (!groveStore.get().settings.sound || !AC) return
+  const notes = kind === 'focus' ? [660, 880, 1108] : [523, 659]
+  const t0 = AC.currentTime
+  notes.forEach((f, i) => {
+    const o = AC!.createOscillator()
+    const g = AC!.createGain()
+    o.type = 'sine'
+    o.frequency.value = f
+    g.gain.setValueAtTime(0, t0 + i * 0.16)
+    g.gain.linearRampToValueAtTime(0.22, t0 + i * 0.16 + 0.02)
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.16 + 0.9)
+    o.connect(g).connect(AC!.destination)
+    o.start(t0 + i * 0.16)
+    o.stop(t0 + i * 0.16 + 1)
+  })
+}
+function browserNotify(title: string, body: string): void {
+  if (!groveStore.get().settings.notify) return
+  if (!('Notification' in window) || Notification.permission !== 'granted') return
+  try { new Notification(title, { body, silent: true }) } catch { /* blocked */ }
+}
+
+/** One place reacts to a finished phase — chime, notification, toast. */
+export function handleCompletion(ev: CompletionEvent): void {
+  if (ev.finished === 'focus' && ev.plant) {
+    chime('focus')
+    browserNotify('Session complete', 'A tree joined your forest. Time for a break.')
+    toast(ev.autoStarted ? 'Tree planted — break started' : 'Tree planted — time for a break')
+  } else if (ev.finished !== 'focus') {
+    chime('break')
+    browserNotify('Break over', 'Ready for the next session.')
+    toast(ev.autoStarted ? 'Next session started' : 'Ready for the next session')
+  }
+}
+
+/* ------------------------------ dial ------------------------------ */
+
+const R = 136
+const CIRC = 2 * Math.PI * R
+
+function DialTicks() {
+  const lines: ReactNode[] = []
+  for (let i = 0; i < 60; i++) {
+    const a = (i * 6 * Math.PI) / 180
+    const major = i % 5 === 0
+    const r1 = major ? 146 : 150
+    const r2 = 156
+    lines.push(
+      <line key={i}
+        x1={(170 + r1 * Math.sin(a)).toFixed(1)} y1={(170 - r1 * Math.cos(a)).toFixed(1)}
+        x2={(170 + r2 * Math.sin(a)).toFixed(1)} y2={(170 - r2 * Math.cos(a)).toFixed(1)}
+        stroke={major ? 'var(--gv-faint)' : 'var(--gv-line2)'} strokeWidth={major ? 2 : 1} strokeLinecap="round" />,
+    )
+  }
+  return <g>{lines}</g>
+}
+
+/* ------------------------------ focus tab ------------------------------ */
+
+function FocusTab({ st, now, flashTs }: { st: GroveState; now: number; flashTs: number }) {
+  const run = st.running
+  const paused = run !== null && run.pausedAt !== null
+  const flashing = now - flashTs < 1600
+
+  const mainLabel = run ? (paused ? 'Resume' : 'Pause') : 'Start'
+  function onMain() {
+    primeAudio()
+    if (!run) start()
+    else if (paused) resume()
+    else pause()
+  }
+  function onSkip() {
+    if (!run) return
+    if (run.mode === 'focus') {
+      const ev = skipPhase()
+      if (ev) toast('Session skipped — nothing planted')
+    } else {
+      const ev = skipPhase()
+      if (ev) handleCompletion(ev)
+    }
+  }
+
+  /* keyboard — prototype bindings, scoped to this screen */
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement | null)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.code === 'Space') { e.preventDefault(); onMainRef.current() }
+      else if (e.key === 'r' || e.key === 'R') reset()
+      else if (e.key === 's' || e.key === 'S') onSkipRef.current()
+      else if (e.key === '1') setMode('focus')
+      else if (e.key === '2') setMode('short')
+      else if (e.key === '3') setMode('long')
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+  const onMainRef = useRef(onMain)
+  const onSkipRef = useRef(onSkip)
+  onMainRef.current = onMain
+  onSkipRef.current = onSkip
+
+  /* duration chips */
+  const curMin = run ? run.minutes : minutesFor(st, st.mode)
+  const presets = MODE_PRESETS[st.mode]
+  const isPreset = presets.includes(curMin)
+  const [editViaChip, setEditViaChip] = useState(0)
+
+  /* today's grove strip */
+  const today = todayKey()
+  const todaysPlants = useMemo(
+    () => st.plants.filter((p) => dayKey(p.ts) === today).slice(0, 12).reverse(),
+    [st.plants, today],
+  )
+  const growing = run !== null && run.mode === 'focus'
+  const growP = run && growing ? progress(run, now) : 0
+
   return (
-    <div
-      className={'gv-dial-wrap' + (paused ? ' paused' : '') + (isBreak ? ' break' : '')}
-      style={{ ['--gv-mode' as string]: isBreak ? 'var(--gv-break)' : 'var(--m-grove-warm)' } as CSSProperties}
-    >
-      <svg viewBox="0 0 340 340" className="gv-dial" aria-hidden="true">
-        <defs>
-          <linearGradient id="gv-bezel" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3d352a" />
-            <stop offset="100%" stopColor="#14110c" />
-          </linearGradient>
-          <radialGradient id="gv-face" cx="50%" cy="38%" r="75%">
-            <stop offset="0%" stopColor="color-mix(in srgb, var(--gv-dial-face) 80%, #4a3f2d)" />
-            <stop offset="100%" stopColor="var(--gv-dial-face)" />
-          </radialGradient>
-          <linearGradient id="gv-arc-g" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0%" stopColor="var(--gv-mode)" />
-            <stop offset="100%" stopColor="color-mix(in srgb, var(--gv-mode) 50%, #ffffff)" />
-          </linearGradient>
-        </defs>
-        <circle cx="170" cy="170" r="163" fill="url(#gv-bezel)" />
-        <circle cx="170" cy="170" r="163" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" />
-        <circle cx="170" cy="170" r="149" fill="url(#gv-face)" />
-        <circle cx="170" cy="170" r="149" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="2.5" />
-        <circle cx="170" cy="170" r="146" fill="none" stroke="rgba(255,255,255,0.045)" strokeWidth="1" />
-        {ticks.map((_, i) => {
-          const a = (i / 60) * 2 * Math.PI - Math.PI / 2
-          const major = i % 5 === 0
-          const r1 = major ? 130 : 135
-          return (
-            <line
-              key={i}
-              x1={170 + r1 * Math.cos(a)} y1={170 + r1 * Math.sin(a)}
-              x2={170 + 141 * Math.cos(a)} y2={170 + 141 * Math.sin(a)}
-              stroke={major ? 'var(--dim)' : 'var(--line)'}
-              strokeWidth={major ? 2.4 : 1.2}
-            />
-          )
-        })}
-        <circle cx="170" cy="170" r="118" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="5" />
-        <circle
-          cx="170" cy="170" r="118" fill="none"
-          stroke="url(#gv-arc-g)" strokeWidth="5" strokeLinecap="round"
-          strokeDasharray={`${2 * Math.PI * 118 * fraction} ${2 * Math.PI * 118}`}
-          transform="rotate(-90 170 170)"
-          style={{ transition: 'stroke-dasharray 0.5s linear', filter: 'drop-shadow(0 0 7px color-mix(in srgb, var(--gv-mode) 55%, transparent))' }}
-        />
-      </svg>
-      <div className="gv-dial-center">
-        {editing && onEditMinutes ? (
-          <input
-            className="gv-dial-input num"
-            autoFocus
-            inputMode="numeric"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => {
-              const n = parseInt(draft, 10)
-              if (Number.isFinite(n)) onEditMinutes(n)
-              setEditing(false)
-            }}
-            onKeyDown={(e: { key: string; target: EventTarget }) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-          />
-        ) : (
-          <button
-            className="gv-dial-time num"
-            onClick={() => {
-              if (!running && onEditMinutes) {
-                setDraft(String(minutes))
-                setEditing(true)
-              }
-            }}
-          >
-            {clock}
+    <div className={'gv2 gv2-focus' + (st.mode !== 'focus' ? ' gv2-break' : '')}>
+      <div className={'gv2-card gv2-timercard' + (flashing ? ' flash' : '')}>
+        <div className="gv2-modes" role="tablist" aria-label="Timer mode">
+          {MODES.map((m) => (
+            <button key={m.id} role="tab" aria-pressed={st.mode === m.id}
+              onClick={() => { if (!run) setMode(m.id) }}>{m.label}</button>
+          ))}
+        </div>
+
+        <div className={'gv2-chips' + (run ? ' locked' : '')} aria-label="Length presets">
+          {presets.map((m) => (
+            <button key={m} className={'chip' + (m === curMin ? ' on' : '')}
+              onClick={() => setRoundMinutes(st.mode, m)} title={`${m} minutes`}>{m}m</button>
+          ))}
+          <button className={'chip custom' + (isPreset ? '' : ' on')}
+            onClick={() => setEditViaChip((n) => n + 1)} title="Type any length">
+            ✎ {isPreset ? 'custom' : curMin + 'm'}
+          </button>
+        </div>
+
+        <DialWithChipEdit st={st} now={now} editSignal={editViaChip} />
+
+        <div className="gv2-cycle" aria-label="Cycle progress"
+          title={`${st.cyclePos} of ${st.settings.longEvery} sessions toward a long break`}>
+          {Array.from({ length: st.settings.longEvery }).map((_, i) => (
+            <span key={i} className={
+              'dot' + (i < st.cyclePos ? ' done' : i === st.cyclePos && st.mode === 'focus' ? ' now' : '')
+            } />
+          ))}
+        </div>
+
+        <div className="gv2-controls">
+          <button className="gv2-iconbtn" onClick={() => { if (run) reset(); }} title="Reset (R)" aria-label="Reset timer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
+          </button>
+          <button className="gv2-mainbtn" onClick={onMain}>{mainLabel}</button>
+          <button className="gv2-iconbtn" onClick={onSkip} title="Skip (S)" aria-label="Skip to next phase">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4l10 8-10 8V4z" /><path d="M19 5v14" /></svg>
+          </button>
+        </div>
+        {run && run.mode === 'focus' && (
+          <button className="gv2-giveup" onClick={() => { giveUp(); toast('Session abandoned — the tree withered') }}>
+            Give up — the tree withers
           </button>
         )}
-        <div className="gv-dial-sub">{sub}</div>
-        {hint && <div className="gv-dial-hint">{hint}</div>}
+        <p className="gv2-kbd"><kbd>space</kbd> start · pause &nbsp; <kbd>R</kbd> reset &nbsp; <kbd>S</kbd> skip &nbsp; <kbd>1·2·3</kbd> mode</p>
+
+        <div className="gv2-grove">
+          <div className="g-label">Today's grove</div>
+          <div className="gv2-groverow">
+            {todaysPlants.map((p, i) => (
+              <PlantSprite key={p.id} kind={p.kind} p={1} h={46} prefix={'gr' + i}
+                title={`${p.minutes} min session · ${new Date(p.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`} />
+            ))}
+            {growing && run && (
+              <PlantSprite kind={kindForFocus(run.minutes)} p={growP} h={46} prefix="grow"
+                title={`Growing… ${Math.round(growP * 100)}%`} />
+            )}
+            {todaysPlants.length === 0 && !growing && (
+              <span className="placeholder">Finish a focus session to grow your first tree of the day</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <StatsCard st={st} />
+    </div>
+  )
+}
+
+/** Bridges the ✎ custom chip to the dial's inline editor. */
+function DialWithChipEdit({ st, now, editSignal }: { st: GroveState; now: number; editSignal: number }) {
+  const seen = useRef(0)
+  const [editing, setEditing] = useState(false)
+  useEffect(() => {
+    if (editSignal > seen.current && !st.running) {
+      seen.current = editSignal
+      setEditing(true)
+    }
+  }, [editSignal, st.running])
+  return (
+    <DialView st={st} now={now} editing={editing} setEditing={setEditing}
+      onCommit={(m) => setRoundMinutes(st.mode, m)} />
+  )
+}
+
+function DialView({ st, now, editing, setEditing, onCommit }: {
+  st: GroveState; now: number; editing: boolean; setEditing: (b: boolean) => void; onCommit: (m: number) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const run = st.running
+  const totalMs = (run ? run.minutes : minutesFor(st, st.mode)) * 60_000
+  const leftMs = run ? remainingMs(run, now) : totalMs
+  const frac = totalMs > 0 ? Math.min(1, Math.max(0, leftMs / totalMs)) : 0
+  const activeTask = st.tasks.find((t) => t.id === st.activeTaskId && !t.finished)
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [editing])
+
+  function commit() {
+    const v = parseInt(inputRef.current?.value ?? '', 10)
+    setEditing(false)
+    if (Number.isFinite(v)) onCommit(v)
+  }
+
+  return (
+    <div className="gv2-dialwrap">
+      <div className="gv2-bezel" aria-hidden="true" />
+      <svg viewBox="0 0 340 340" aria-hidden="true">
+        <DialTicks />
+        <circle cx="170" cy="170" r={R} fill="none" stroke="var(--gv-line)" strokeWidth="5" />
+        <circle cx="170" cy="170" r={R} fill="none" stroke="var(--gv-mode)" strokeWidth="5"
+          strokeLinecap="round" transform="rotate(-90 170 170)"
+          strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - frac)}
+          style={{ filter: 'drop-shadow(0 0 6px var(--gv-mode-glow))', transition: 'stroke-dashoffset 0.25s linear' }} />
+      </svg>
+      <div className="gv2-digits">
+        {editing && !run ? (
+          <div className="time">
+            <input ref={inputRef} type="number" min={1} max={180}
+              defaultValue={Math.round(totalMs / 60_000)} aria-label="Custom minutes"
+              onBlur={commit}
+              onKeyDown={(e) => {
+                e.stopPropagation()
+                if (e.key === 'Enter') commit()
+                if (e.key === 'Escape') setEditing(false)
+              }} />
+          </div>
+        ) : (
+          <div className={'time' + (run ? '' : ' editable')} role="timer"
+            onClick={() => { if (!run) setEditing(true) }}
+            title={run ? undefined : 'Click to type any length'}>
+            {fmtClock(leftMs)}
+          </div>
+        )}
+        <div className="phase">
+          {st.mode === 'focus'
+            ? `Focus · session ${Math.min(st.cyclePos + 1, st.settings.longEvery)} of ${st.settings.longEvery}`
+            : MODE_LABEL[st.mode]}
+        </div>
+        {!run && <div className="edit-hint">pick a preset above, or click the time to type</div>}
+        {activeTask && st.mode === 'focus' && (
+          <div className="task-tag">on <em>{activeTask.name}</em></div>
+        )}
       </div>
     </div>
   )
 }
 
-/* ---------- focus tab ---------- */
+/* ------------------------------ stats card ------------------------------ */
 
-function FocusTab() {
-  const st = useStore(groveStore)
-  const events = useStore(eventsStore)
-  const now = useNow(st.running !== null && st.running.pausedAt === null)
-  const [confirmGiveUp, setConfirmGiveUp] = useState(false)
-  const [confirmReset, setConfirmReset] = useState(false)
-  const [startSheet, setStartSheet] = useState(false)
-  const [customDraft, setCustomDraft] = useState('')
-  const celebrated = useRef<string | null>(null)
-
-  useEffect(() => {
-    const plant = maybeComplete(now)
-    if (plant && celebrated.current !== plant.id) {
-      celebrated.current = plant.id
-      toast(`${plant.minutes} min focused — a ${plant.kind} joins your grove`)
-    }
-  }, [now])
-
-  const run = st.running
-  const running = run !== null
-  const paused = run?.pausedAt != null
-  const remaining = run ? remainingMs(run, now) : minutesFor(st, st.mode) * 60_000
-  const fraction = run ? 1 - progress(run, now) : 1
-  const sessionN = Math.min(4, st.cyclePos + (running && run.mode === 'focus' ? 1 : st.mode === 'focus' ? 1 : 0))
-  const sub =
-    (run ? MODE_LABEL[run.mode] : MODE_LABEL[st.mode]).toUpperCase() +
-    ' · SESSION ' + Math.max(1, sessionN) + ' OF 4'
-
-  const activeTask = st.tasks.find((t) => t.id === st.activeTaskId && !t.finished)
-  const stats = todayStats(st.plants)
+function StatsCard({ st }: { st: GroveState }) {
+  const today = todayStats(st.plants)
   const streak = focusDayStreak(st.plants)
-  const days = lastNDayKeys(14)
-  const perDay = days.map((d) => ({
-    label: new Date(d + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'narrow' }),
-    value: events
-      .filter((e) => e.module === 'grove' && e.kind === 'focus' && dayKey(e.ts) === d)
-      .length,
-  }))
-  const todaysPlants = st.plants.filter((p) => dayKey(p.ts) === todayKey()).slice(0, 12).reverse()
+  const days = useMemo(() => {
+    const out: { key: string; label: string; count: number }[] = []
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const key = dayKey(d.getTime())
+      out.push({
+        key,
+        label: d.toLocaleDateString(undefined, { weekday: 'narrow' }),
+        count: st.plants.filter((p) => p.kind !== 'flower' && p.kind !== 'fern' && dayKey(p.ts) === key).length,
+      })
+    }
+    return out
+  }, [st.plants])
+  const max = Math.max(4, ...days.map((d) => d.count))
+  const W = 280, H = 86, bw = W / 14
 
   return (
-    <>
-      <div className="gv-modes">
-        {MODES.map((m) => (
-          <button
-            key={m.id}
-            className={'gv-mode' + (st.mode === m.id && !running ? ' on' : running && run.mode === m.id ? ' on' : '') + (m.id !== 'focus' ? ' brk' : '')}
-            disabled={running}
-            onClick={() => setMode(m.id)}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
-
-      <Dial
-        minutes={minutesFor(st, st.mode)}
-        fraction={fraction}
-        running={running}
-        isBreak={(running ? run.mode : st.mode) !== 'focus'}
-        paused={paused === true}
-        clock={fmtClock(remaining)}
-        sub={sub}
-        hint={running ? (activeTask ? `→ ${activeTask.name}` : null) : 'pick a preset, or tap the time to type'}
-        onEditMinutes={!running && st.mode === 'focus' ? setFocusMinutes : null}
-      />
-
-      <div className="gv-dots" aria-hidden="true">
-        {[1, 2, 3, 4].map((i) => (
-          <span key={i} className={'gv-dot' + (i <= st.cyclePos ? ' done' : '') + (i === Math.max(1, sessionN) && (running ? run.mode === 'focus' : st.mode === 'focus') ? ' cur' : '')} />
-        ))}
-      </div>
-
-      <div className="gv-controls">
-        <button
-          className="gv-round"
-          aria-label="Reset timer"
-          disabled={!running}
-          onClick={() => {
-            if (!run) return
-            const elapsedMin = (run.pausedAt ?? now) - run.startTs
-            if (run.mode === 'focus' && elapsedMin > 2 * 60_000) setConfirmReset(true)
-            else reset()
-          }}
-        >
-          ↺
-        </button>
-        {!running ? (
-          <button
-            className="btn btn-primary gv-start"
-            onClick={() => (st.mode === 'focus' ? setStartSheet(true) : start())}
-          >
-            Start
-          </button>
-        ) : paused ? (
-          <button className="btn btn-primary gv-start" onClick={() => resume()}>
-            Resume
-          </button>
-        ) : (
-          <button className="btn btn-ghost gv-start" onClick={() => pause()}>
-            Pause
-          </button>
-        )}
-        <button
-          className="gv-round"
-          aria-label={running && run.mode === 'focus' ? 'Give up session' : 'Skip break'}
-          disabled={!running}
-          onClick={() => {
-            if (!run) return
-            if (run.mode === 'focus') setConfirmGiveUp(true)
-            else {
-              skipBreak(now)
-              toast('Break skipped — back to focus')
-            }
-          }}
-        >
-          ⏭
-        </button>
-      </div>
-
-      <div className="section-label">Today's grove</div>
-      <div className="gv-strip">
-        {todaysPlants.length === 0 ? (
-          <span className="gv-strip-empty">Finish a focus session to grow your first tree of the day.</span>
-        ) : (
-          todaysPlants.map((p) => <PlantSVG key={p.id} kind={p.kind} size={34} sway={jitter(p.id) * 2} />)
-        )}
-      </div>
-
-      <div className="ins-grid three" style={{ marginTop: 16 }}>
-        <StatBox label="sessions today" value={String(stats.count)} />
-        <StatBox label="minutes today" value={String(stats.minutes)} />
-        <StatBox label="day streak" value={`${streak}d`} />
-      </div>
-      <div className="card">
-        <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-grove)' }}>Sessions · last 14 days</span>
+    <div className="gv2-card gv2-stats">
+      <h2>Today &amp; trends</h2>
+      <div className="body">
+        <div className="gv2-statrow">
+          <div className="stat"><div className="v">{today.count}</div><div className="l">Sessions today</div></div>
+          <div className="stat"><div className="v">{today.minutes}<span>m</span></div><div className="l">Minutes today</div></div>
+          <div className="stat"><div className="v">{streak}<span>d</span></div><div className="l">Day streak</div></div>
         </div>
-        <Bars data={perDay} accentVar="var(--m-grove)" />
+        <div className="gv2-chartwrap">
+          <div className="title">Sessions · last 14 days</div>
+          <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Sessions per day, last 14 days">
+            {days.map((d, i) => {
+              const h = d.count ? Math.max(3, (d.count / max) * (H - 26)) : 2
+              const x = i * bw + 5
+              const y = H - 20 - h
+              const isToday = i === 13
+              return (
+                <g key={d.key}>
+                  <rect x={x} y={y} width={bw - 8} height={h} rx={2.5}
+                    fill={d.count ? (isToday ? 'var(--gv-brass)' : 'var(--gv-brass-mid)') : 'var(--gv-line)'}>
+                    <title>{d.count} session{d.count === 1 ? '' : 's'}</title>
+                  </rect>
+                  {d.count > 0 && (
+                    <text x={x + (bw - 8) / 2} y={y - 4} textAnchor="middle" className="cnt">{d.count}</text>
+                  )}
+                  <text x={x + (bw - 8) / 2} y={H - 7} textAnchor="middle" className="lbl">{d.label}</text>
+                </g>
+              )
+            })}
+          </svg>
+        </div>
       </div>
-
-      <Sheet open={startSheet} title="Start a focus session" onClose={() => setStartSheet(false)}>
-        <div className="gv-sheet-presets">
-          {PRESETS.map((p) => (
-            <button
-              key={p}
-              className={'gv-preset num' + (st.focusMin === p ? ' on' : '')}
-              onClick={() => setFocusMinutes(p)}
-            >
-              {p}m
-            </button>
-          ))}
-        </div>
-        <div className="or-window-row" style={{ marginTop: 12 }}>
-          <input
-            className="tinput num"
-            inputMode="numeric"
-            placeholder="custom"
-            value={customDraft}
-            onChange={(e) => {
-              setCustomDraft(e.target.value)
-              const n = parseInt(e.target.value, 10)
-              if (Number.isFinite(n) && n >= 5) setFocusMinutes(n)
-            }}
-          />
-          <b className="num">minutes</b>
-        </div>
-        <button
-          className="btn btn-primary"
-          style={{ width: '100%', marginTop: 16, ['--accent' as string]: 'var(--m-grove-warm)' } as CSSProperties}
-          onClick={() => {
-            setStartSheet(false)
-            start()
-          }}
-        >
-          ▶&nbsp; Begin · {st.focusMin} min
-        </button>
-      </Sheet>
-      <ConfirmSheet
-        open={confirmGiveUp}
-        title="Give up this session?"
-        body="The tree withers — nothing is logged. Sometimes that's the honest call."
-        actionLabel="Give up"
-        danger
-        onConfirm={() => giveUp()}
-        onClose={() => setConfirmGiveUp(false)}
-      />
-      <ConfirmSheet
-        open={confirmReset}
-        title="Restart the timer?"
-        body="Progress on this session resets to zero. The clock forgives; the forest forgets."
-        actionLabel="Restart"
-        onConfirm={() => reset()}
-        onClose={() => setConfirmReset(false)}
-      />
-    </>
+    </div>
   )
 }
 
-/* ---------- tasks tab ---------- */
+/* ------------------------------ tasks tab ------------------------------ */
 
-function TasksTab() {
-  const st = useStore(groveStore)
+function TasksTab({ st }: { st: GroveState }) {
   const [name, setName] = useState('')
-  const [planned, setPlanned] = useState(1)
+  const [est, setEst] = useState(1)
+  const open = st.tasks.filter((t) => !t.finished).length
+
+  function submit() {
+    const n = name.trim()
+    if (!n) return
+    addTask(n, est)
+    setName('')
+    setEst(1)
+  }
+
   return (
-    <>
-      <div className="card">
-        <div className="gv-task-add">
-          <input
-            className="tinput"
-            placeholder="What are you working on?"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <div className="gv-stepper num">
-            <button onClick={() => setPlanned((p) => Math.max(1, p - 1))}>−</button>
-            <span>{planned}</span>
-            <button onClick={() => setPlanned((p) => Math.min(20, p + 1))}>+</button>
+    <div className="gv2 gv2-page">
+      <div className="gv2-card gv2-tasks">
+        <h2>Tasks {st.tasks.length > 0 && <span className="count">{open} open</span>}</h2>
+        <div className="body">
+          <div className="gv2-taskadd">
+            <input type="text" value={name} maxLength={80} placeholder="What are you working on?"
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
+            <div className="est" title="How many focus sessions you plan for this task">
+              <button onClick={() => setEst((v) => Math.max(1, v - 1))} aria-label="Fewer planned sessions">−</button>
+              <span>{est}</span>
+              <button onClick={() => setEst((v) => Math.min(20, v + 1))} aria-label="More planned sessions">+</button>
+            </div>
+            <button className="add" onClick={submit} aria-label="Add task">+</button>
           </div>
-          <button
-            className="btn btn-primary gv-task-plus"
-            onClick={() => {
-              if (name.trim() === '') {
-                toast('Name the task first')
-                return
-              }
-              addTask(name, planned)
-              setName('')
-              setPlanned(1)
-            }}
-          >
-            +
-          </button>
+          <p className="gv2-taskhelp">
+            Tap a task to make it <b>active</b> — every focus session you finish counts toward it
+            (done / planned). The checkbox just marks the task finished.
+          </p>
+          <div className="gv2-tasklist">
+            {st.tasks.map((t) => (
+              <div key={t.id}
+                className={'gv2-task' + (t.finished ? ' done' : '') + (t.id === st.activeTaskId ? ' active' : '')}
+                onClick={() => setActiveTask(st.activeTaskId === t.id ? null : t.id)}
+                title={t.id === st.activeTaskId ? 'Active — finished sessions count toward this task' : 'Tap to make this the active task'}>
+                <button className="check" aria-label="Mark task finished"
+                  onClick={(e) => { e.stopPropagation(); toggleFinished(t.id) }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                </button>
+                <span className="name">{t.name}</span>
+                <span className="sessions" title="Focus sessions finished on this task / planned">
+                  <b>{t.done}</b>/{t.planned} sessions
+                </span>
+                <button className="del" aria-label="Delete task"
+                  onClick={(e) => { e.stopPropagation(); removeTask(t.id) }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M8 6V4h8v2m-9 0l1 14h8l1-14" /></svg>
+                </button>
+              </div>
+            ))}
+            {st.tasks.length === 0 && <div className="gv2-empty">No tasks yet — add one above.</div>}
+          </div>
         </div>
-        <p className="rs-foot" style={{ marginTop: 10 }}>
-          Tap a task to make it <b>active</b> — every focus session you finish counts toward it
-          (done / planned). The checkbox just marks the task finished.
-        </p>
       </div>
-      {st.tasks.length === 0 ? (
-        <p className="gv-tasks-empty">No tasks yet — add one above.</p>
-      ) : (
-        st.tasks.map((t) => (
-          <div
-            key={t.id}
-            className={'card gv-task' + (t.id === st.activeTaskId && !t.finished ? ' active' : '') + (t.finished ? ' finished' : '')}
-          >
-            <button
-              className={'gv-task-check' + (t.finished ? ' on' : '')}
-              aria-label={t.finished ? 'Reopen task' : 'Finish task'}
-              onClick={() => toggleFinished(t.id)}
-            >
-              ✓
-            </button>
-            <button className="gv-task-main" onClick={() => !t.finished && setActiveTask(t.id === st.activeTaskId ? null : t.id)}>
-              <span className="gv-task-name">{t.name}</span>
-              <span className="gv-task-sub num">
-                {t.done} / {t.planned} sessions
-                {t.id === st.activeTaskId && !t.finished && <em> · active</em>}
-              </span>
-            </button>
-            <button className="sn-trash sm" onClick={() => removeTask(t.id)} aria-label={`Delete ${t.name}`}>
-              🗑
-            </button>
-          </div>
-        ))
-      )}
-    </>
+    </div>
   )
 }
 
-/* ---------- forest tab ---------- */
+/* ------------------------------ forest tab ------------------------------ */
 
 type Span = 'week' | 'month' | 'year' | 'all'
 const SPANS: readonly { id: Span; label: string; days: number | null }[] = [
@@ -431,131 +488,362 @@ const SPANS: readonly { id: Span; label: string; days: number | null }[] = [
   { id: 'all', label: 'All', days: null },
 ]
 
-function ForestTab() {
-  const st = useStore(groveStore)
+/* iso geometry — prototype constants */
+const GRID = 12
+const TW = 22
+const TH = 11
+const ISO_X0 = 310
+const ISO_Y0 = 58
+
+function uvToIso(u: number, v: number): [number, number] {
+  const gx = u * (GRID - 1)
+  const gy = v * (GRID - 1)
+  return [ISO_X0 + (gx - gy) * TW, ISO_Y0 + (gx + gy) * TH]
+}
+function pointToUV(svg: SVGSVGElement, clientX: number, clientY: number): [number, number] | null {
+  const pt = svg.createSVGPoint()
+  pt.x = clientX
+  pt.y = clientY
+  const ctm = svg.getScreenCTM()
+  if (!ctm) return null
+  const p = pt.matrixTransform(ctm.inverse())
+  const rx = p.x - ISO_X0
+  const ry = p.y - ISO_Y0
+  const gx = (rx / TW + ry / TH) / 2
+  const gy = (ry / TH - rx / TW) / 2
+  if (gx < -0.6 || gy < -0.6 || gx > GRID - 0.4 || gy > GRID - 0.4) return null
+  return [Math.min(1, Math.max(0, gx / (GRID - 1))), Math.min(1, Math.max(0, gy / (GRID - 1)))]
+}
+
+const ANIMAL_IDS: Record<string, AnimalId> = { Rabbit: 'rabbit', Fox: 'fox', Deer: 'deer', Bear: 'bear', Owl: 'owl' }
+
+function ForestTab({ st }: { st: GroveState }) {
   const [span, setSpan] = useState<Span>('week')
-  const [arrange, setArrange] = useState(false)
-  const [picked, setPicked] = useState<string | null>(null)
-  const cutoffDays = SPANS.find((s) => s.id === span)!.days
-  const cutoff = cutoffDays === null ? 0 : Date.now() - cutoffDays * 86400_000
-  const plants = st.plants.filter((p) => p.ts >= cutoff)
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [drag, setDrag] = useState<{ id: string; u: number; v: number } | null>(null)
+
+  const inRange = useMemo(() => {
+    const def = SPANS.find((s) => s.id === span)!
+    if (def.days === null) return st.plants
+    const cutoff = Date.now() - def.days * 86400000
+    return st.plants.filter((p) => p.ts >= cutoff)
+  }, [st.plants, span])
+
+  const focusIn = inRange.filter((p) => p.kind !== 'flower' && p.kind !== 'fern')
+  const mins = focusIn.reduce((a, p) => a + p.minutes, 0)
+  const shown = useMemo(() => {
+    const withUV = inRange.slice(0, 140).map((p) => {
+      const uv = drag && drag.id === p.id ? { u: drag.u, v: drag.v } : plantUV(st, p.id)
+      return { p, ...uv }
+    })
+    return withUV.sort((a, b) => (a.u + a.v) - (b.u + b.v) || a.u - b.u)
+  }, [inRange, st, drag])
+
+  /* companions */
   const unlocked = unlockedAnimals(st.plants)
   const next = nextAnimal(st.plants)
-  const totalH = Math.floor(totalFocusMinutes(st.plants) / 60)
-  const totalM = totalFocusMinutes(st.plants) % 60
-
-  const W = 340
-  const H = 260
-  const placed = plants
-    .map((p) => {
-      const { u, v } = plantUV(st, p.id)
-      const cx = W / 2 + ((u - v) * W * 0.46)
-      const cy = H * 0.14 + ((u + v) / 2) * H * 0.66
-      const depth = (u + v) / 2
-      const base = p.kind === 'flower' ? 22 : p.kind === 'fern' ? 26 : p.kind === 'shrub' ? 26 : p.kind === 'birch' ? 34 : p.kind === 'pine' ? 40 : 46
-      return { p, cx, cy, size: base * (0.75 + depth * 0.5) }
+  const totalH = totalFocusMinutes(st.plants) / 60
+  const [roam, setRoam] = useState<Record<string, { u: number; v: number }>>({})
+  useEffect(() => {
+    if (unlocked.length === 0) return
+    setRoam((r) => {
+      const nr = { ...r }
+      for (const a of unlocked) if (!nr[a.name]) nr[a.name] = { u: Math.random(), v: Math.random() }
+      return nr
     })
-    .sort((a, b) => a.cy - b.cy)
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduced) return
+    const t = setInterval(() => {
+      if (document.hidden) return
+      setRoam((r) => {
+        const nr: typeof r = {}
+        for (const a of unlocked) {
+          const cur = r[a.name] ?? { u: Math.random(), v: Math.random() }
+          nr[a.name] = {
+            u: Math.min(0.95, Math.max(0.05, cur.u + (Math.random() - 0.5) * 0.34)),
+            v: Math.min(0.95, Math.max(0.05, cur.v + (Math.random() - 0.5) * 0.34)),
+          }
+        }
+        return nr
+      })
+    }, 5200)
+    return () => clearInterval(t)
+  }, [unlocked.length])
 
-  const critters = unlocked.map((a, i) => {
-    const u = 0.2 + 0.6 * jitter(a.name, st.shuffleSeed + i)
-    const v = 0.2 + 0.6 * jitter(a.name + 'v', st.shuffleSeed + i)
-    return { a, cx: W / 2 + (u - v) * W * 0.46, cy: H * 0.14 + ((u + v) / 2) * H * 0.66 }
-  })
+  /* drag to rearrange / swap */
+  function onPointerDown(e: RPointerEvent<SVGSVGElement>) {
+    const g = (e.target as Element).closest('g[data-pid]')
+    if (!g || !svgRef.current) return
+    const id = g.getAttribute('data-pid')!
+    const uv = pointToUV(svgRef.current, e.clientX, e.clientY)
+    if (!uv) return
+    e.preventDefault()
+    svgRef.current.setPointerCapture?.(e.pointerId)
+    setDrag({ id, u: uv[0], v: uv[1] })
+  }
+  function onPointerMove(e: RPointerEvent<SVGSVGElement>) {
+    if (!drag || !svgRef.current) return
+    const uv = pointToUV(svgRef.current, e.clientX, e.clientY)
+    if (!uv) return
+    setDrag({ ...drag, u: uv[0], v: uv[1] })
+  }
+  function onPointerUp() {
+    if (!drag) return
+    const cellU = 1 / (GRID - 1)
+    const other = inRange.find((p) => {
+      if (p.id === drag.id) return false
+      const uv = plantUV(st, p.id)
+      return Math.abs(uv.u - drag.u) < cellU * 0.7 && Math.abs(uv.v - drag.v) < cellU * 0.7
+    })
+    if (other) swapPlants(drag.id, other.id)
+    else movePlant(drag.id, drag.u, drag.v)
+    setDrag(null)
+  }
+
+  const groundPts = (() => {
+    const [tx, ty] = uvToIso(0, 0)
+    const [rx, ry] = uvToIso(1, 0)
+    const [bx, by] = uvToIso(1, 1)
+    const [lx, ly] = uvToIso(0, 1)
+    return `${tx},${ty - TH} ${rx + TW},${ry} ${bx},${by + TH} ${lx - TW},${ly}`
+  })()
+
+  const emptyCopy = span === 'all'
+    ? <>Your forest is empty —<br />every session you finish plants something here.</>
+    : <>Nothing planted in the last {span === 'week' ? '7 days' : span === 'month' ? '30 days' : 'year'} yet.<br />Finish a session to start this {span}'s growth.</>
 
   return (
-    <>
-      <div className="gv-forest-head">
-        <Seg<Span>
-          options={SPANS.map((s) => ({ id: s.id, label: s.label }))}
-          value={span}
-          onChange={setSpan}
-        />
-        <div className="gv-forest-btns">
-          <button className={'chip' + (arrange ? ' on' : '')} onClick={() => { setArrange((a) => !a); setPicked(null) }}>
-            ✥ Arrange
-          </button>
-          <button className="chip" onClick={reshuffle}>⤨ Shuffle</button>
-        </div>
-      </div>
-      <div className="card gv-forest-card">
-        <div className="gv-forest" style={{ ['--fw' as string]: `${W}px` } as CSSProperties}>
-          <svg viewBox={`0 0 ${W} ${H}`} className="gv-ground" aria-hidden="true">
-            <polygon
-              points={`${W / 2},${H * 0.06} ${W * 0.97},${H * 0.5} ${W / 2},${H * 0.94} ${W * 0.03},${H * 0.5}`}
-              fill="var(--gv-ground, #22301f)"
-              stroke="var(--line)"
-              strokeWidth="1"
-            />
-            <polygon
-              points={`${W / 2},${H * 0.12} ${W * 0.9},${H * 0.5} ${W / 2},${H * 0.88} ${W * 0.1},${H * 0.5}`}
-              fill="none"
-              stroke="rgba(255,255,255,0.04)"
-              strokeWidth="1"
-            />
-          </svg>
-          {placed.length === 0 && (
-            <div className="gv-forest-empty">
-              Nothing planted in this window yet.
-              <br />
-              Finish a session to start the growth.
-            </div>
-          )}
-          {placed.map(({ p, cx, cy, size }) => (
-            <span
-              key={p.id}
-              className={'gv-spot' + (arrange ? ' pickable' : '') + (picked === p.id ? ' picked' : '')}
-              style={{ left: cx, top: cy }}
-              onClick={() => {
-                if (!arrange) return
-                if (picked === null) setPicked(p.id)
-                else if (picked === p.id) setPicked(null)
-                else {
-                  swapPlants(picked, p.id)
-                  setPicked(null)
-                }
-              }}
-            >
-              <PlantSVG kind={p.kind} size={size} sway={jitter(p.id) * 3} />
-            </span>
-          ))}
-          {critters.map(({ a, cx, cy }) => (
-            <span key={a.name} className="gv-spot gv-critter" style={{ left: cx, top: cy }} title={a.name}>
-              {a.emoji}
-            </span>
-          ))}
-        </div>
-        {arrange && (
-          <p className="gv-arrange-hint">Tap one plant, then another — they swap places. Tap Arrange again when done.</p>
-        )}
-        <p className="gv-legend">
-          Focus grows the forest — <b>&lt;10m</b> shrub · <b>10–19m</b> birch · <b>20–39m</b> pine ·{' '}
-          <b>40m+</b> oak. Breaks grow nothing — they're for you, not the grove.
-        </p>
-        <div className="gv-animals">
-          {ANIMALS.map((a) => {
-            const has = unlocked.some((u) => u.name === a.name)
-            return (
-              <span key={a.name} className={'gv-animal' + (has ? ' on' : '')}>
-                {a.emoji} {a.name}
+    <div className="gv2 gv2-page">
+      <div className="gv2-card gv2-forest">
+        <div className="gv2-foresthead">
+          <div className="title">Your forest
+            {inRange.length > 0 && (
+              <span className="count">
+                {focusIn.length} tree{focusIn.length === 1 ? '' : 's'}
+                {inRange.length - focusIn.length > 0 ? ` · ${inRange.length - focusIn.length} flora` : ''}
+                {' · '}{Math.floor(mins / 60)}h {mins % 60}m focused
               </span>
-            )
-          })}
+            )}
+          </div>
+          <div className="gv2-ranges" role="tablist" aria-label="Forest time range">
+            {SPANS.map((s) => (
+              <button key={s.id} aria-pressed={span === s.id} onClick={() => setSpan(s.id)}>{s.label}</button>
+            ))}
+          </div>
+          <div className="tools">
+            <span className="hint">drag plants to rearrange · drop on another to swap</span>
+            <button className="gv2-toolbtn" onClick={() => { reshuffle(); toast('Forest reshuffled') }} title="Randomise the layout">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5" /><path d="M4 20L21 3" /><path d="M21 16v5h-5" /><path d="M15 15l6 6" /><path d="M4 4l5 5" /></svg>
+              Shuffle
+            </button>
+          </div>
         </div>
-        {next && (
-          <p className="gv-next num">
-            next: <b>{next.animal.name}</b> at {next.animal.hours}h — {totalH}h {totalM}m so far
-          </p>
-        )}
+
+        <div className="gv2-stage">
+          <svg ref={svgRef} viewBox="0 0 620 392" aria-label="Isometric forest"
+            onPointerDown={onPointerDown} onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+            <defs>
+              <radialGradient id="gvGround" cx="50%" cy="38%" r="75%">
+                <stop offset="0%" stopColor="var(--gv-ground1)" />
+                <stop offset="55%" stopColor="var(--gv-ground2)" />
+                <stop offset="100%" stopColor="var(--gv-ground3)" />
+              </radialGradient>
+            </defs>
+            <ArtDefs prefix="iso" />
+            <polygon points={groundPts} fill="url(#gvGround)" stroke="var(--gv-line2)" strokeWidth="1.5"
+              style={{ filter: 'drop-shadow(0 14px 22px rgba(0,0,0,.45))' }} />
+            {shown.map(({ p, u, v }) => {
+              const [cx, cy] = uvToIso(u, v)
+              const dragging = drag !== null && drag.id === p.id
+              const when = new Date(p.ts).toLocaleDateString([], { month: 'short', day: 'numeric' })
+              return (
+                <g key={p.id} data-pid={p.id}
+                  className={'gv2-plant' + (dragging ? ' dragging' : '')}
+                  transform={`translate(${cx},${cy})`}>
+                  <title>{`${p.minutes} min focus · ${when} — drag to move`}</title>
+                  <ellipse cx="0" cy={TH} rx="12" ry="4.6" fill="#000" opacity="0.28" />
+                  <g className="lift" transform={`translate(-15,${TH - 46})`}>
+                    <PlantInner kind={p.kind} p={1} prefix="iso" />
+                  </g>
+                </g>
+              )
+            })}
+            {inRange.length > 0 && unlocked.map((a) => {
+              const pos = roam[a.name]
+              if (!pos) return null
+              const [cx, cy] = uvToIso(pos.u, pos.v)
+              return (
+                <g key={a.name} className="gv2-animal"
+                  style={{ transform: `translate(${cx}px, ${cy}px)`, transition: 'transform 3.2s ease-in-out' }}>
+                  <title>{a.name}</title>
+                  <ellipse cx="0" cy={TH} rx="10" ry="3.6" fill="#000" opacity="0.22" />
+                  <g transform={`translate(-11,${TH - 17})`}>
+                    <AnimalInnerWrap id={ANIMAL_IDS[a.name]} />
+                  </g>
+                </g>
+              )
+            })}
+          </svg>
+          {inRange.length === 0 && <div className="gv2-forestempty">{emptyCopy}</div>}
+        </div>
+
+        <div className="gv2-forestfoot">
+          <div className="legend">
+            Focus grows the forest — <b>&lt;10m</b> shrub · <b>10–19m</b> birch · <b>20–39m</b> pine · <b>40m+</b> oak.
+            Breaks grow nothing — they're for you, not the grove.
+          </div>
+          <div className="gv2-companions">
+            {ANIMALS.map((a) => (
+              <span key={a.name} className={'comp' + (totalH >= a.hours ? '' : ' locked')}
+                title={`${a.name} — unlocks at ${a.hours}h of focus`}>
+                <AnimalSprite id={ANIMAL_IDS[a.name]} prefix={'bad-' + a.name} />
+                {a.name}
+              </span>
+            ))}
+            {next ? (
+              <span className="next">
+                next: <b>{next.animal.name}</b> at {next.animal.hours}h — {Math.floor(next.soFarMin / 60)}h {next.soFarMin % 60}m so far
+              </span>
+            ) : (
+              <span className="next"><b>All companions found</b></span>
+            )}
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   )
 }
 
-/* ---------- screen ---------- */
+function AnimalInnerWrap({ id }: { id: AnimalId }) {
+  return (
+    <svg width="23" height="17" viewBox="0 0 23 17" overflow="visible">
+      <AnimalInner id={id} prefix="iso" />
+    </svg>
+  )
+}
+
+/* -------------------------- settings (shell slot) -------------------------- */
+
+function Stepper({ value, onDelta, small }: { value: ReactNode; onDelta: (d: number) => void; small?: boolean }) {
+  return (
+    <div className={'gv2-stepper' + (small ? ' sm' : '')}>
+      <button onClick={() => onDelta(-1)} aria-label="Decrease">−</button>
+      <span>{value}</span>
+      <button onClick={() => onDelta(1)} aria-label="Increase">+</button>
+    </div>
+  )
+}
+
+function Toggle({ on, onFlip }: { on: boolean; onFlip: () => void }) {
+  return <button className="gv2-toggle" role="switch" aria-checked={on} onClick={onFlip} />
+}
+
+export function GroveSettingsExtra() {
+  const st = useStore(groveStore)
+  const [confirmErase, setConfirmErase] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  function exportData() {
+    const blob = new Blob(
+      [JSON.stringify({ app: 'grove', version: 3, exported: new Date().toISOString(), data: groveStore.get() }, null, 2)],
+      { type: 'application/json' },
+    )
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `grove-backup-${todayKey()}.json`
+    a.click()
+    URL.revokeObjectURL(a.href)
+    toast('Backup downloaded')
+  }
+  function importData(file: File) {
+    const r = new FileReader()
+    r.onload = () => {
+      try {
+        const parsed = JSON.parse(String(r.result)) as { data?: unknown }
+        /* The migration path doubles as the universal normalizer for imports. */
+        groveStore.set(() => migrateGrove(parsed.data ?? parsed, 2))
+        toast('Backup restored')
+      } catch {
+        toast("That file couldn't be read as a Grove backup")
+      }
+    }
+    r.readAsText(file)
+  }
+  async function flipNotify() {
+    if (!('Notification' in window)) { toast("Notifications aren't supported in this browser"); return }
+    if (st.settings.notify) { updateFlow({ notify: false }); return }
+    const perm = await Notification.requestPermission()
+    if (perm !== 'granted') { toast('Permission was declined'); updateFlow({ notify: false }); return }
+    updateFlow({ notify: true })
+  }
+
+  return (
+    <div className="gv2 gv2-setx">
+      <div className="g-label">Default durations</div>
+      <div className="gv2-setrow"><span className="sl">Focus</span><Stepper value={st.focusMin + 'm'} onDelta={(d) => setModeDefault('focus', st.focusMin + d * 5)} /></div>
+      <div className="gv2-setrow"><span className="sl">Short break</span><Stepper value={st.shortMin + 'm'} onDelta={(d) => setModeDefault('short', st.shortMin + d)} /></div>
+      <div className="gv2-setrow"><span className="sl">Long break</span><Stepper value={st.longMin + 'm'} onDelta={(d) => setModeDefault('long', st.longMin + d)} /></div>
+      <div className="gv2-setrow"><span className="sl">Long break after<small>focus sessions per cycle</small></span><Stepper value={st.settings.longEvery} onDelta={(d) => updateFlow({ longEvery: st.settings.longEvery + d })} /></div>
+
+      <div className="g-label">Flow</div>
+      <div className="gv2-setrow"><span className="sl">Auto-start breaks<small>break begins when a session ends</small></span><Toggle on={st.settings.autoBreak} onFlip={() => updateFlow({ autoBreak: !st.settings.autoBreak })} /></div>
+      <div className="gv2-setrow"><span className="sl">Auto-start focus<small>next session begins when a break ends</small></span><Toggle on={st.settings.autoFocus} onFlip={() => updateFlow({ autoFocus: !st.settings.autoFocus })} /></div>
+
+      <div className="g-label">Signals</div>
+      <div className="gv2-setrow"><span className="sl">Chime on completion</span><Toggle on={st.settings.sound} onFlip={() => updateFlow({ sound: !st.settings.sound })} /></div>
+      <div className="gv2-setrow"><span className="sl">Browser notification<small>needs permission, works in background tabs</small></span><Toggle on={st.settings.notify} onFlip={() => { void flipNotify() }} /></div>
+
+      <div className="g-label">Data</div>
+      <div className="gv2-setbtns">
+        {!hasDemo(st) ? (
+          <button className="gv2-ghostbtn" onClick={() => { seedDemo(); toast('Sample forest planted') }}>Load sample data</button>
+        ) : (
+          <button className="gv2-ghostbtn" onClick={() => { removeDemo(); toast('Sample data removed — your real sessions are untouched') }}>Remove sample data</button>
+        )}
+        <button className="gv2-ghostbtn" onClick={exportData}>Export backup</button>
+        <button className="gv2-ghostbtn" onClick={() => fileRef.current?.click()}>Import backup</button>
+        <button className={'gv2-ghostbtn danger' + (confirmErase ? ' armed' : '')}
+          onClick={() => {
+            if (!confirmErase) {
+              setConfirmErase(true)
+              setTimeout(() => setConfirmErase(false), 3500)
+              return
+            }
+            resetAll()
+            setConfirmErase(false)
+            toast('All Grove data erased')
+          }}>
+          {confirmErase ? 'Really erase everything?' : 'Erase all data'}
+        </button>
+      </div>
+      <input ref={fileRef} type="file" accept=".json" hidden
+        onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) importData(f) }} />
+    </div>
+  )
+}
+
+/* ------------------------------ root ------------------------------ */
 
 export default function GroveScreen({ tab = 'focus' }: { tab?: string }) {
-  if (tab === 'tasks') return <TasksTab />
-  if (tab === 'forest') return <ForestTab />
-  return <FocusTab />
+  const st = useStore(groveStore)
+  const [flashTs, setFlashTs] = useState(0)
+  const now = useNow(true, st.running ? 250 : 1000)
+
+  /* the completion watcher lives at the root so timers finish on any tab */
+  useEffect(() => {
+    const ev = maybeComplete()
+    if (ev) {
+      handleCompletion(ev)
+      if (ev.finished === 'focus' && ev.plant) setFlashTs(Date.now())
+    }
+  }, [now])
+
+  return (
+    <>
+      {tab === 'focus' && <FocusTab st={st} now={now} flashTs={flashTs} />}
+      {tab === 'tasks' && <TasksTab st={st} />}
+      {tab === 'forest' && <ForestTab st={st} />}
+    </>
+  )
 }

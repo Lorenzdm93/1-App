@@ -27,6 +27,14 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.10.6 — GROVE: the prototype rebuild**
+
+GROVE is now the dark prototype, living inside the shell: brass focus and eucalyptus breaks with the whole accent system swapping per phase, the machined conic-bezel dial with its 60-tick ring, per-mode length chips (15/25/45/60/90 for focus, shorter sets for breaks) plus a **✎ custom** chip and click-the-time-to-type — one-off lengths apply *to this round only*, defaults live in Settings. Cycle dots track a configurable **long-break-after-N** (2–8), with auto-start toggles for breaks and focus, a completion **chime** (synthesized, no assets) and optional browser notifications. Keyboard on desktop: space, R, S, 1·2·3. Today's grove grows a live tree as the session runs.
+
+The forest went **dimensional**: split-lit pine tiers, radial-lit oak and birch canopies with rim light, gradient trunks — and the companions (rabbit, fox, deer, bear, owl) got the same treatment, roaming the isometric stage on their own. Drag any plant to rearrange, drop it on another to swap, Shuffle re-rolls the whole layout. Kept from the app on purpose: **breaks grow nothing** — they're for you, not the grove — the four-tab structure, and the current companion thresholds (10/25/50/100/200 h).
+
+Settings (gear tab) now hosts the long-owed **sample data** loader: six weeks of tagged sessions to see the forest full — and because every demo entry is tagged, *Remove sample data* strips only those, never a real session. Export/Import moved here too (imports run through the same normalizer as migrations), plus the armed two-tap **Erase all data**. No offline/private/no-account copy anywhere — this app is online. Schema v3 migrates v2 state untouched.
+
 **New in v0.10.5 — GHISA: living charts, module talk, 60 exercises**
 
 The per-exercise progression chart now **draws itself left to right** on open and on every 1RM ↔ Volume switch — the prototype's animation, rebuilt in raw SVG (clip-path reveal, ~0.9 s). Bars grow from the baseline with a light stagger, everywhere. Dense chart labels (6-month, year, long histories) sit at a **–32° angle** so months never collide. Tabs reordered: **Exercises before Profile** — Profile now sits second from the right, beside the gear.

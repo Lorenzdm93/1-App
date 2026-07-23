@@ -1,7 +1,7 @@
 import { eventsStore } from '../../core/events'
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import Screen from './Screen'
+import Screen, { GroveSettingsExtra } from './Screen'
 import Widget from './Widget'
 import QuickActions from './QuickActions'
 
@@ -55,7 +55,7 @@ const grove: ModuleDefinition = {
     ],
   },
   accentVar: 'var(--m-grove)',
-  schemaVersion: 2,
+  schemaVersion: 3,
   tabs: [
     { id: 'focus', label: 'Focus', Icon: TreeIcon },
     { id: 'tasks', label: 'Tasks', Icon: TaskIcon },
@@ -65,6 +65,7 @@ const grove: ModuleDefinition = {
   Screen,
   Widget,
   QuickActions,
+  SettingsExtra: GroveSettingsExtra,
   weekly: {
     label: 'focus',
     unit: 'min',
