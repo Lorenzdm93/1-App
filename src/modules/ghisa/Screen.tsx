@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode, CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
+import { mediaUrls } from './media'
 import {
   ghisaStore,
   exerciseById,
@@ -28,7 +29,16 @@ import {
   setRestSec,
   seedDemo,
   resetAll,
+  addMeasure,
+  deleteMeasure,
+  setHeight,
+  latestWeight,
+  weeklyMetric,
+  totalRestDays,
+  workoutDaySet,
   epley,
+  brzycki,
+  roundTo,
   round1,
   fmtVol,
   fmtDur,
@@ -56,6 +66,8 @@ import {
   type SetType,
   type Period,
   type FinishResult,
+  type Measure,
+  type ProfileMetric,
 } from './model'
 
 const pf = (v: string): number => parseFloat(v.replace(',', '.')) || 0
@@ -95,7 +107,15 @@ const IChevronR = ic('m9 18 6-6-6-6')
 const ISparkles = ic('M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3ZM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z')
 const ITimer = ic('M10 2h4M12 14l3-3M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z')
 const IClock = ic('M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 6v6l4 2')
-const IDumbbell = ic('M6.5 6.5 4 4M17.5 17.5 20 20M4 10 10 4M14 20l6-6M9 6.5 17.5 15M6.5 9 15 17.5M2.5 8.5l3-3M18.5 21.5l3-3')
+function IDumbbell({ size = 18, style }: IcProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={style} aria-hidden="true">
+      <path d="m6.5 6.5 11 11" /><path d="m21 21-1-1" /><path d="m3 3 1 1" />
+      <path d="m18 22 4-4" /><path d="m2 6 4-4" /><path d="m3 10 7-7" /><path d="m14 21 7-7" />
+    </svg>
+  )
+}
 const ITrend = ic('m22 7-8.5 8.5-5-5L2 17M16 7h6v6')
 const IHistoryI = ic('M3 3v5h5M3.05 13A9 9 0 1 0 6 5.3L3 8M12 7v5l4 2')
 
@@ -205,6 +225,38 @@ function PRBadge({ label }: { label: string }) {
   return <span className="gh2-pr gh2-pop"><ITrophy size={11} /> {label}</span>
 }
 
+/**
+ * Exercise photo (free-exercise-db). animate=true flips the two poses like
+ * a short demo loop. Any load failure or missing mapping falls back to a
+ * muscle-tinted monogram — never a broken image.
+ */
+function ExMedia({ exerciseId, name, size = 44, animate = false }: {
+  exerciseId: string; name: string; size?: number; animate?: boolean
+}) {
+  const urls = mediaUrls(exerciseId)
+  const [frame, setFrame] = useState(0)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    if (!animate || !urls || failed) return
+    const t = setInterval(() => setFrame((f) => (f === 0 ? 1 : 0)), 1100)
+    return () => clearInterval(t)
+  }, [animate, urls !== null, failed])
+  if (!urls || failed) {
+    return (
+      <span className="gh2-mono" style={{ width: size, height: size, fontSize: size * 0.4 }} aria-hidden="true">
+        {name.trim().charAt(0).toUpperCase() || '?'}
+      </span>
+    )
+  }
+  return (
+    <span className="gh2-thumb" style={{ width: size, height: size }}>
+      <img src={urls[animate ? frame : 0]} alt="" loading="lazy" decoding="async"
+        onError={() => setFailed(true)} />
+      {animate && <img src={urls[1]} alt="" aria-hidden="true" style={{ display: 'none' }} onError={() => undefined} />}
+    </span>
+  )
+}
+
 /* ------------------------- hand-rolled charts ------------------------- */
 
 function GBarChart({ data }: { data: { label: string; vol: number }[] }) {
@@ -310,7 +362,8 @@ function RestBar({ rest, onAdjust, onSkip }: {
 function RMCalcSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [w, setW] = useState('100')
   const [r, setR] = useState('5')
-  const oneRM = epley(pf(w), pi(r))
+  const oneRM = epley(pf(w), pi(r)) > 0 ? roundTo(epley(pf(w), pi(r)), 0.5) : 0
+  const bRM = brzycki(pf(w), pi(r)) > 0 ? roundTo(brzycki(pf(w), pi(r)), 0.1) : 0
   const rows = [1, 2, 3, 5, 8, 10, 12].map((reps) => ({
     reps,
     weight: oneRM > 0 ? round1(oneRM / (1 + reps / 30)) : 0,
@@ -331,7 +384,8 @@ function RMCalcSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
         </div>
         <div className="gh2-1rm">
           <div className="k">Estimated 1RM · Epley</div>
-          <div className="v gh2-display tnum">{oneRM > 0 ? round1(oneRM) : '—'}<small> kg</small></div>
+          <div className="v gh2-display tnum">{oneRM > 0 ? oneRM : '—'}<small> kg</small></div>
+          <div className="b tnum">{bRM > 0 ? `Brzycki: ${bRM} kg` : '\u00a0'}</div>
         </div>
         <div className="gh2-listcard" style={{ marginTop: 16 }}>
           {rows.map((row) => (
@@ -409,7 +463,8 @@ function ExercisePicker({ open, onClose, onPick }: {
         <div className="gh2-listcard">
           {list.map((e) => (
             <button key={e.id} className="gh2-exrow" onClick={() => onPick(e)}>
-              <span className="nm">
+              <ExMedia exerciseId={e.id} name={e.name} size={40} />
+              <span className="nm" style={{ flex: 1 }}>
                 <b>{e.name} {e.custom && <em>custom</em>}</b>
                 <i>{e.muscle} · {e.equipment}</i>
               </span>
@@ -807,7 +862,6 @@ function TrainScreen({ st, onStart }: { st: GhisaState; onStart: (tpl: Template 
           <div key={t.id} className="gh2-card gh2-rise" style={{ animationDelay: i * 40 + 'ms' }}>
             <div className="gh2-cardhead">
               <div className="gh2-display gh2-cardtitle">{t.name}</div>
-              <IconBtn small onClick={() => setMenuFor(t.id)} label="Template options"><IMore size={18} /></IconBtn>
             </div>
             <div className="gh2-tpllist">
               {t.items.map((it) => exerciseById(st, it.exerciseId)?.name ?? '?').join(' · ')}
@@ -815,6 +869,7 @@ function TrainScreen({ st, onStart }: { st: GhisaState; onStart: (tpl: Template 
             <div className="gh2-tplbtns">
               <button className="start" onClick={() => onStart(t)}><IPlay size={15} fill /> Start</button>
               <button className="edit" onClick={() => setEditing(t)} aria-label={`Edit ${t.name}`}><IPencil size={15} /></button>
+              <button className="edit trash" onClick={() => setMenuFor(t.id)} aria-label={`Delete ${t.name}`}><ITrash size={15} /></button>
             </div>
           </div>
         ))}
@@ -823,9 +878,9 @@ function TrainScreen({ st, onStart }: { st: GhisaState; onStart: (tpl: Template 
         )}
       </div>
 
-      <ActionSheet open={menuFor !== null} onClose={() => setMenuFor(null)} title={menuTpl ? menuTpl.name : ''}
+      <ActionSheet open={menuFor !== null} onClose={() => setMenuFor(null)}
+        title={menuTpl ? `Delete "${menuTpl.name}"?` : ''}
         actions={[
-          { label: 'Edit template', icon: <IPencil size={18} style={{ color: 'var(--g-muted)' }} />, onClick: () => setEditing(menuTpl ?? null) },
           { label: 'Delete template', icon: <ITrash size={18} />, danger: true, onClick: () => { if (menuFor) deleteTemplate(menuFor) } },
         ]} />
 
@@ -887,15 +942,74 @@ function TemplateEditor({ open, tpl, onClose }: { open: boolean; tpl: Template |
 
 /* --------------------------- history --------------------------- */
 
-function HistoryScreen({ st }: { st: GhisaState }) {
+const IUser = ic('M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z')
+const IRuler = ic('M21.3 9.7 14.3 2.7a1 1 0 0 0-1.4 0L2.7 12.9a1 1 0 0 0 0 1.4l7 7a1 1 0 0 0 1.4 0L21.3 11a1 1 0 0 0 0-1.3ZM7.5 10.5l2 2M10.5 7.5l2 2M13.5 4.5l2 2')
+const ICalendarI = ic('M8 2v4M16 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z')
+
+const METRIC_LABEL: Record<ProfileMetric, { seg: string; unit: string }> = {
+  duration: { seg: 'Duration', unit: 'min' },
+  volume: { seg: 'Volume', unit: 'kg' },
+  reps: { seg: 'Reps', unit: 'reps' },
+}
+
+function ProfileScreen({ st }: { st: GhisaState }) {
+  const [metric, setMetric] = useState<ProfileMetric>('volume')
+  const [range, setRange] = useState<12 | 26 | 52>(12)
+  const [sheet, setSheet] = useState<'stats' | 'exercises' | 'measures' | 'calendar' | null>(null)
+  const [exDetail, setExDetail] = useState<string | null>(null)
   const [detail, setDetail] = useState<string | null>(null)
   const [confirmDel, setConfirmDel] = useState(false)
+
   const sorted = useMemo(() => [...st.workouts].sort((a, b) => b.startedAt - a.startedAt), [st.workouts])
   const w = sorted.find((x) => x.id === detail)
+  const series = useMemo(() => weeklyMetric(st.workouts, range, metric), [st.workouts, range, metric])
+  const rangeTotal = series.reduce((a, x) => a + x.vol, 0)
+  const kg = latestWeight(st.measures)
+  const bodyline = [st.settings.heightCm ? st.settings.heightCm + ' cm' : null, kg ? kg + ' kg' : null]
+    .filter(Boolean).join(' @ ')
 
   return (
     <div className="gh2 gh2-page">
-      <div className="gh2-display gh2-h1">History</div>
+      <div className="gh2-pagehead" style={{ marginBottom: 8 }}>
+        <div>
+          <div className="gh2-display gh2-h1" style={{ margin: 0 }}>Profile</div>
+          {bodyline && <div className="gh2-datehead" style={{ marginTop: 2 }}>{bodyline}</div>}
+        </div>
+        <div className="gh2-profcount">
+          <b className="gh2-display tnum">{st.workouts.length}</b>
+          <i>workouts</i>
+        </div>
+      </div>
+
+      <div className="gh2-card gh2-rise" style={{ marginBottom: 16 }}>
+        <Segmented value={metric} onChange={setMetric}
+          options={(['duration', 'volume', 'reps'] as ProfileMetric[]).map((m) => ({ value: m, label: METRIC_LABEL[m].seg }))} />
+        <div className="gh2-chips" style={{ margin: '12px 0 0' }}>
+          {([12, 26, 52] as const).map((r) => (
+            <button key={r} className={'gh2-chip' + (range === r ? ' on' : '')} onClick={() => setRange(r)}>
+              {r === 12 ? 'Last 3 months' : r === 26 ? '6 months' : 'Year'}
+            </button>
+          ))}
+        </div>
+        <div style={{ height: 150, marginTop: 8 }}>
+          {rangeTotal > 0
+            ? <GBarChart data={series} />
+            : <div className="gh2-emptycell" style={{ paddingTop: 48 }}>No data in time period</div>}
+        </div>
+        <div className="gh2-datehead tnum" style={{ textAlign: 'right' }}>
+          {rangeTotal > 0 ? `${metric === 'volume' ? fmtVol(rangeTotal) : rangeTotal.toLocaleString()} ${METRIC_LABEL[metric].unit} total` : '\u00a0'}
+        </div>
+      </div>
+
+      <div className="gh2-k">Dashboard</div>
+      <div className="gh2-dash">
+        <button className="gh2-dashcard" onClick={() => setSheet('stats')}><ITrend size={19} /> Statistics</button>
+        <button className="gh2-dashcard" onClick={() => setSheet('exercises')}><IDumbbell size={19} /> Exercises</button>
+        <button className="gh2-dashcard" onClick={() => setSheet('measures')}><IRuler size={19} /> Measures</button>
+        <button className="gh2-dashcard" onClick={() => setSheet('calendar')}><ICalendarI size={19} /> Calendar</button>
+      </div>
+
+      <div className="gh2-k" style={{ marginTop: 20 }}>Workouts</div>
       <div className="gh2-stack sm">
         {sorted.map((x) => <WorkoutRow key={x.id} w={x} onClick={() => setDetail(x.id)} />)}
         {sorted.length === 0 && (
@@ -942,7 +1056,247 @@ function HistoryScreen({ st }: { st: GhisaState }) {
 
       <ActionSheet open={confirmDel} onClose={() => setConfirmDel(false)} title="Delete this workout?"
         actions={[{ label: 'Delete workout', icon: <ITrash size={18} />, danger: true, onClick: () => { if (detail) deleteWorkout(detail); setDetail(null) } }]} />
+
+      <StatisticsSheet st={st} open={sheet === 'stats'} onClose={() => setSheet(null)} />
+      <MyExercisesSheet st={st} open={sheet === 'exercises'} onClose={() => setSheet(null)} onPick={setExDetail} />
+      <MeasuresSheet st={st} open={sheet === 'measures'} onClose={() => setSheet(null)} />
+      <CalendarSheet st={st} open={sheet === 'calendar'} onClose={() => setSheet(null)} />
+      <ExerciseDetail st={st} exerciseId={exDetail} onClose={() => setExDetail(null)} />
     </div>
+  )
+}
+
+/* ---------------------- profile dashboard sheets ---------------------- */
+
+function StatisticsSheet({ st, open, onClose }: { st: GhisaState; open: boolean; onClose: () => void }) {
+  const all = st.workouts
+  const stats = useMemo(() => ({
+    workouts: all.length,
+    vol: all.reduce((a, w) => a + w.volume, 0),
+    sets: all.reduce((a, w) => a + w.sets, 0),
+    reps: all.reduce((a, w) => a + w.reps, 0),
+    hours: all.reduce((a, w) => a + w.duration, 0) / 60,
+    streak: weekStreak(all),
+  }), [all])
+  const perMuscle = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const w of all) for (const e of w.entries) {
+      const ex = exerciseById(st, e.exerciseId)
+      const muscle = ex ? ex.muscle : 'Other'
+      m.set(muscle, (m.get(muscle) ?? 0) + e.sets.filter((s) => s.type !== 'W').length)
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1])
+  }, [all, st])
+  const maxMuscle = Math.max(1, ...perMuscle.map(([, n]) => n))
+  const vol8 = useMemo(() => weeklyMetric(all, 8, 'volume'), [all])
+
+  return (
+    <GSheet open={open} onClose={onClose} full title="Statistics">
+      <div className="gh2-pad">
+        <div className="gh2-grid2" style={{ marginBottom: 16 }}>
+          <StatCard label="Workouts" value={stats.workouts} />
+          <StatCard label="Volume" value={fmtVol(stats.vol)} sub="kg lifted" />
+          <StatCard label="Sets" value={stats.sets} />
+          <StatCard label="Reps" value={stats.reps} />
+          <StatCard label="Hours trained" value={round1(stats.hours)} />
+          <StatCard label="Streak" value={stats.streak} sub={stats.streak === 1 ? 'week' : 'weeks'} />
+        </div>
+        <div className="gh2-card" style={{ marginBottom: 16 }}>
+          <div className="gh2-k">Weekly volume · last 8 weeks</div>
+          <div style={{ height: 150 }}><GBarChart data={vol8} /></div>
+        </div>
+        <div className="gh2-card">
+          <div className="gh2-k">Sets per muscle group</div>
+          {perMuscle.map(([muscle, n]) => (
+            <div key={muscle} className="gh2-musclerow">
+              <span className="m">{muscle}</span>
+              <span className="track"><i style={{ width: (n / maxMuscle) * 100 + '%' }} /></span>
+              <span className="n tnum">{n}</span>
+            </div>
+          ))}
+          {perMuscle.length === 0 && <div className="gh2-emptycell">Log workouts to see the distribution.</div>}
+        </div>
+      </div>
+    </GSheet>
+  )
+}
+
+function MyExercisesSheet({ st, open, onClose, onPick }: {
+  st: GhisaState; open: boolean; onClose: () => void; onPick: (id: string) => void
+}) {
+  const used = useMemo(() => {
+    const m = new Map<string, { sets: number; last: number }>()
+    for (const w of st.workouts) for (const e of w.entries) {
+      const n = e.sets.filter((s) => s.type !== 'W').length
+      if (n === 0) continue
+      const cur = m.get(e.exerciseId) ?? { sets: 0, last: 0 }
+      m.set(e.exerciseId, { sets: cur.sets + n, last: Math.max(cur.last, w.startedAt) })
+    }
+    return [...m.entries()]
+      .map(([id, u]) => ({ ex: exerciseById(st, id), id, ...u }))
+      .filter((x) => x.ex)
+      .sort((a, b) => b.last - a.last)
+  }, [st])
+
+  return (
+    <GSheet open={open} onClose={onClose} full title="My exercises">
+      <div className="gh2-pad">
+        <div className="gh2-listcard">
+          {used.map((x) => (
+            <button key={x.id} className="gh2-exrow" onClick={() => onPick(x.id)}>
+              <ExMedia exerciseId={x.id} name={x.ex ? x.ex.name : '?'} size={44} />
+              <span className="nm" style={{ flex: 1 }}>
+                <b>{x.ex ? x.ex.name : '?'}</b>
+                <i>{x.sets} sets · last {fmtDateShort(x.last)}</i>
+              </span>
+              <IChevronR size={18} style={{ color: 'var(--g-muted)' }} />
+            </button>
+          ))}
+          {used.length === 0 && <div className="gh2-emptycell">Exercises you train will collect here.</div>}
+        </div>
+      </div>
+    </GSheet>
+  )
+}
+
+const MEASURE_FIELDS: { key: keyof Omit<Measure, 'id' | 'ts'>; label: string; unit: string }[] = [
+  { key: 'weightKg', label: 'Weight', unit: 'kg' },
+  { key: 'chestCm', label: 'Chest', unit: 'cm' },
+  { key: 'waistCm', label: 'Waist', unit: 'cm' },
+  { key: 'hipsCm', label: 'Hips', unit: 'cm' },
+  { key: 'bicepsCm', label: 'Biceps', unit: 'cm' },
+  { key: 'thighCm', label: 'Thigh', unit: 'cm' },
+]
+
+function MeasuresSheet({ st, open, onClose }: { st: GhisaState; open: boolean; onClose: () => void }) {
+  const [form, setForm] = useState<Record<string, string>>({})
+  const [height, setHeightStr] = useState('')
+  useEffect(() => {
+    if (open) {
+      setForm({})
+      setHeightStr(st.settings.heightCm ? String(st.settings.heightCm) : '')
+    }
+  }, [open, st.settings.heightCm])
+
+  const entries = useMemo(() => [...st.measures].sort((a, b) => b.ts - a.ts), [st.measures])
+  const anyFilled = MEASURE_FIELDS.some((f) => pf(form[f.key] ?? '') > 0)
+
+  function save() {
+    if (!anyFilled) return
+    const m: Record<string, number> = {}
+    for (const f of MEASURE_FIELDS) {
+      const v = pf(form[f.key] ?? '')
+      if (v > 0) m[f.key] = v
+    }
+    addMeasure(m)
+    setForm({})
+  }
+
+  return (
+    <GSheet open={open} onClose={onClose} full title="Measures">
+      <div className="gh2-pad">
+        <div className="gh2-card" style={{ marginBottom: 16 }}>
+          <div className="gh2-k">Height</div>
+          <div className="gh2-hrow">
+            <input inputMode="decimal" value={height} placeholder="cm"
+              onChange={(e) => setHeightStr(e.target.value)}
+              onBlur={() => setHeight(pf(height) > 0 ? pf(height) : undefined)}
+              className="gh2-input" style={{ maxWidth: 120 }} />
+            <span className="u">cm</span>
+          </div>
+        </div>
+
+        <div className="gh2-card" style={{ marginBottom: 16 }}>
+          <div className="gh2-k ember">New measurement</div>
+          <div className="gh2-mgrid">
+            {MEASURE_FIELDS.map((f) => (
+              <label key={f.key} className="gh2-mfield">
+                <span>{f.label} · {f.unit}</span>
+                <input inputMode="decimal" value={form[f.key] ?? ''} placeholder="—"
+                  onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} />
+              </label>
+            ))}
+          </div>
+          <BigButton onClick={save} style={{ height: 46, marginTop: 12, opacity: anyFilled ? 1 : 0.4 }}>
+            <IPlus size={17} /> Save measurement
+          </BigButton>
+        </div>
+
+        <div className="gh2-k">Log</div>
+        <div className="gh2-stack sm">
+          {entries.map((m) => (
+            <div key={m.id} className="gh2-card slim gh2-mrow">
+              <div className="top">
+                <b>{fmtDate(m.ts)}</b>
+                <button onClick={() => deleteMeasure(m.id)} aria-label="Delete entry"><ITrash size={15} /></button>
+              </div>
+              <div className="vals tnum">
+                {MEASURE_FIELDS.filter((f) => typeof m[f.key] === 'number')
+                  .map((f) => `${f.label} ${m[f.key]}${f.unit}`).join(' · ')}
+              </div>
+            </div>
+          ))}
+          {entries.length === 0 && <div className="gh2-emptycell">No measurements yet — log the first above.</div>}
+        </div>
+      </div>
+    </GSheet>
+  )
+}
+
+function monthMatrix(year: number, month: number): (number | null)[][] {
+  const first = new Date(year, month, 1)
+  const lead = (first.getDay() + 6) % 7
+  const daysIn = new Date(year, month + 1, 0).getDate()
+  const cells: (number | null)[] = [...Array(lead).fill(null), ...Array.from({ length: daysIn }, (_, i) => i + 1)]
+  while (cells.length % 7 !== 0) cells.push(null)
+  const rows: (number | null)[][] = []
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7))
+  return rows
+}
+
+function CalendarSheet({ st, open, onClose }: { st: GhisaState; open: boolean; onClose: () => void }) {
+  const days = useMemo(() => workoutDaySet(st.workouts), [st.workouts])
+  const streak = weekStreak(st.workouts)
+  const rest = totalRestDays(st.workouts)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const months = [0, 1, 2].map((back) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - back, 1)
+    return { y: d.getFullYear(), m: d.getMonth(), label: d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) }
+  })
+
+  return (
+    <GSheet open={open} onClose={onClose} full title="Calendar">
+      <div className="gh2-pad">
+        <div className="gh2-calhead">
+          <span>🔥 <b className="tnum">{streak}</b> week streak</span>
+          <span>🌙 <b className="tnum">{rest}</b> rest days</span>
+        </div>
+        {months.map(({ y, m, label }) => (
+          <div key={label} className="gh2-card" style={{ marginBottom: 12 }}>
+            <div className="gh2-k">{label}</div>
+            <div className="gh2-calgrid hdr">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => <span key={d}>{d}</span>)}
+            </div>
+            {monthMatrix(y, m).map((row, ri) => (
+              <div key={ri} className="gh2-calgrid">
+                {row.map((day, ci) => {
+                  if (day === null) return <span key={ci} />
+                  const ts = new Date(y, m, day).getTime()
+                  const trained = days.has(ts)
+                  const isToday = ts === today
+                  return (
+                    <span key={ci} className={'d tnum' + (trained ? ' on' : '') + (isToday ? ' today' : '')}>
+                      {day}
+                    </span>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </GSheet>
   )
 }
 
@@ -983,7 +1337,8 @@ function LibraryScreen({ st }: { st: GhisaState }) {
       <div className="gh2-listcard">
         {list.map((e) => (
           <button key={e.id} className="gh2-exrow" onClick={() => setDetail(e.id)}>
-            <span className="nm">
+            <ExMedia exerciseId={e.id} name={e.name} size={44} />
+            <span className="nm" style={{ flex: 1 }}>
               <b>{e.name} {e.custom && <em>custom</em>}</b>
               <i>{e.muscle} · {e.equipment}</i>
             </span>
@@ -1047,7 +1402,10 @@ function ExerciseDetail({ st, exerciseId, onClose }: { st: GhisaState; exerciseI
     <GSheet open={exerciseId !== null} onClose={onClose} full title={ex ? ex.name : ''}>
       {ex && maxes && (
         <div className="gh2-pad">
-          <div className="gh2-sumsub" style={{ textAlign: 'left', marginBottom: 16 }}>{ex.muscle} · {ex.equipment}</div>
+          <div className="gh2-detailhead">
+            <ExMedia exerciseId={ex.id} name={ex.name} size={72} animate />
+            <div className="gh2-sumsub" style={{ textAlign: 'left' }}>{ex.muscle} · {ex.equipment}</div>
+          </div>
           <div className="gh2-grid2" style={{ marginBottom: 16 }}>
             <StatCard label="Heaviest" value={maxes.maxW > 0 ? maxes.maxW + ' kg' : '—'} />
             <StatCard label="Best est. 1RM" value={maxes.maxE > 0 ? round1(maxes.maxE) + ' kg' : '—'} />
@@ -1171,7 +1529,7 @@ export default function GhisaScreen({ tab = 'home' }: { tab?: string }) {
           onResume={() => setLiveOpen(true)} />
       )}
       {tab === 'train' && <TrainScreen st={st} onStart={handleStart} />}
-      {tab === 'history' && <HistoryScreen st={st} />}
+      {(tab === 'profile' || tab === 'history') && <ProfileScreen st={st} />}
       {tab === 'library' && <LibraryScreen st={st} />}
 
       {st.active && !liveOpen && (

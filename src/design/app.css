@@ -4628,3 +4628,76 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
 .gw-stat { display: flex; flex-direction: column; }
 .gw-stat b { font-size: 19px; font-weight: 750; letter-spacing: -0.02em; color: var(--ink); }
 .gw-stat i { font-style: normal; font-size: 11px; color: var(--dim); }
+
+/* ============================================================
+   v0.10.3 — GHISA profile tab, measures, calendar, media
+   ============================================================ */
+
+/* profile head */
+.gh2-profcount { text-align: right; }
+.gh2-profcount b { display: block; font-size: 22px; font-weight: 700; color: var(--g-text); }
+.gh2-profcount i { font-style: normal; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--g-muted); }
+
+/* dashboard 2x2 */
+.gh2-dash { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gh2-dashcard {
+  display: flex; align-items: center; gap: 10px;
+  height: 56px; padding: 0 16px; border: 1px solid var(--g-border); border-radius: 14px;
+  background: var(--g-surface); color: var(--g-text);
+  font-size: 15px; font-weight: 650; text-align: left;
+  transition: opacity 0.15s ease;
+}
+.gh2-dashcard:active { opacity: 0.6; }
+.gh2-dashcard svg { color: var(--g-muted); flex: none; }
+
+/* stats: sets per muscle */
+.gh2-musclerow { display: flex; align-items: center; gap: 12px; padding: 7px 0; }
+.gh2-musclerow .m { width: 84px; font-size: 13px; font-weight: 600; color: var(--g-text); }
+.gh2-musclerow .track { flex: 1; position: relative; height: 8px; border-radius: 4px; background: var(--g-surface2); overflow: hidden; }
+.gh2-musclerow .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--g-ember); }
+.gh2-musclerow .n { min-width: 34px; text-align: right; font-size: 13px; font-weight: 700; color: var(--g-muted); }
+
+/* calendar */
+.gh2-calhead { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 14px; font-size: 14px; color: var(--g-text); }
+.gh2-calhead b { font-weight: 700; }
+.gh2-calgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 4px; }
+.gh2-calgrid.hdr span { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--g-muted); text-align: center; padding-bottom: 2px; }
+.gh2-calgrid .d {
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 1; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: var(--g-muted);
+}
+.gh2-calgrid .d.on { background: var(--g-ember); color: #0B0C0E; font-weight: 800; }
+.gh2-calgrid .d.today { box-shadow: inset 0 0 0 1.5px var(--g-ember); color: var(--g-ember); }
+.gh2-calgrid .d.on.today { box-shadow: none; color: #0B0C0E; }
+
+/* measures */
+.gh2-hrow { display: flex; align-items: center; gap: 10px; }
+.gh2-hrow .u { font-size: 13px; font-weight: 600; color: var(--g-muted); }
+.gh2-mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gh2-mfield { display: flex; flex-direction: column; gap: 5px; }
+.gh2-mfield span { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--g-muted); }
+.gh2-mfield input {
+  height: 44px; padding: 0 12px; border-radius: 10px; font-size: 16px; font-weight: 700;
+  outline: none; background: var(--g-surface2); color: var(--g-text); border: 1px solid var(--g-border);
+}
+.gh2-mrow .top { display: flex; align-items: center; justify-content: space-between; }
+.gh2-mrow .top b { font-size: 14px; font-weight: 700; color: var(--g-text); }
+.gh2-mrow .top button { border: 0; background: none; color: #F87171; padding: 4px; }
+.gh2-mrow .vals { font-size: 13px; color: var(--g-muted); margin-top: 2px; }
+
+/* media */
+.gh2-thumb { flex: none; border-radius: 10px; overflow: hidden; background: var(--g-surface2); }
+.gh2-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gh2-mono {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  border-radius: 10px; background: var(--g-ember-soft); color: var(--g-ember);
+  font-family: var(--font-display); font-weight: 700;
+}
+.gh2-detailhead { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.gh2-detailhead .gh2-thumb, .gh2-detailhead .gh2-mono { border-radius: 14px; }
+
+/* calc secondary */
+.gh2-1rm .b { font-size: 13px; font-weight: 600; color: var(--g-muted); margin-top: 4px; min-height: 18px; }
+
+/* train trash */
+.gh2-tplbtns .edit.trash { color: #F87171; }

@@ -6,6 +6,7 @@
  */
 import { createPersistedStore } from '../../core/store'
 import { logEvent } from '../../core/events'
+import { epley as coreEpley, brzycki as coreBrzycki } from '../../core/strength'
 
 /* ------------------------------ types ------------------------------ */
 
@@ -87,12 +88,26 @@ export interface Workout {
 export interface GhisaSettings {
   restSec: number
   unit: 'kg'
+  heightCm?: number
+}
+
+/** Manual body measurement — all fields optional, kg / cm. */
+export interface Measure {
+  id: string
+  ts: number
+  weightKg?: number
+  chestCm?: number
+  waistCm?: number
+  hipsCm?: number
+  bicepsCm?: number
+  thighCm?: number
 }
 
 export interface GhisaState {
   exercises: Exercise[]
   templates: Template[]
   workouts: Workout[]
+  measures: Measure[]
   settings: GhisaSettings
   active: ActiveWorkout | null
 }
@@ -188,13 +203,23 @@ export const uid = (): string =>
 
 export const DAY = 86400000
 
+/** Estimated 1RM — delegates to core/strength so GHISA and CALIBER can never drift. */
 export function epley(w: unknown, r: unknown): number {
   const weight = Number(w) || 0
   const reps = Number(r) || 0
   if (weight <= 0 || reps <= 0) return 0
-  if (reps === 1) return weight
-  return weight * (1 + reps / 30)
+  return coreEpley(weight, reps)
 }
+
+/** Secondary estimate, mirrored from CALIBER's dual readout. */
+export function brzycki(w: unknown, r: unknown): number {
+  const weight = Number(w) || 0
+  const reps = Number(r) || 0
+  if (weight <= 0 || reps <= 0) return 0
+  return coreBrzycki(weight, reps)
+}
+
+export const roundTo = (v: number, step: number): number => Math.round(v / step) * step
 
 export const round1 = (n: number): number => Math.round(n * 10) / 10
 export const round2p5 = (n: number): number => Math.round(n / 2.5) * 2.5
@@ -363,6 +388,7 @@ function defaults(): GhisaState {
     exercises: LIB,
     templates: SEED_TEMPLATES,
     workouts: [],
+    measures: [],
     settings: { restSec: 90, unit: 'kg' },
     active: null,
   }
@@ -514,6 +540,7 @@ export function migrateGhisa(data: unknown, _fromVersion: number): GhisaState {
       exercises: pool,
       templates: templates.length > 0 ? templates : base.templates,
       workouts,
+      measures: [],
       settings: { restSec: typeof data.restSeconds === 'number' ? data.restSeconds : 90, unit: 'kg' },
       active,
     }
@@ -528,12 +555,13 @@ export function migrateGhisa(data: unknown, _fromVersion: number): GhisaState {
     exercises,
     templates: Array.isArray(d.templates) ? d.templates : base.templates,
     workouts: Array.isArray(d.workouts) ? d.workouts : [],
+    measures: Array.isArray(d.measures) ? d.measures : [],
     settings: { ...base.settings, ...(d.settings ?? {}) },
     active: d.active ?? null,
   }
 }
 
-export const ghisaStore = createPersistedStore<GhisaState>('ghisa', defaults(), 5, migrateGhisa)
+export const ghisaStore = createPersistedStore<GhisaState>('ghisa', defaults(), 6, migrateGhisa)
 
 /* ------------------------------ actions ------------------------------ */
 
@@ -716,4 +744,70 @@ export function seedDemo(): void {
 /** Removes demo/all workouts + custom exercises + templates back to seeds. Active survives nothing. */
 export function resetAll(): void {
   ghisaStore.set(() => defaults())
+}
+
+/* ---------------------- v6: measures + profile helpers ---------------------- */
+
+export function addMeasure(m: Omit<Measure, 'id' | 'ts'> & { ts?: number }): void {
+  const entry: Measure = { id: uid(), ts: m.ts ?? Date.now(), ...m }
+  ghisaStore.set((st) => ({ ...st, measures: [...st.measures, entry] }))
+}
+
+export function deleteMeasure(id: string): void {
+  ghisaStore.set((st) => ({ ...st, measures: st.measures.filter((x) => x.id !== id) }))
+}
+
+export function setHeight(cm: number | undefined): void {
+  ghisaStore.set((st) => ({ ...st, settings: { ...st.settings, heightCm: cm } }))
+}
+
+export function latestWeight(measures: Measure[]): number | undefined {
+  for (let i = measures.length - 1; i >= 0; i--) {
+    const w = measures[i].weightKg
+    if (typeof w === 'number' && w > 0) return w
+  }
+  return undefined
+}
+
+export type ProfileMetric = 'duration' | 'volume' | 'reps'
+
+/** Weekly buckets (Mon-start) over the last `weeksBack` weeks for the profile chart. */
+export function weeklyMetric(
+  workouts: Workout[],
+  weeksBack: number,
+  metric: ProfileMetric,
+  now = Date.now(),
+): { label: string; vol: number }[] {
+  const thisMon = mondayOf(now)
+  const out: { label: string; vol: number }[] = []
+  for (let i = weeksBack - 1; i >= 0; i--) {
+    const start = thisMon - i * 7 * DAY
+    let v = 0
+    for (const w of workouts) {
+      if (w.startedAt < start || w.startedAt >= start + 7 * DAY) continue
+      v += metric === 'duration' ? w.duration : metric === 'volume' ? w.volume : w.reps
+    }
+    out.push({ label: fmtDateShort(start), vol: Math.round(v) })
+  }
+  return out
+}
+
+const dayFloor = (ts: number): number => {
+  const d = new Date(ts)
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
+}
+
+/** Hevy-style lifetime rest days: days since the first workout (inclusive of today) minus distinct training days. */
+export function totalRestDays(workouts: Workout[], now = Date.now()): number {
+  if (workouts.length === 0) return 0
+  const days = new Set(workouts.map((w) => dayFloor(w.startedAt)))
+  const first = Math.min(...days)
+  const span = Math.floor((dayFloor(now) - first) / DAY) + 1
+  return Math.max(0, span - days.size)
+}
+
+/** Distinct training days as day-floor timestamps — feeds the calendar. */
+export function workoutDaySet(workouts: Workout[]): Set<number> {
+  return new Set(workouts.map((w) => dayFloor(w.startedAt)))
 }

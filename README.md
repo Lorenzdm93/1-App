@@ -27,6 +27,14 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.10.3 — GHISA: Profile tab, CALIBER-parity math, exercise media**
+
+The History tab is now a Hevy-style **Profile**: a metric chart (Duration / Volume / Reps over 3 m / 6 m / year), a 2×2 dashboard — **Statistics** (all-time totals, 8-week volume, sets per muscle group), **Exercises** (everything you've trained, most recent first), **Measures** (height plus manual body-measurement log: weight, chest, waist, hips, biceps, thigh), **Calendar** (three months, training days in ember, week streak and lifetime rest days) — and the full workout history below, exactly where it used to live (old `/history` links land here too).
+
+e1RM math is now **formula-identical with CALIBER**: both modules import the shared `core/strength` Epley, and the 1RM calculator mirrors CALIBER's dual readout (Epley to 0.5 kg as the headline, Brzycki to 0.1 kg beneath). The dumbbell icon is the prototype's exact lucide glyph everywhere — module mark, Train tab, in-screen. Template cards drop the ⋯ menu for a pen + trash pair (trash confirms before deleting).
+
+Exercise rows and detail pages now carry **demonstration photos** from free-exercise-db (MIT, ~870 exercises): two poses that flip like a short loop on the detail page. Images are hotlinked; anything unavailable — custom lifts, offline, an unmapped name — falls back to a clean monogram tile. Run `node scripts/verify-ghisa-media.mjs` locally once to confirm all 41 mappings against the live dataset.
+
 **New in v0.10.2 — GHISA, rebuilt from the prototype**
 
 GHISA is gone and rewritten from the ground up against the standalone prototype — not patched, rebuilt. The forged-iron dark theme now renders pixel-faithful (its own `--g-*` palette: `#0B0C0E` ground, ember `#F97316`, chalk text), and light mode maps the same layout onto app tokens. The module is now four tabs mirroring the prototype exactly — **Home** (period stats, 8-week volume bars, streak, recent, resume-in-progress), **Train** (start empty or from a template, full template editor with per-exercise set steppers), **History** (every session, tap for the set-by-set breakdown with per-set e1RM and PR flags), **Exercises** (searchable library + muscle filters, custom exercises, per-exercise detail with heaviest / best-1RM / most-reps / sessions and a 1RM-vs-Volume progression chart).
