@@ -27,6 +27,12 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.10.7 — shell hardening + module reorder**
+
+Fixes the black-screen after loading GROVE sample data — two layers deep. First, the **shell finally has error containment**: every module screen, dashboard widget, and quick action now renders inside an error boundary, so a crash anywhere becomes a contained card that *names the exact error* (screenshot = bug report) with Try again / Back to Today — never a black app. Second, the first-time-exercised companion path in GROVE was armored: the nested-SVG-inside-transformed-group construct (a known browser-quirk class) is gone, animal name→sprite lookups have fallbacks, every rendered coordinate is finite-checked, dates use the spec-safest locale form, and demo ids are collision-proof and self-describing (`…-d17`). The headless seed→render pipeline test (71 plants, ids, coords, kinds, dates, painter sort) runs clean.
+
+And the 1% overview learned **drag-and-drop module ordering**: grab the six-dot grip on any module card, drag, drop where the indicator line shows — the order persists (it *is* the enabled array, which was already ordered by design; the UI just caught up).
+
 **New in v0.10.6 — GROVE: the prototype rebuild**
 
 GROVE is now the dark prototype, living inside the shell: brass focus and eucalyptus breaks with the whole accent system swapping per phase, the machined conic-bezel dial with its 60-tick ring, per-mode length chips (15/25/45/60/90 for focus, shorter sets for breaks) plus a **✎ custom** chip and click-the-time-to-type — one-off lengths apply *to this round only*, defaults live in Settings. Cycle dots track a configurable **long-break-after-N** (2–8), with auto-start toggles for breaks and focus, a completion **chime** (synthesized, no assets) and optional browser notifications. Keyboard on desktop: space, R, S, 1·2·3. Today's grove grows a live tree as the session runs.

@@ -481,7 +481,7 @@ export function seedDemo(now = Date.now()): void {
       const hour = 9 + Math.floor(Math.random() * 10)
       const ts = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, Math.floor(Math.random() * 50)).getTime()
       if (ts > now) continue
-      plants.push({ id: uid(), ts, minutes, kind: kindForFocus(minutes), demo: true })
+      plants.push({ id: uid() + '-d' + plants.length, ts, minutes, kind: kindForFocus(minutes), demo: true })
     }
   }
   plants.sort((a, b) => b.ts - a.ts)

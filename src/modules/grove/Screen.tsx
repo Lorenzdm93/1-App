@@ -53,7 +53,7 @@ import {
   type Mode,
   type CompletionEvent,
 } from './model'
-import { ArtDefs, PlantInner, PlantSprite, AnimalSprite, type AnimalId } from './Art'
+import { ArtDefs, PlantInner, PlantSprite, AnimalInner, AnimalSprite, type AnimalId } from './Art'
 
 const MODE_LABEL: Record<Mode, string> = { focus: 'Focus', short: 'Short break', long: 'Long break' }
 
@@ -255,7 +255,7 @@ function FocusTab({ st, now, flashTs }: { st: GroveState; now: number; flashTs: 
           <div className="gv2-groverow">
             {todaysPlants.map((p, i) => (
               <PlantSprite key={p.id} kind={p.kind} p={1} h={46} prefix={'gr' + i}
-                title={`${p.minutes} min session · ${new Date(p.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`} />
+                title={`${p.minutes} min session · ${new Date(p.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`} />
             ))}
             {growing && run && (
               <PlantSprite kind={kindForFocus(run.minutes)} p={growP} h={46} prefix="grow"
@@ -515,7 +515,7 @@ function pointToUV(svg: SVGSVGElement, clientX: number, clientY: number): [numbe
   return [Math.min(1, Math.max(0, gx / (GRID - 1))), Math.min(1, Math.max(0, gy / (GRID - 1)))]
 }
 
-const ANIMAL_IDS: Record<string, AnimalId> = { Rabbit: 'rabbit', Fox: 'fox', Deer: 'deer', Bear: 'bear', Owl: 'owl' }
+const ANIMAL_IDS: Partial<Record<string, AnimalId>> = { Rabbit: 'rabbit', Fox: 'fox', Deer: 'deer', Bear: 'bear', Owl: 'owl' }
 
 function ForestTab({ st }: { st: GroveState }) {
   const [span, setSpan] = useState<Span>('week')
@@ -655,8 +655,9 @@ function ForestTab({ st }: { st: GroveState }) {
               style={{ filter: 'drop-shadow(0 14px 22px rgba(0,0,0,.45))' }} />
             {shown.map(({ p, u, v }) => {
               const [cx, cy] = uvToIso(u, v)
+              if (!Number.isFinite(cx) || !Number.isFinite(cy)) return null
               const dragging = drag !== null && drag.id === p.id
-              const when = new Date(p.ts).toLocaleDateString([], { month: 'short', day: 'numeric' })
+              const when = new Date(p.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
               return (
                 <g key={p.id} data-pid={p.id}
                   className={'gv2-plant' + (dragging ? ' dragging' : '')}
@@ -673,13 +674,14 @@ function ForestTab({ st }: { st: GroveState }) {
               const pos = roam[a.name]
               if (!pos) return null
               const [cx, cy] = uvToIso(pos.u, pos.v)
+              if (!Number.isFinite(cx) || !Number.isFinite(cy)) return null
               return (
                 <g key={a.name} className="gv2-animal"
                   style={{ transform: `translate(${cx}px, ${cy}px)`, transition: 'transform 3.2s ease-in-out' }}>
                   <title>{a.name}</title>
                   <ellipse cx="0" cy={TH} rx="10" ry="3.6" fill="#000" opacity="0.22" />
                   <g transform={`translate(-11,${TH - 17})`}>
-                    <AnimalInnerWrap id={ANIMAL_IDS[a.name]} />
+                    <AnimalInner id={ANIMAL_IDS[a.name] ?? 'owl'} prefix="iso" />
                   </g>
                 </g>
               )
@@ -697,7 +699,7 @@ function ForestTab({ st }: { st: GroveState }) {
             {ANIMALS.map((a) => (
               <span key={a.name} className={'comp' + (totalH >= a.hours ? '' : ' locked')}
                 title={`${a.name} — unlocks at ${a.hours}h of focus`}>
-                <AnimalSprite id={ANIMAL_IDS[a.name]} prefix={'bad-' + a.name} />
+                <AnimalSprite id={ANIMAL_IDS[a.name] ?? 'owl'} prefix={'bad-' + a.name} />
                 {a.name}
               </span>
             ))}
@@ -712,14 +714,6 @@ function ForestTab({ st }: { st: GroveState }) {
         </div>
       </div>
     </div>
-  )
-}
-
-function AnimalInnerWrap({ id }: { id: AnimalId }) {
-  return (
-    <svg width="23" height="17" viewBox="0 0 23 17" overflow="visible">
-      <AnimalInner id={id} prefix="iso" />
-    </svg>
   )
 }
 

@@ -1,8 +1,8 @@
-import { useMemo } from 'react'
-import type { CSSProperties } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import type { CSSProperties, PointerEvent as RPointerEvent } from 'react'
 import { useStore } from '../core/hooks'
 import { eventsStore, currentStreak } from '../core/events'
-import { settingsStore } from '../core/settings'
+import { settingsStore, setModuleOrder } from '../core/settings'
 import { enabledModules, moduleById } from '../core/registry'
 import { navigate } from '../core/router'
 import { todayKey, lastNDayKeys, dayKey } from '../core/dates'
@@ -10,6 +10,7 @@ import { oneStore } from '../core/one'
 import { computePulse, nextMoves } from '../core/score'
 import { Chevron, Empty } from '../app/ui'
 import Ring from '../app/Ring'
+import ErrorBoundary from '../app/ErrorBoundary'
 import { cadenceStore, recentMoodAvg } from '../modules/cadence/model'
 
 function useWeekPulse() {
@@ -148,6 +149,57 @@ export default function Today() {
     month: 'long',
   })
 
+  /* ---- module reorder: grip-drag with a drop indicator, commit on release ---- */
+  const [dragState, setDragState] = useState<{ id: string; startY: number; dy: number; target: number } | null>(null)
+  const dragRef = useRef<typeof dragState>(null)
+  dragRef.current = dragState
+
+  function cardMids(): { id: string; mid: number }[] {
+    return Array.from(document.querySelectorAll<HTMLElement>('[data-mid]')).map((el) => {
+      const r = el.getBoundingClientRect()
+      return { id: el.dataset.mid!, mid: r.top + r.height / 2 }
+    })
+  }
+  function onGripDown(e: RPointerEvent<HTMLSpanElement>, id: string, index: number) {
+    e.preventDefault()
+    e.stopPropagation()
+    const startY = e.clientY
+    setDragState({ id, startY, dy: 0, target: index })
+    const move = (ev: globalThis.PointerEvent) => {
+      const cur = dragRef.current
+      if (!cur) return
+      const dy = ev.clientY - cur.startY
+      const mids = cardMids()
+      let target = mids.length - 1
+      for (let i = 0; i < mids.length; i++) {
+        if (ev.clientY < mids[i].mid) { target = i; break }
+        if (i === mids.length - 1) target = mids.length
+      }
+      setDragState({ ...cur, dy, target: Math.min(target, mids.length) })
+    }
+    const up = () => {
+      document.removeEventListener('pointermove', move)
+      document.removeEventListener('pointerup', up)
+      document.removeEventListener('pointercancel', up)
+      const cur = dragRef.current
+      if (cur) {
+        const ids = modules.map((x) => x.id)
+        const from = ids.indexOf(cur.id)
+        let to = cur.target
+        if (from !== -1 && to !== from && to !== from + 1) {
+          ids.splice(from, 1)
+          if (to > from) to -= 1
+          ids.splice(to, 0, cur.id)
+          setModuleOrder(ids)
+        }
+      }
+      setDragState(null)
+    }
+    document.addEventListener('pointermove', move)
+    document.addEventListener('pointerup', up)
+    document.addEventListener('pointercancel', up)
+  }
+
   return (
     <>
       <div className="screen-head">
@@ -161,8 +213,14 @@ export default function Today() {
         <Empty title="No modules enabled" sub="Turn on the tools you want in the Modules tab." />
       )}
 
-      {modules.map((m) => (
-        <div className="card" key={m.id}>
+      {modules.map((m, mi) => (
+        <div
+          className={'card mod-card' + (dragState && dragState.id === m.id ? ' dragging' : '')}
+          key={m.id}
+          data-mid={m.id}
+          style={dragState && dragState.id === m.id ? { transform: `translateY(${dragState.dy}px)` } : undefined}
+        >
+          {dragState && dragState.target === mi && dragState.id !== m.id && <div className="drop-line" />}
           <button className="card-head" onClick={() => navigate('/m/' + m.id)}>
             <span className="mark">
               <m.Icon />
@@ -181,6 +239,19 @@ export default function Today() {
                 </span>
               ) : null
             })()}
+            <span
+              className="mod-grip"
+              role="button"
+              aria-label={`Reorder ${m.name}`}
+              onPointerDown={(e) => onGripDown(e, m.id, mi)}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg viewBox="0 0 10 16" width="10" height="16" aria-hidden="true">
+                <circle cx="2.5" cy="2.5" r="1.4" /><circle cx="7.5" cy="2.5" r="1.4" />
+                <circle cx="2.5" cy="8" r="1.4" /><circle cx="7.5" cy="8" r="1.4" />
+                <circle cx="2.5" cy="13.5" r="1.4" /><circle cx="7.5" cy="13.5" r="1.4" />
+              </svg>
+            </span>
             <Chevron />
           </button>
           {(() => {
@@ -195,10 +266,14 @@ export default function Today() {
               </div>
             ) : null
           })()}
-          <m.Widget />
+          <ErrorBoundary name={m.name} compact>
+            <m.Widget />
+          </ErrorBoundary>
           {m.QuickActions && (
             <div className="action-row">
-              <m.QuickActions />
+              <ErrorBoundary name={m.name} compact>
+                <m.QuickActions />
+              </ErrorBoundary>
             </div>
           )}
         </div>

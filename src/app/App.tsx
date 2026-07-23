@@ -14,6 +14,7 @@ import Onboarding from '../screens/Onboarding'
 import TabBar from './TabBar'
 import ModuleTabBar from './ModuleTabBar'
 import ModuleSettingsScreen from './ModuleSettingsScreen'
+import ErrorBoundary from './ErrorBoundary'
 import { ToastHost, Sheet } from './ui'
 import { introStore, shouldShowIntro, markIntroSeen } from '../core/intro'
 
@@ -81,7 +82,9 @@ function ModuleScreen({ id, tab }: { id: string; tab?: string }) {
           <div className="sub eyebrow-sub">{mod.tagline}</div>
         </div>
       </div>
-      {active === 'settings' ? <ModuleSettingsScreen mod={mod} /> : <mod.Screen tab={active} />}
+      <ErrorBoundary name={mod.name} key={mod.id + ':' + active}>
+        {active === 'settings' ? <ModuleSettingsScreen mod={mod} /> : <mod.Screen tab={active} />}
+      </ErrorBoundary>
       <ModuleTabBar moduleId={mod.id} tabs={tabs} active={active} />
       <ModuleIntro mod={mod} />
     </div>
