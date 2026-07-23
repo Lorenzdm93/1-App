@@ -32,6 +32,8 @@ export interface CadenceState {
   habits: Habit[]
   /** dayKey -> ids of build habits checked that day. */
   checks: Record<string, string[]>
+  /** dayKey → habitId → partial completion 0..1 (integrations write this; a full check lives in `checks`). */
+  progress?: Record<string, Record<string, number>>
   /** habitId -> dayKeys with a logged slip (quit habits). */
   slips: Record<string, string[]>
 }
@@ -42,7 +44,7 @@ export const PALETTE: readonly string[] = [
   '#6366f1', '#ec4899', '#84cc16', '#06b6d4', '#ef4444', '#a855f7',
 ]
 
-const DEFAULTS: CadenceState = { habits: [], checks: {}, slips: {} }
+const DEFAULTS: CadenceState = { habits: [], checks: {}, slips: {}, progress: {} }
 
 function normalizedSchedule(raw: unknown): HabitSchedule {
   if (raw !== null && typeof raw === 'object') {
@@ -89,6 +91,7 @@ export function migrateCadence(data: unknown, fromVersion: number): CadenceState
     return {
       habits,
       checks: d.checks && typeof d.checks === 'object' ? d.checks : {},
+      progress: d.progress && typeof d.progress === 'object' ? d.progress : {},
       slips: d.slips && typeof d.slips === 'object' ? d.slips : {},
       ...(d.moods && typeof d.moods === 'object' ? { moods: d.moods } : {}),
     }
@@ -96,7 +99,7 @@ export function migrateCadence(data: unknown, fromVersion: number): CadenceState
   return DEFAULTS
 }
 
-export const cadenceStore = createPersistedStore<CadenceState>('cadence', DEFAULTS, 4, migrateCadence)
+export const cadenceStore = createPersistedStore<CadenceState>('cadence', DEFAULTS, 5, migrateCadence)
 
 export const EMOJI_PRESETS = [
   '💪', '🏃', '📚', '🧘', '💧', '✍️', '🥦', '🌱', '😴', '💊',
@@ -108,7 +111,7 @@ export const EMOJI_PRESETS = [
 export const PRESETS = {
   build: [
     ['💪', 'Workout'], ['🏃', 'Run'], ['📚', 'Read'], ['🧘', 'Meditate'], ['💧', 'Drink water'],
-    ['✍️', 'Journal'], ['🥦', 'Eat vegetables'], ['🌱', 'Stretch'], ['😴', 'Sleep by 11pm'], ['💊', 'Vitamins'],
+    ['✍️', 'Journal'], ['🥦', 'Eat vegetables'], ['🌱', 'Stretch'], ['😴', 'Sleep by 11pm'], ['💊', 'Supplements'],
   ],
   quit: [
     ['🚭', 'No smoking'], ['🍺', 'No alcohol'], ['📵', 'No doomscrolling'], ['🍬', 'No sugar'],
@@ -664,3 +667,45 @@ export function monthMoodAvg(st: CadenceState, grid: MonthGrid, today = todayKey
 }
 
 export const MOOD_FACES = ['😞', '😕', '😐', '🙂', '😄'] as const
+
+/* ---------------- v5: fractional day progress (integration-fed) ---------------- */
+
+/** 1 when fully checked, else any partial fraction, else 0. */
+export function checkFraction(st: CadenceState, habitId: string, day: string): number {
+  if (isChecked(st, habitId, day)) return 1
+  const f = st.progress?.[day]?.[habitId]
+  return typeof f === 'number' && f > 0 ? Math.min(1, f) : 0
+}
+
+/**
+ * Authoritative fraction write for a day a source-of-truth integration manages:
+ * ≥1 promotes to a real check (events, streak toast — the full ceremony),
+ * 0<f<1 demotes any check and records the partial bar,
+ * ≤0 clears both. Manual checks on days no integration touches are unaffected,
+ * because integrations only call this when they actually have doses due.
+ */
+export function setCheckFraction(habitId: string, day: string, frac: number): void {
+  const f = Math.max(0, Math.min(1, frac))
+  if (f >= 0.999) {
+    setCheck(habitId, day, true)
+    cadenceStore.set((s) => {
+      if (!s.progress?.[day]?.[habitId]) return s
+      const dayMap = { ...s.progress[day] }
+      delete dayMap[habitId]
+      return { ...s, progress: { ...s.progress, [day]: dayMap } }
+    })
+    return
+  }
+  setCheck(habitId, day, false)
+  const existing = cadenceStore.get().progress?.[day]?.[habitId]
+  const rounded = Math.round(f * 100) / 100
+  if (f > 0 && existing === rounded) return
+  cadenceStore.set((s) => {
+    const progress = { ...(s.progress ?? {}) }
+    const dayMap = { ...(progress[day] ?? {}) }
+    if (f <= 0) delete dayMap[habitId]
+    else dayMap[habitId] = Math.round(f * 100) / 100
+    progress[day] = dayMap
+    return { ...s, progress }
+  })
+}

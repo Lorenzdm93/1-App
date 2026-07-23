@@ -31,12 +31,6 @@ export const LIBRARY: readonly LibraryEntry[] = [
   { name: 'Iron', chem: 'Fe bisglycinate', amount: '18', unit: 'mg', form: 'capsule', slot: 'morning', note: 'Away from coffee and tea; vitamin C helps', info: 'Only worth taking against a demonstrated need — ferritin is the number to know.', caution: 'Do not supplement iron blind; excess is genuinely harmful. Test first.' },
   { name: 'Probiotic', chem: 'Multi-strain', amount: '1', unit: 'cap', form: 'capsule', slot: 'morning', note: 'Refrigerate if the label says so', info: 'Strain-specific by nature — benefits shown for one strain do not transfer to another.' },
   {
-    name: 'Ashwagandha', chem: 'Withania somnifera (KSM-66/Sensoril)', amount: '600', unit: 'mg', form: 'capsule', slot: 'evening',
-    note: 'Cycle it — 6–8 weeks on, 2–4 off',
-    info: 'Adaptogen commonly taken for stress and sleep; 300–600 mg/day of a root extract is the studied range. Effects build over weeks.',
-    caution: 'Cycling is commonly advised (tolerance and rebound reports). Avoid in pregnancy, hyperthyroidism, or with sedatives without medical advice.',
-  },
-  {
     name: 'Rhodiola', chem: 'Rhodiola rosea (3% rosavins)', amount: '300', unit: 'mg', form: 'capsule', slot: 'morning',
     note: 'Morning, empty stomach — can be stimulating',
     info: 'Adaptogen used for fatigue and stress resilience; 200–400 mg/day. Often cycled 6–8 weeks on, 2 off.',
@@ -54,31 +48,9 @@ export const LIBRARY: readonly LibraryEntry[] = [
     caution: 'Tolerance builds — periodic 1–2 week resets restore sensitivity. Caution with anxiety, hypertension, pregnancy.',
   },
   {
-    name: 'Zinc', chem: 'Zinc picolinate', amount: '15', unit: 'mg', form: 'capsule', slot: 'evening',
-    note: 'With food — on empty it can nauseate',
-    info: '10–25 mg/day supports immunity and hormones; more isn\'t better long-term.',
-    caution: 'Chronic doses >40 mg/day deplete copper. Separate from iron and high-calcium meals.',
-  },
-  {
-    name: 'Vitamin C', chem: 'Ascorbic acid', amount: '500', unit: 'mg', form: 'tablet', slot: 'morning',
-    note: 'Split doses absorb better than one gram at once',
-    info: '200–500 mg/day saturates most people; absorption drops steeply above ~500 mg per sitting.',
-  },
-  {
     name: 'B-Complex', chem: 'B1–B12 complex', amount: '1', unit: 'capsule', form: 'capsule', slot: 'morning',
     note: 'Morning — B vitamins can be mildly energising',
     info: 'Covers the water-soluble Bs; most useful with low intake, veganism, or high stress. Bright-yellow urine is riboflavin, harmless.',
-  },
-  {
-    name: 'Vitamin B12', chem: 'Methylcobalamin', amount: '1000', unit: 'µg', form: 'tablet', slot: 'morning',
-    note: 'Essential if plant-based',
-    info: '250–1000 µg/day or 2000 µg weekly; absorption per dose is tiny, hence the large numbers.',
-  },
-  {
-    name: 'Vitamin K2', chem: 'Menaquinone-7 (MK-7)', amount: '100', unit: 'µg', form: 'softgel', slot: 'morning',
-    note: 'Take with D3 and a fatty meal',
-    info: '90–200 µg MK-7 directs calcium toward bone; commonly paired with vitamin D.',
-    caution: 'Interacts with warfarin and similar anticoagulants — medical advice first.',
   },
   {
     name: 'Selenium', chem: 'Selenomethionine', amount: '100', unit: 'µg', form: 'capsule', slot: 'morning',
@@ -160,6 +132,81 @@ export const LIBRARY: readonly LibraryEntry[] = [
     note: 'With a FULL glass of water, away from meds',
     info: '5–10 g/day of soluble fibre for regularity and LDL; increase slowly.',
     caution: 'Never dry — it swells. Separate from medication by 2 h.',
+  },
+  {
+    name: 'Resveratrol', chem: 'trans-Resveratrol', amount: '250', unit: 'mg', form: 'capsule', slot: 'morning',
+    note: 'With fat \u2014 absorbs poorly alone',
+    info: 'Polyphenol from grape skin studied for longevity pathways.',
+  },
+  {
+    name: 'Lion\u2019s Mane', chem: 'Hericium erinaceus', amount: '1000', unit: 'mg', form: 'capsule', slot: 'morning',
+    note: 'Consistency over weeks matters',
+    info: 'Culinary mushroom commonly taken for focus and nerve-growth-factor interest.',
+  },
+  {
+    name: 'Bacopa', chem: 'Bacopa monnieri, 50% bacosides', amount: '300', unit: 'mg', form: 'capsule', slot: 'evening',
+    note: 'With food \u2014 can unsettle an empty stomach',
+    info: 'Ayurvedic herb with the slowest onset in the nootropic aisle; studied over 8\u201312 weeks.',
+  },
+  {
+    name: 'Alpha-GPC', chem: 'L-Alpha glycerylphosphorylcholine', amount: '300', unit: 'mg', form: 'capsule', slot: 'morning',
+    note: 'Often paired with caffeine pre-training',
+    info: 'Choline donor popular before workouts and focus blocks.',
+  },
+  {
+    name: 'Ginkgo', chem: 'Ginkgo biloba, 24% flavone glycosides', amount: '120', unit: 'mg', form: 'tablet', slot: 'morning',
+    note: 'Morning \u2014 mildly stimulating for some',
+    info: 'One of the oldest studied botanicals for circulation and memory.',
+    caution: 'Interacts with blood thinners.',
+  },
+  {
+    name: 'Vitamin E', chem: 'd-Alpha tocopherol', amount: '134', unit: 'mg', form: 'softgel', slot: 'morning',
+    note: 'With a meal that has fat',
+    info: 'Fat-soluble antioxidant; the natural d- form absorbs better than dl-.',
+    caution: 'High doses interact with blood thinners.',
+  },
+  {
+    name: 'Vitamin A', chem: 'Retinyl palmitate', amount: '750', unit: 'mcg RAE', form: 'softgel', slot: 'morning',
+    note: 'With a meal that has fat',
+    info: 'Preformed vitamin A \u2014 the active form, no beta-carotene conversion step.',
+    caution: 'Accumulates; avoid doubling with multivitamins.',
+  },
+  {
+    name: 'Calcium', chem: 'Calcium citrate', amount: '500', unit: 'mg', form: 'tablet', slot: 'evening',
+    note: 'Away from iron and zinc doses',
+    info: 'Citrate form absorbs without stomach acid \u2014 friendlier than carbonate.',
+    caution: 'Competes with iron and zinc for absorption.',
+  },
+  {
+    name: 'Potassium', chem: 'Potassium citrate', amount: '99', unit: 'mg', form: 'capsule', slot: 'midday',
+    note: 'With food and water',
+    info: 'The electrolyte most diets under-deliver; capsules are capped low by design.',
+  },
+  {
+    name: 'L-Glutamine', chem: 'L-Glutamine', amount: '5', unit: 'g', form: 'powder', slot: 'night',
+    note: 'Timing flexible',
+    info: 'Conditionally essential amino acid popular in heavy training blocks.',
+  },
+  {
+    name: 'L-Carnitine', chem: 'Acetyl-L-carnitine', amount: '1000', unit: 'mg', form: 'capsule', slot: 'morning',
+    note: 'Empty stomach or pre-training',
+    info: 'Shuttle molecule for fatty-acid oxidation; the acetyl form crosses into the brain.',
+  },
+  {
+    name: 'Boron', chem: 'Boron glycinate', amount: '3', unit: 'mg', form: 'capsule', slot: 'morning',
+    note: 'With food',
+    info: 'Trace mineral with interest around hormone binding and joints.',
+  },
+  {
+    name: '5-HTP', chem: '5-Hydroxytryptophan', amount: '100', unit: 'mg', form: 'capsule', slot: 'night',
+    note: 'Evening only \u2014 precursor to serotonin',
+    info: 'Direct serotonin precursor from Griffonia seed.',
+    caution: 'Never combine with SSRIs or MAOIs.',
+  },
+  {
+    name: 'Alpha-Lipoic Acid', chem: 'R-ALA', amount: '300', unit: 'mg', form: 'capsule', slot: 'morning',
+    note: 'Empty stomach, away from minerals',
+    info: 'Both fat- and water-soluble antioxidant; chelates metals, so separate from mineral doses.',
   },
 ]
 

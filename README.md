@@ -27,6 +27,14 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.10.8 — SANA↔CADENCE, doses, day pager, the last sun**
+
+SANA's Today header is a proper **day pager** now: ‹ › shift days, and when you're in the past the center label becomes a button — tap to jump straight back to today. The compound **library grew to 45 entries** (Curcumin, Berberine, CoQ10, Resveratrol, Lion's Mane, Bacopa, Alpha-GPC, Ginkgo, vitamins A/E, Calcium, Potassium, L-Carnitine, ALA, 5-HTP…), five long-standing duplicates were purged, and **every compound's dose is now tunable** — open its ⓘ sheet and the dose line is two live fields (amount + unit), saved on blur.
+
+**CADENCE speaks fractions** (schema v5): a new `progress` layer under the boolean checks. `setCheckFraction` is the authoritative write — a full day promotes to a real check with the full ceremony (event, streak toast), a partial day paints a **progress bar right on the habit row** ("64%"), a drop demotes honestly. The 'Vitamins' preset is now **'Supplements 💊'**. And the new `sana/integrations.ts` (the module's only cross-module seam, GHISA precedent) subscribes to the dose log: any change to any day's taken-list streams that day's fraction into every supplement-reading habit (name EN/IT or 💊/🧬 emoji, build-type only) — take all 13 and the habit ticks itself; take 8 and CADENCE shows 62%. Fault-isolated both ways.
+
+The **core tab bar's sun** — the last survivor — is now the same gear as everywhere else.
+
 **New in v0.10.7 — shell hardening + module reorder**
 
 Fixes the black-screen after loading GROVE sample data — two layers deep. First, the **shell finally has error containment**: every module screen, dashboard widget, and quick action now renders inside an error boundary, so a crash anywhere becomes a contained card that *names the exact error* (screenshot = bug report) with Try again / Back to Today — never a black app. Second, the first-time-exercised companion path in GROVE was armored: the nested-SVG-inside-transformed-group construct (a known browser-quirk class) is gone, animal name→sprite lookups have fallbacks, every rendered coordinate is finite-checked, dates use the spec-safest locale form, and demo ids are collision-proof and self-describing (`…-d17`). The headless seed→render pipeline test (71 plants, ids, coords, kinds, dates, painter sort) runs clean.

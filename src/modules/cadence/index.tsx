@@ -58,7 +58,7 @@ const cadence: ModuleDefinition = {
     ],
   },
   accentVar: 'var(--m-cadence)',
-  schemaVersion: 4,
+  schemaVersion: 5,
   tabs: [
     { id: 'today', label: 'Today', Icon: CheckIcon },
     { id: 'month', label: 'Month', Icon: CalIcon },

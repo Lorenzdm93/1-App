@@ -1,4 +1,8 @@
 import { sanaStore, weekAdherence, dueOn, isTaken } from './model'
+import { wireSanaIntegrations } from './integrations'
+
+/* Registration-time side effect: dose changes stream into CADENCE. */
+wireSanaIntegrations()
 import { todayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import SanaScreen from './Screen'
@@ -68,7 +72,7 @@ const sana: ModuleDefinition = {
       'SANA is a personal tracker and general reference — not medical advice. Talk to a doctor or pharmacist before you start, stop, or combine supplements or medicines, especially when pregnant, nursing, on other medication, or managing a health condition.',
   },
   accentVar: 'var(--m-sana)',
-  schemaVersion: 1,
+  schemaVersion: 2,
   Icon: SanaIcon,
   tabs: [
     { id: 'today', label: 'Today', Icon: PillIcon },

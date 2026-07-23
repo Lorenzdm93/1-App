@@ -67,15 +67,35 @@ function InfoDot({ onClick }: { onClick: () => void }) {
 /* ---------- compound info sheet ---------- */
 
 function CompoundInfo({ compound, onClose }: { compound: Compound | null; onClose: () => void }) {
-  const lib = compound ? libraryByName(compound.name) : undefined
+  const st = useStore(sanaStore)
+  const live = compound ? compoundById(st, compound.id) ?? compound : null
+  const [amt, setAmt] = useState('')
+  const [unit, setUnit] = useState('')
+  useEffect(() => {
+    if (live) { setAmt(live.amount); setUnit(live.unit) }
+  }, [compound?.id])
+  function saveDose() {
+    if (!live) return
+    const a = amt.trim() || live.amount
+    const u = unit.trim() || live.unit
+    if (a !== live.amount || u !== live.unit) updateCompound(live.id, { amount: a, unit: u })
+  }
+  const lib = live ? libraryByName(live.name) : undefined
   return (
-    <Sheet open={compound !== null} title={compound?.name ?? ''} onClose={onClose}>
-      {compound && (
+    <Sheet open={compound !== null} title={live?.name ?? ''} onClose={() => { saveDose(); onClose() }}>
+      {live && (
         <>
-          <div className="kv"><span className="k">Dose</span><span className="num">{compound.amount} {compound.unit}</span></div>
-          {compound.chem && <div className="kv"><span className="k">Also known as</span><span>{compound.chem}</span></div>}
-          <div className="kv"><span className="k">When</span><span>{SLOTS.find((s) => s.id === compound.slot)?.label}</span></div>
-          {compound.note && <p className="sn-note-line">{compound.note}</p>}
+          <div className="kv"><span className="k">Dose <span className="hint">· tune it</span></span>
+            <span className="sn-doseedit">
+              <input value={amt} inputMode="decimal" aria-label="Amount"
+                onChange={(e) => setAmt(e.target.value)} onBlur={saveDose} />
+              <input value={unit} aria-label="Unit"
+                onChange={(e) => setUnit(e.target.value)} onBlur={saveDose} />
+            </span>
+          </div>
+          {live.chem && <div className="kv"><span className="k">Also known as</span><span>{live.chem}</span></div>}
+          <div className="kv"><span className="k">When</span><span>{SLOTS.find((s) => s.id === live.slot)?.label}</span></div>
+          {live.note && <p className="sn-note-line">{live.note}</p>}
           {lib && <p className="guide-p">{lib.info}</p>}
           {lib?.caution && <div className="rs-warning" style={{ marginTop: 10 }}><b>Worth knowing.</b> {lib.caution}</div>}
           <p className="rs-foot">
@@ -179,13 +199,15 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
 
   return (
     <>
-      <div className="cd-pager">
-        <button onClick={() => setDayOffset((o) => o - 1)} aria-label="Previous day">‹</button>
-        <span className="cd-pager-label">
-          {label}
-          <span className="sn-pager-sub">{sub}</span>
-        </span>
-        <button onClick={() => setDayOffset((o) => Math.min(0, o + 1))} disabled={dayOffset === 0} aria-label="Next day">›</button>
+      <div className="sn-pager">
+        <button className="nav" onClick={() => setDayOffset((o) => o - 1)} aria-label="Previous day">‹</button>
+        <button className="mid" disabled={dayOffset === 0}
+          onClick={() => setDayOffset(0)}
+          aria-label={dayOffset === 0 ? undefined : 'Jump back to today'}>
+          <span className="lbl">{label}</span>
+          <span className="sub">{dayOffset === 0 ? sub : sub + ' · tap for today'}</span>
+        </button>
+        <button className="nav" onClick={() => setDayOffset((o) => Math.min(0, o + 1))} disabled={dayOffset === 0} aria-label="Next day">›</button>
       </div>
 
       <div className="card sn-dial-card">

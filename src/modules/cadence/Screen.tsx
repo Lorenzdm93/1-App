@@ -10,6 +10,7 @@ import {
   activeHabits,
   habitById,
   isChecked,
+  checkFraction,
   isScheduled,
   statusOf,
   scheduleLabel,
@@ -153,6 +154,7 @@ function HabitCard({
   const offDay = isBuild && !isScheduled(habit, viewDay)
   const preDay = viewDay < habit.startDate
   const done = isBuild && isChecked(st, habit.id, viewDay)
+  const frac = isBuild && !done ? checkFraction(st, habit.id, viewDay) : 0
   const slipped = !isBuild && (st.slips[habit.id] ?? []).includes(viewDay)
   const badge = scheduleLabel(habit)
   const clean = daysClean(st, habit.id)
@@ -173,6 +175,12 @@ function HabitCard({
           {offDay && <i className="cd-badge">rest day</i>}
         </span>
         {habit.cue && <span className="cd-cue">{habit.cue}</span>}
+        {frac > 0 && frac < 1 && (
+          <span className="cd-fracrow" aria-label={`Partial progress ${Math.round(frac * 100)} percent`}>
+            <i className="cd-fracbar"><i style={{ width: `${Math.round(frac * 100)}%` }} /></i>
+            <b className="num">{Math.round(frac * 100)}%</b>
+          </span>
+        )}
         <span className="cd-meta">
           {isBuild ? (
             <span className="cd-streakline">

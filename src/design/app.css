@@ -5211,3 +5211,35 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
   position: absolute; left: 10px; right: 10px; top: -7px; height: 3px; border-radius: 2px;
   background: var(--ink); opacity: 0.55; pointer-events: none;
 }
+
+/* ============================================================
+   v0.10.8 — SANA pager + dose tuning, CADENCE fractions
+   ============================================================ */
+.sn-pager { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; margin: 2px 0 14px; }
+.sn-pager .nav {
+  width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-size: 20px; line-height: 1;
+}
+.sn-pager .nav:disabled { opacity: 0.35; }
+.sn-pager .mid { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 0; background: none; padding: 2px 8px; border-radius: 12px; }
+.sn-pager .mid:not(:disabled):active { background: var(--raised); }
+.sn-pager .lbl { font-family: var(--font-display, serif); font-size: 22px; color: var(--ink); line-height: 1.1; }
+.sn-pager .sub { font-family: var(--font-mono, monospace); font-size: 11px; letter-spacing: 0.06em; color: var(--dim); }
+
+.sn-doseedit { display: inline-flex; gap: 6px; }
+.sn-doseedit input {
+  height: 36px; border-radius: 9px; border: 1px solid var(--line); background: var(--raised);
+  color: var(--ink); font-size: 14px; font-weight: 650; padding: 0 10px; outline: none;
+  font-variant-numeric: tabular-nums;
+}
+.sn-doseedit input:first-child { width: 78px; text-align: right; }
+.sn-doseedit input:last-child { width: 84px; }
+.sn-doseedit input:focus { border-color: var(--m-sana, var(--ink)); }
+
+.cd-fracrow { display: inline-flex; align-items: center; gap: 8px; margin-top: 5px; }
+.cd-fracbar {
+  position: relative; width: 120px; height: 5px; border-radius: 3px; overflow: hidden;
+  background: var(--raised); display: inline-block;
+}
+.cd-fracbar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--hc, var(--m-cadence)); }
+.cd-fracrow b { font-size: 11px; color: var(--dim); }
