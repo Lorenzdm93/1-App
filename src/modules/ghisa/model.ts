@@ -4,7 +4,7 @@
  * {exerciseId, sets}, workouts store only completed sets as numbers.
  * v4 state (name-based sessions/templates) migrates losslessly.
  */
-import { createPersistedStore } from '../../core/store'
+import { createPersistedStore, createStore } from '../../core/store'
 import { logEvent } from '../../core/events'
 import { epley as coreEpley, brzycki as coreBrzycki } from '../../core/strength'
 
@@ -18,6 +18,8 @@ export interface Exercise {
   muscle: string
   equipment: string
   custom: boolean
+  /** One-line setup/execution cue, shown on the exercise page. */
+  cue?: string
 }
 
 export interface TemplateItem {
@@ -116,51 +118,51 @@ export interface GhisaState {
 
 export const MUSCLES = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'] as const
 
-const LIB_ROWS: [string, string, string, string][] = [
-  ['bench-press', 'Bench Press', 'Chest', 'Barbell'],
-  ['incline-bench', 'Incline Bench Press', 'Chest', 'Barbell'],
-  ['incline-db-press', 'Incline Dumbbell Press', 'Chest', 'Dumbbell'],
-  ['db-bench', 'Dumbbell Bench Press', 'Chest', 'Dumbbell'],
-  ['chest-fly', 'Cable Chest Fly', 'Chest', 'Cable'],
-  ['dip', 'Dip', 'Chest', 'Bodyweight'],
-  ['push-up', 'Push-Up', 'Chest', 'Bodyweight'],
-  ['deadlift', 'Deadlift', 'Back', 'Barbell'],
-  ['barbell-row', 'Barbell Row', 'Back', 'Barbell'],
-  ['lat-pulldown', 'Lat Pulldown', 'Back', 'Cable'],
-  ['pull-up', 'Pull-Up', 'Back', 'Bodyweight'],
-  ['seated-row', 'Seated Cable Row', 'Back', 'Cable'],
-  ['db-row', 'Dumbbell Row', 'Back', 'Dumbbell'],
-  ['face-pull', 'Face Pull', 'Back', 'Cable'],
-  ['squat', 'Back Squat', 'Legs', 'Barbell'],
-  ['front-squat', 'Front Squat', 'Legs', 'Barbell'],
-  ['rdl', 'Romanian Deadlift', 'Legs', 'Barbell'],
-  ['leg-press', 'Leg Press', 'Legs', 'Machine'],
-  ['leg-curl', 'Leg Curl', 'Legs', 'Machine'],
-  ['leg-extension', 'Leg Extension', 'Legs', 'Machine'],
-  ['bulgarian-split', 'Bulgarian Split Squat', 'Legs', 'Dumbbell'],
-  ['lunge', 'Walking Lunge', 'Legs', 'Dumbbell'],
-  ['hip-thrust', 'Hip Thrust', 'Legs', 'Barbell'],
-  ['calf-raise', 'Standing Calf Raise', 'Legs', 'Machine'],
-  ['ohp', 'Overhead Press', 'Shoulders', 'Barbell'],
-  ['db-shoulder-press', 'Dumbbell Shoulder Press', 'Shoulders', 'Dumbbell'],
-  ['lateral-raise', 'Lateral Raise', 'Shoulders', 'Dumbbell'],
-  ['rear-delt-fly', 'Rear Delt Fly', 'Shoulders', 'Dumbbell'],
-  ['upright-row', 'Upright Row', 'Shoulders', 'Cable'],
-  ['bicep-curl', 'Dumbbell Curl', 'Arms', 'Dumbbell'],
-  ['barbell-curl', 'Barbell Curl', 'Arms', 'Barbell'],
-  ['hammer-curl', 'Hammer Curl', 'Arms', 'Dumbbell'],
-  ['preacher-curl', 'Preacher Curl', 'Arms', 'Machine'],
-  ['triceps-pushdown', 'Triceps Pushdown', 'Arms', 'Cable'],
-  ['skull-crusher', 'Skull Crusher', 'Arms', 'Barbell'],
-  ['overhead-extension', 'Overhead Triceps Extension', 'Arms', 'Cable'],
-  ['plank', 'Plank', 'Core', 'Bodyweight'],
-  ['cable-crunch', 'Cable Crunch', 'Core', 'Cable'],
-  ['hanging-leg-raise', 'Hanging Leg Raise', 'Core', 'Bodyweight'],
-  ['ab-wheel', 'Ab Wheel Rollout', 'Core', 'Bodyweight'],
+const LIB_ROWS: [string, string, string, string, string][] = [
+  ['bench-press', 'Bench Press', 'Chest', 'Barbell', 'Shoulder blades pinned, feet planted, bar to mid-chest, press up and slightly back.'],
+  ['incline-bench', 'Incline Bench Press', 'Chest', 'Barbell', 'Bench at ~30°, grip just outside shoulders, lower to the upper chest, press without flaring.'],
+  ['incline-db-press', 'Incline Dumbbell Press', 'Chest', 'Dumbbell', 'Bench 30–45°, dumbbells over the upper chest, deep stretch at the bottom, press up together.'],
+  ['db-bench', 'Dumbbell Bench Press', 'Chest', 'Dumbbell', 'Flat bench, elbows ~45° from the torso, lower to a full stretch, press without clanging.'],
+  ['chest-fly', 'Cable Chest Fly', 'Chest', 'Cable', 'Fix a slight elbow bend, open wide to a stretch, squeeze the cables together at mid-chest.'],
+  ['dip', 'Dip', 'Chest', 'Bodyweight', 'Lean the torso forward, elbows track back, lower to a deep stretch, press up without shrugging.'],
+  ['push-up', 'Push-Up', 'Chest', 'Bodyweight', 'One rigid line, hands under shoulders, chest to the floor, press without the hips sagging.'],
+  ['deadlift', 'Deadlift', 'Back', 'Barbell', 'Bar over mid-foot, hinge and grip, brace hard, push the floor away and stand tall.'],
+  ['barbell-row', 'Barbell Row', 'Back', 'Barbell', 'Hinge to ~45° with a flat back, pull the bar to the lower ribs, lower under control.'],
+  ['lat-pulldown', 'Lat Pulldown', 'Back', 'Cable', 'Slight lean back, drive the elbows down to bring the bar to the upper chest — no swinging.'],
+  ['pull-up', 'Pull-Up', 'Back', 'Bodyweight', 'From a dead hang, pull the chest to the bar, elbows down and back, full stretch every rep.'],
+  ['seated-row', 'Seated Cable Row', 'Back', 'Cable', 'Sit tall, pull the handle to the waist, squeeze the shoulder blades, resist the return.'],
+  ['db-row', 'Dumbbell Row', 'Back', 'Dumbbell', 'One hand braced, flat back, pull the dumbbell to the hip without twisting the torso.'],
+  ['face-pull', 'Face Pull', 'Back', 'Cable', 'Rope at face height, pull toward the eyes with elbows high, finish with hands apart.'],
+  ['squat', 'Back Squat', 'Legs', 'Barbell', 'Bar on the upper back, brace, sit down between the hips, drive up through mid-foot.'],
+  ['front-squat', 'Front Squat', 'Legs', 'Barbell', 'Bar on the front delts with elbows high, torso upright, sit deep and stand.'],
+  ['rdl', 'Romanian Deadlift', 'Legs', 'Barbell', 'Soft knees, push the hips back, bar along the thighs to a hamstring stretch, squeeze up.'],
+  ['leg-press', 'Leg Press', 'Legs', 'Machine', 'Feet mid-platform, lower deep — stop before the lower back rolls off the pad.'],
+  ['leg-curl', 'Leg Curl', 'Legs', 'Machine', 'Hips pinned to the pad, curl the heels to the glutes, lower slowly.'],
+  ['leg-extension', 'Leg Extension', 'Legs', 'Machine', 'Sit tall, extend to full lockout, pause a beat, lower under control.'],
+  ['bulgarian-split', 'Bulgarian Split Squat', 'Legs', 'Dumbbell', 'Rear foot on the bench, slight forward lean, drop the back knee, drive through the front heel.'],
+  ['lunge', 'Walking Lunge', 'Legs', 'Dumbbell', 'Long stride, back knee toward the floor, push through the front heel, stay tall.'],
+  ['hip-thrust', 'Hip Thrust', 'Legs', 'Barbell', 'Upper back on the bench, chin tucked, drive the hips to full lockout and squeeze.'],
+  ['calf-raise', 'Standing Calf Raise', 'Legs', 'Machine', 'Full stretch at the bottom, pause, drive to tip-toes — no bouncing.'],
+  ['ohp', 'Overhead Press', 'Shoulders', 'Barbell', 'Glutes tight, press from the collarbone straight overhead, head through at lockout.'],
+  ['db-shoulder-press', 'Dumbbell Shoulder Press', 'Shoulders', 'Dumbbell', 'Dumbbells at ear height, press overhead without arching, lower to a full stretch.'],
+  ['lateral-raise', 'Lateral Raise', 'Shoulders', 'Dumbbell', 'Slight forward lean, raise to shoulder height leading with the elbows — no swing.'],
+  ['rear-delt-fly', 'Rear Delt Fly', 'Shoulders', 'Dumbbell', 'Hinge over, arms wide with soft elbows, squeeze the rear delts without momentum.'],
+  ['upright-row', 'Upright Row', 'Shoulders', 'Cable', 'Pull the cable up the body, elbows lead and stay above the wrists, stop at the lower chest.'],
+  ['bicep-curl', 'Dumbbell Curl', 'Arms', 'Dumbbell', 'Elbows pinned to the sides, curl without swinging, lower slow and full.'],
+  ['barbell-curl', 'Barbell Curl', 'Arms', 'Barbell', 'Shoulder-width grip, elbows still, curl to shoulder height, control the negative.'],
+  ['hammer-curl', 'Hammer Curl', 'Arms', 'Dumbbell', 'Neutral grip, elbows pinned, curl and squeeze at the top — no body English.'],
+  ['preacher-curl', 'Preacher Curl', 'Arms', 'Machine', 'Armpits over the pad, curl to the top, lower to a near-full stretch.'],
+  ['triceps-pushdown', 'Triceps Pushdown', 'Arms', 'Cable', 'Elbows pinned to the ribs, press to lockout — only the forearms move.'],
+  ['skull-crusher', 'Skull Crusher', 'Arms', 'Barbell', 'Upper arms vertical, lower the bar toward the forehead, extend without flaring.'],
+  ['overhead-extension', 'Overhead Triceps Extension', 'Arms', 'Cable', 'Elbows by the ears, lower behind the head to a stretch, extend to lockout.'],
+  ['plank', 'Plank', 'Core', 'Bodyweight', 'Elbows under shoulders, glutes and abs squeezed, one straight line — keep breathing.'],
+  ['cable-crunch', 'Cable Crunch', 'Core', 'Cable', 'Kneel with hips still, crunch the ribs toward the pelvis, resist the way back up.'],
+  ['hanging-leg-raise', 'Hanging Leg Raise', 'Core', 'Bodyweight', 'Dead hang, no swing — raise the legs by curling the pelvis up.'],
+  ['ab-wheel', 'Ab Wheel Rollout', 'Core', 'Bodyweight', 'Braced and hollow, roll out only as far as the back stays flat, pull back with the abs.'],
 ]
 
-export const LIB: Exercise[] = LIB_ROWS.map(([id, name, muscle, equipment]) => ({
-  id, name, muscle, equipment, custom: false,
+export const LIB: Exercise[] = LIB_ROWS.map(([id, name, muscle, equipment, cue]) => ({
+  id, name, muscle, equipment, custom: false, cue,
 }))
 
 const SEED_TEMPLATES: Template[] = [
@@ -548,7 +550,13 @@ export function migrateGhisa(data: unknown, _fromVersion: number): GhisaState {
 
   /* --- v5 shape: normalize defensively --- */
   const d = data as Partial<GhisaState>
-  const exercises = Array.isArray(d.exercises) && d.exercises.length > 0 ? d.exercises : base.exercises
+  const stored = Array.isArray(d.exercises) && d.exercises.length > 0 ? d.exercises : base.exercises
+  /* Library-backed entries refresh from LIB (authoritative name/muscle/cue); customs pass through. */
+  const exercises = stored.map((e) => {
+    if (e.custom) return e
+    const lib = LIB.find((l) => l.id === e.id)
+    return lib ?? e
+  })
   const known = new Set(exercises.map((e) => e.id))
   for (const libEx of LIB) if (!known.has(libEx.id)) exercises.push(libEx)
   return {
@@ -561,7 +569,10 @@ export function migrateGhisa(data: unknown, _fromVersion: number): GhisaState {
   }
 }
 
-export const ghisaStore = createPersistedStore<GhisaState>('ghisa', defaults(), 6, migrateGhisa)
+export const ghisaStore = createPersistedStore<GhisaState>('ghisa', defaults(), 7, migrateGhisa)
+
+/** Ephemeral UI channel — lets the dashboard open the live workout screen. Never persisted. */
+export const ghisaUi = createStore<{ liveOpen: boolean }>({ liveOpen: false })
 
 /* ------------------------------ actions ------------------------------ */
 
@@ -777,9 +788,9 @@ export function weeklyMetric(
   weeksBack: number,
   metric: ProfileMetric,
   now = Date.now(),
-): { label: string; vol: number }[] {
+): { label: string; vol: number; ts: number }[] {
   const thisMon = mondayOf(now)
-  const out: { label: string; vol: number }[] = []
+  const out: { label: string; vol: number; ts: number }[] = []
   for (let i = weeksBack - 1; i >= 0; i--) {
     const start = thisMon - i * 7 * DAY
     let v = 0
@@ -787,7 +798,7 @@ export function weeklyMetric(
       if (w.startedAt < start || w.startedAt >= start + 7 * DAY) continue
       v += metric === 'duration' ? w.duration : metric === 'volume' ? w.volume : w.reps
     }
-    out.push({ label: fmtDateShort(start), vol: Math.round(v) })
+    out.push({ label: fmtDateShort(start), vol: Math.round(v), ts: start })
   }
   return out
 }

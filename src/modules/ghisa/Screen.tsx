@@ -10,6 +10,7 @@ import { navigate } from '../../core/router'
 import { mediaUrls } from './media'
 import {
   ghisaStore,
+  ghisaUi,
   exerciseById,
   startWorkout,
   updateSet,
@@ -92,7 +93,7 @@ const ISearch = ic('M21 21l-4.3-4.3M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0Z')
 const IPlus = ic('M12 5v14M5 12h14')
 const ICheck = ic('M20 6 9 17l-5-5')
 const IMore = ic('M5 12h.01M12 12h.01M19 12h.01')
-const ITrash = ic('M3 6h18M8 6V4h8v2m1 0-1 14H8L7 6M10 11v6M14 11v6')
+const ITrash = ic('M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6')
 const IPlay = ic('M7 4.5 19 12 7 19.5v-15Z')
 const ISkip = ic('M5 5l9 7-9 7V5ZM17 5v14')
 const ILink = ic('M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7')
@@ -100,7 +101,7 @@ const ICalc = ic('M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0
 const IGear = ic('M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.98 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.98a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9c.36.62.94 1.03 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51.97Z')
 const IZap = ic('M13 2 3 14h8l-1 8 11-13h-8l0-7Z')
 const ITrophy = ic('M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4ZM7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3')
-const IPencil = ic('M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z')
+const IPencil = ic('M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3ZM15 5l4 4')
 const IArrowLeft = ic('M19 12H5M12 19l-7-7 7-7')
 const IMinus = ic('M5 12h14')
 const IChevronR = ic('m9 18 6-6-6-6')
@@ -230,8 +231,8 @@ function PRBadge({ label }: { label: string }) {
  * a short demo loop. Any load failure or missing mapping falls back to a
  * muscle-tinted monogram — never a broken image.
  */
-function ExMedia({ exerciseId, name, size = 44, animate = false }: {
-  exerciseId: string; name: string; size?: number; animate?: boolean
+function ExMedia({ exerciseId, name, size = 44, animate = false, onClick }: {
+  exerciseId: string; name: string; size?: number; animate?: boolean; onClick?: () => void
 }) {
   const urls = mediaUrls(exerciseId)
   const [frame, setFrame] = useState(0)
@@ -241,25 +242,28 @@ function ExMedia({ exerciseId, name, size = 44, animate = false }: {
     const t = setInterval(() => setFrame((f) => (f === 0 ? 1 : 0)), 1100)
     return () => clearInterval(t)
   }, [animate, urls !== null, failed])
-  if (!urls || failed) {
-    return (
-      <span className="gh2-mono" style={{ width: size, height: size, fontSize: size * 0.4 }} aria-hidden="true">
-        {name.trim().charAt(0).toUpperCase() || '?'}
-      </span>
-    )
-  }
-  return (
+  const inner = !urls || failed ? (
+    <span className="gh2-mono" style={{ width: size, height: size, fontSize: size * 0.4 }} aria-hidden="true">
+      {name.trim().charAt(0).toUpperCase() || '?'}
+    </span>
+  ) : (
     <span className="gh2-thumb" style={{ width: size, height: size }}>
       <img src={urls[animate ? frame : 0]} alt="" loading="lazy" decoding="async"
         onError={() => setFailed(true)} />
       {animate && <img src={urls[1]} alt="" aria-hidden="true" style={{ display: 'none' }} onError={() => undefined} />}
     </span>
   )
+  if (!onClick || !urls || failed) return inner
+  return (
+    <button className="gh2-thumbbtn" onClick={onClick} aria-label={`View ${name} demonstration`}>
+      {inner}
+    </button>
+  )
 }
 
 /* ------------------------- hand-rolled charts ------------------------- */
 
-function GBarChart({ data }: { data: { label: string; vol: number }[] }) {
+function GBarChart({ data }: { data: { label: string; vol: number; ts?: number }[] }) {
   const W = 320
   const H = 150
   const pad = { t: 6, b: 18, l: 4, r: 4 }
@@ -274,11 +278,22 @@ function GBarChart({ data }: { data: { label: string; vol: number }[] }) {
         const y = H - pad.b - h
         return <rect key={i} x={x} y={y} width={bw} height={h} rx={5} className="bar" />
       })}
-      {data.map((d, i) =>
-        i % 2 === 1 ? (
-          <text key={'t' + i} x={pad.l + i * iw + iw / 2} y={H - 5} textAnchor="middle" className="lbl">{d.label}</text>
-        ) : null,
-      )}
+      {data.length > 12 && data.every((d) => typeof d.ts === 'number')
+        ? data.map((d, i) => {
+            const m = new Date(d.ts as number).getMonth()
+            const prev = i > 0 ? new Date(data[i - 1].ts as number).getMonth() : -1
+            if (m === prev) return null
+            return (
+              <text key={'t' + i} x={pad.l + i * iw + iw / 2} y={H - 5} textAnchor="middle" className="lbl">
+                {new Date(d.ts as number).toLocaleDateString('en-GB', { month: 'short' })}
+              </text>
+            )
+          })
+        : data.map((d, i) =>
+            i % 2 === 1 ? (
+              <text key={'t' + i} x={pad.l + i * iw + iw / 2} y={H - 5} textAnchor="middle" className="lbl">{d.label}</text>
+            ) : null,
+          )}
     </svg>
   )
 }
@@ -868,8 +883,8 @@ function TrainScreen({ st, onStart }: { st: GhisaState; onStart: (tpl: Template 
             </div>
             <div className="gh2-tplbtns">
               <button className="start" onClick={() => onStart(t)}><IPlay size={15} fill /> Start</button>
-              <button className="edit" onClick={() => setEditing(t)} aria-label={`Edit ${t.name}`}><IPencil size={15} /></button>
-              <button className="edit trash" onClick={() => setMenuFor(t.id)} aria-label={`Delete ${t.name}`}><ITrash size={15} /></button>
+              <button className="edit" onClick={() => setEditing(t)} aria-label={`Edit ${t.name}`}><IPencil size={18} /></button>
+              <button className="edit trash" onClick={() => setMenuFor(t.id)} aria-label={`Delete ${t.name}`}><ITrash size={18} /></button>
             </div>
           </div>
         ))}
@@ -1372,6 +1387,8 @@ function LibraryScreen({ st }: { st: GhisaState }) {
 
 function ExerciseDetail({ st, exerciseId, onClose }: { st: GhisaState; exerciseId: string | null; onClose: () => void }) {
   const [metric, setMetric] = useState<'e1rm' | 'vol'>('e1rm')
+  const [zoom, setZoom] = useState(false)
+  useEffect(() => { setZoom(false) }, [exerciseId])
   const ex = exerciseId ? exerciseById(st, exerciseId) : undefined
 
   const sessions = useMemo(() => {
@@ -1403,9 +1420,16 @@ function ExerciseDetail({ st, exerciseId, onClose }: { st: GhisaState; exerciseI
       {ex && maxes && (
         <div className="gh2-pad">
           <div className="gh2-detailhead">
-            <ExMedia exerciseId={ex.id} name={ex.name} size={72} animate />
+            <ExMedia exerciseId={ex.id} name={ex.name} size={72} animate onClick={() => setZoom(true)} />
             <div className="gh2-sumsub" style={{ textAlign: 'left' }}>{ex.muscle} · {ex.equipment}</div>
           </div>
+          {ex.cue && <div className="gh2-cue">{ex.cue}</div>}
+          {zoom && (
+            <div className="gh2 gh2-lightbox gh2-fade" onClick={() => setZoom(false)} role="button" aria-label="Close">
+              <ExMedia exerciseId={ex.id} name={ex.name} size={360} animate />
+              <div className="cap gh2-display">{ex.name}</div>
+            </div>
+          )}
           <div className="gh2-grid2" style={{ marginBottom: 16 }}>
             <StatCard label="Heaviest" value={maxes.maxW > 0 ? maxes.maxW + ' kg' : '—'} />
             <StatCard label="Best est. 1RM" value={maxes.maxE > 0 ? round1(maxes.maxE) + ' kg' : '—'} />
@@ -1496,7 +1520,8 @@ function ElapsedResume({ start }: { start: number }) {
 
 export default function GhisaScreen({ tab = 'home' }: { tab?: string }) {
   const st = useStore(ghisaStore)
-  const [liveOpen, setLiveOpen] = useState(false)
+  const liveOpen = useStore(ghisaUi).liveOpen
+  const setLiveOpen = (v: boolean) => ghisaUi.set({ liveOpen: v })
   const [rest, setRest] = useState<RestState | null>(null)
   const [summary, setSummary] = useState<FinishResult | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)

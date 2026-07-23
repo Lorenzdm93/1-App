@@ -4701,3 +4701,48 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
 
 /* train trash */
 .gh2-tplbtns .edit.trash { color: #F87171; }
+
+/* ============================================================
+   v0.10.4 — GHISA polish: dashboard start, media zoom, cues,
+   proper edit/delete buttons, platform gear
+   ============================================================ */
+
+/* media breathing room */
+.gh2-exrow { gap: 14px; }
+.gh2-detailhead { gap: 18px; }
+
+/* tappable media + lightbox */
+.gh2-thumbbtn { border: 0; background: none; padding: 0; display: inline-flex; border-radius: 14px; }
+.gh2-thumbbtn:active { opacity: 0.8; }
+.gh2-lightbox {
+  position: fixed; inset: 0; z-index: 80;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  background: rgba(0, 0, 0, 0.82); padding: 24px;
+}
+.gh2-lightbox .gh2-thumb, .gh2-lightbox .gh2-mono {
+  width: min(86vw, 420px) !important; height: min(86vw, 420px) !important;
+  border-radius: 22px; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+.gh2-lightbox .cap { font-size: 18px; font-weight: 700; color: #F4F4F5; }
+
+/* exercise cue */
+.gh2-cue {
+  margin: -6px 0 16px; padding: 12px 14px; border-radius: 12px;
+  background: var(--g-surface); border: 1px solid var(--g-border);
+  border-left: 3px solid var(--g-ember);
+  font-size: 13.5px; line-height: 1.5; color: var(--g-muted);
+}
+
+/* train card: substantial edit / delete pair */
+.gh2-tplbtns .edit {
+  width: 48px; height: 48px; padding: 0; border-radius: 13px;
+  border: 1px solid var(--g-border); background: var(--g-surface);
+  transition: transform 0.1s ease, opacity 0.15s ease;
+}
+.gh2-tplbtns .edit:active { transform: scale(0.94); }
+.gh2-tplbtns .edit.trash {
+  color: #F87171;
+  background: color-mix(in srgb, #F87171 9%, var(--g-surface));
+  border-color: color-mix(in srgb, #F87171 28%, var(--g-border));
+}
+.gh2-tplbtns .start { height: 48px; border-radius: 13px; }

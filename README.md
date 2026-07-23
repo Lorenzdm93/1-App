@@ -27,6 +27,12 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.10.4 — GHISA polish + platform gear**
+
+The 1% overview grows a **Start workout** chip under GHISA: tap it for a small routine menu — your templates plus an empty session — and you land straight in the live workout (it reads *Resume workout* when one is running). The Profile chart's 6-month and year views now label **month boundaries only** (Feb · Mar · Apr), so nothing crams. Exercise pages gained a **one-line coaching cue** for all 40 library movements (setup + execution, ember-edged card) and the demo photo is now **tappable — opens a full-size loop** in a lightbox; list thumbnails got more breathing room from the text. The Train cards' pen and trash are now proper 48 px bordered buttons (trash in warning red with its own tint) with cleaner lucide glyphs. And platform-wide: the Settings tab's sun-like asterisk is finally a **real gear**, in every module and the core app.
+
+Data note: library exercises refresh from the built-in catalog on load (schema v7) — that's how existing installs receive the cues; custom exercises are untouched.
+
 **New in v0.10.3 — GHISA: Profile tab, CALIBER-parity math, exercise media**
 
 The History tab is now a Hevy-style **Profile**: a metric chart (Duration / Volume / Reps over 3 m / 6 m / year), a 2×2 dashboard — **Statistics** (all-time totals, 8-week volume, sets per muscle group), **Exercises** (everything you've trained, most recent first), **Measures** (height plus manual body-measurement log: weight, chest, waist, hips, biceps, thigh), **Calendar** (three months, training days in ember, week streak and lifetime rest days) — and the full workout history below, exactly where it used to live (old `/history` links land here too).

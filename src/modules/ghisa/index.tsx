@@ -3,6 +3,7 @@ import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import Screen from './Screen'
 import Widget from './Widget'
+import QuickActions from './QuickActions'
 
 /* GHISA's mark — the prototype's lucide dumbbell (0.383), exact strokes. */
 function Icon({ size = 20 }: { size?: number }) {
@@ -62,7 +63,7 @@ const ghisa: ModuleDefinition = {
     ],
   },
   accentVar: 'var(--m-ghisa)',
-  schemaVersion: 6,
+  schemaVersion: 7,
   tabs: [
     { id: 'home', label: 'Home', Icon: HomeIcon },
     { id: 'train', label: 'Train', Icon: DumbIcon },
@@ -72,6 +73,7 @@ const ghisa: ModuleDefinition = {
   Icon,
   Screen,
   Widget,
+  QuickActions,
   weekly: {
     label: 'volume',
     unit: 'kg',
