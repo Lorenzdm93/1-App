@@ -27,6 +27,14 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.10.9 — RESPIRO: the instrument + SANA hotfix**
+
+RESPIRO is rebuilt around the prototype's central idea: **the geometry is the timing**. Every technique draws to scale — box is a true square, 4·7·8 is the unique cyclic polygon whose sides are 4, 7 and 8 seconds long — and one comet travels the shape at constant speed, so **every phase change lands exactly on a vertex**. That's the fix for the old engine's wrong execution: it interpolated between hand-placed points at uneven speeds; the new one cannot lie. With it: the breathing core + glow that swell with the breath, phase chimes (C-major tones per phase) and haptic patterns, the synthesized ambient drone that follows your breath, wake-lock, a 3.5 s settle-in, the sigh's double-inhale done properly (first sip to 55%), Nadi Shodhana's twin channels with the lit nostril and crown holds, and full **Wim Hof rounds** — rhythmic breaths, retention with an "I need to breathe" button, 15 s recovery, best-holds recorded. The **custom pattern studio now lives inside its config sheet**: tune the four phases and watch the polygon redraw live. Sessions ≥ 30 s log to history exactly as before.
+
+**Sound**: a proper library alongside the settings — save **Spotify or YouTube** links, tap ▶ to dock a player above the tab bar that keeps playing while you practise. **YouTube plays full-length** (no login, no keys); Spotify plays full tracks only when this browser is logged into Spotify — the sheet says so honestly.
+
+Plus the SANA hotfix (the `useEffect` import the error card caught — thank you, error card) and a new permanent pre-delivery audit that greps every screen for hooks missing from their React import, so that class of bug can't ship again.
+
 **New in v0.10.8 — SANA↔CADENCE, doses, day pager, the last sun**
 
 SANA's Today header is a proper **day pager** now: ‹ › shift days, and when you're in the past the center label becomes a button — tap to jump straight back to today. The compound **library grew to 45 entries** (Curcumin, Berberine, CoQ10, Resveratrol, Lion's Mane, Bacopa, Alpha-GPC, Ginkgo, vitamins A/E, Calcium, Potassium, L-Carnitine, ALA, 5-HTP…), five long-standing duplicates were purged, and **every compound's dose is now tunable** — open its ⓘ sheet and the dose line is two live fields (amount + unit), saved on blur.

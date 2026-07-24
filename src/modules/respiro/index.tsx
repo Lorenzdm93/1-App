@@ -52,7 +52,7 @@ const respiro: ModuleDefinition = {
     ],
   },
   accentVar: 'var(--m-respiro)',
-  schemaVersion: 3,
+  schemaVersion: 4,
   tabs: [
     { id: 'practice', label: 'Practice', Icon: LeafIcon },
     { id: 'progress', label: 'Progress', Icon: ChartIcon },

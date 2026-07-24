@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'

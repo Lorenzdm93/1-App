@@ -1,21 +1,27 @@
-import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useStore } from '../../core/hooks'
-import { navigate } from '../../core/router'
 import { logEvent, eventsStore } from '../../core/events'
-import { shiftDay, formatDuration, dayKey, todayKey, lastNDayKeys } from '../../core/dates'
+import { formatDuration, dayKey, todayKey, lastNDayKeys } from '../../core/dates'
 import { toast } from '../../core/toast'
-import { Sheet, Toggle, StatBox } from '../../app/ui'
+import { Sheet, ConfirmSheet, Toggle, StatBox } from '../../app/ui'
 import { Bars } from '../../app/charts'
 import {
-  PROTOCOLS,
-  CATEGORIES,
-  protocolById,
-  phaseAt,
-  cycleSeconds,
-  buildCustomProtocol,
-  type Protocol,
-} from './protocols'
+  TECHNIQUES,
+  techniqueById,
+  geoFor,
+  ACCENT_VAR,
+  PHASE_LABEL,
+  PHASE_COLOR,
+  breathLevel,
+  buildSegs,
+  segAt,
+  easeInOut,
+  VB,
+  C,
+  type Technique,
+  type Seg,
+  type CustomPhases,
+} from './stage'
 import {
   respiroStore,
   selectProtocol,
@@ -26,6 +32,11 @@ import {
   spotifyEmbedUrl,
   recordHold,
   setSound,
+  addSoundItem,
+  removeSoundItem,
+  parseYouTube,
+  youtubeEmbedUrl,
+  type SoundItem,
 } from './model'
 
 const MIN_SESSION_MS = 30_000
@@ -73,594 +84,641 @@ const playBell = () => {
 
 /* ---------- protocol glyphs ---------- */
 
-function Glyph({ kind }: { kind: Protocol['glyph'] }) {
-  const s = { stroke: 'currentColor', strokeWidth: 1.7, fill: 'none', strokeLinecap: 'round' as const }
-  switch (kind) {
-    case 'sigh':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
-          <path d="M3 16c2-6 4-6 5-2 .8-3 2-4 3-2.5 1.5 2 4 4.5 10 4.5" strokeLinejoin="round" />
-        </svg>
-      )
-    case 'ring':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
-          <circle cx="12" cy="12" r="8" />
-        </svg>
-      )
-    case 'wave':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
-          <circle cx="12" cy="12" r="8" opacity="0.45" />
-          <path d="M12 4a8 8 0 0 1 8 8" strokeWidth="2.4" />
-        </svg>
-      )
-    case 'tri':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
-          <path d="M12 4.5 20 19H4z" strokeLinejoin="round" />
-        </svg>
-      )
-    case 'box':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
-          <rect x="4.5" y="4.5" width="15" height="15" rx="3" />
-        </svg>
-      )
-    case 'nadi':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
-          <path d="M8 20C8 12 12 10 12 4c0 6 4 8 4 16" strokeLinejoin="round" />
-        </svg>
-      )
-    case 'bellows':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" {...s}>
-          <path d="M3 12l3-5 3 10 3-12 3 12 3-10 3 5" strokeLinejoin="round" />
-        </svg>
-      )
-  }
+/* ============================================================
+   THE INSTRUMENT — prototype-faithful stage, engine, and cards.
+   Side lengths equal phase seconds; the comet never lies.
+   ============================================================ */
+
+const fmtSec = (s: number): string => {
+  const v = Math.max(0, Math.floor(s))
+  return Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0')
 }
 
-/* ---------- geometric tracer (unchanged mechanics, kept premium) ---------- */
-
-const SQUARE: readonly [number, number][] = [
-  [40, 40],
-  [160, 40],
-  [160, 160],
-  [40, 160],
-]
-const TRIANGLE: readonly [number, number][] = [
-  [100, 34],
-  [172, 166],
-  [28, 166],
-]
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t
+function buzz(pattern: number[]): void {
+  try { navigator.vibrate?.(pattern) } catch { /* no haptics */ }
 }
 
-function Figure({
-  protocol,
-  index,
-  progress,
-  running,
-  scale,
-  seconds,
-  children,
-}: {
-  protocol: Protocol
-  index: number
-  progress: number
-  running: boolean
-  scale: number
-  seconds: number
-  children: ReactNode
-}) {
-  const n = protocol.phases.length
-  const poly = n === 4 ? SQUARE : n === 3 ? TRIANGLE : null
-  const acc = 'var(--rs-acc, var(--m-respiro))'
-
-  let shape: ReactNode
-  if (poly) {
-    const pts = poly
-    const from = pts[index % pts.length]
-    const to = pts[(index + 1) % pts.length]
-    const dot: [number, number] = [lerp(from[0], to[0], progress), lerp(from[1], to[1], progress)]
-    shape = (
-      <>
-        <polygon
-          points={pts.map((p) => p.join(',')).join(' ')}
-          fill="none"
-          stroke="var(--line)"
-          strokeWidth="2"
-        />
-        {running &&
-          pts.map((p, i) => {
-            if (i >= index) return null
-            const q = pts[(i + 1) % pts.length]
-            return (
-              <line key={i} x1={p[0]} y1={p[1]} x2={q[0]} y2={q[1]} stroke={acc} strokeWidth="3" strokeLinecap="round" />
-            )
-          })}
-        {running && (
-          <line x1={from[0]} y1={from[1]} x2={dot[0]} y2={dot[1]} stroke={acc} strokeWidth="3" strokeLinecap="round" />
-        )}
-        {running && (
-          <>
-            <circle cx={dot[0]} cy={dot[1]} r="13" fill={acc} opacity="0.22" />
-            <circle cx={dot[0]} cy={dot[1]} r="7" fill={acc} />
-          </>
-        )}
-      </>
-    )
-  } else {
-    const r = 78
-    const C = 2 * Math.PI * r
-    const total = cycleSeconds(protocol)
-    let before = 0
-    for (let i = 0; i < index; i++) before += protocol.phases[i].seconds
-    const covered = ((before + protocol.phases[index].seconds * progress) / total) * C
-    const angle = ((before + protocol.phases[index].seconds * progress) / total) * 2 * Math.PI - Math.PI / 2
-    const dot: [number, number] = [100 + r * Math.cos(angle), 100 + r * Math.sin(angle)]
-    let accMarks = 0
-    shape = (
-      <>
-        <circle cx="100" cy="100" r={r} fill="none" stroke="var(--line)" strokeWidth="2" />
-        {protocol.phases.map((ph, i) => {
-          accMarks += ph.seconds
-          const a = (accMarks / total) * 2 * Math.PI - Math.PI / 2
-          return (
-            <line
-              key={i}
-              x1={100 + (r - 6) * Math.cos(a)}
-              y1={100 + (r - 6) * Math.sin(a)}
-              x2={100 + (r + 6) * Math.cos(a)}
-              y2={100 + (r + 6) * Math.sin(a)}
-              stroke="var(--faint)"
-              strokeWidth="1.5"
-            />
-          )
-        })}
-        {running && (
-          <circle
-            cx="100"
-            cy="100"
-            r={r}
-            fill="none"
-            stroke={acc}
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={`${covered} ${C - covered}`}
-            transform="rotate(-90 100 100)"
-          />
-        )}
-        {running && (
-          <>
-            <circle cx={dot[0]} cy={dot[1]} r="13" fill={acc} opacity="0.22" />
-            <circle cx={dot[0]} cy={dot[1]} r="7" fill={acc} />
-          </>
-        )}
-      </>
-    )
-  }
-
-  const wrapStyle: CSSProperties = running
-    ? { transform: `scale(${0.9 + scale * 0.12})`, transitionDuration: `${seconds}s` }
-    : { transform: 'scale(0.96)', transitionDuration: '0.4s' }
-
-  return (
-    <div className="rs-fig-wrap">
-      <div className="rs-fig-scale" style={wrapStyle}>
-        <svg viewBox="0 0 200 200" aria-hidden="true">
-          {shape}
-        </svg>
-      </div>
-      <div className="rs-fig-center">{children}</div>
-    </div>
-  )
-}
-
-/* ---------- practice: library ---------- */
-
-/** The pattern, drawn: one full cycle as a curve the dot travels. */
-function BreathCurve({
-  protocol,
-  cycleFrac,
-  running,
-}: {
-  protocol: Protocol
-  cycleFrac: number
-  running: boolean
-}) {
-  const baseRef = useRef<SVGPathElement | null>(null)
-  const [dot, setDot] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
-  const W = 300
-  const H = 190
-  const total = cycleSeconds(protocol)
-  const yFor = (scale: number) => H - 24 - ((scale - 0.55) / 0.5) * (H - 60)
-  let d = ''
-  let x = 8
-  let prevScale = protocol.phases[protocol.phases.length - 1].scale
-  d = `M ${x} ${yFor(prevScale).toFixed(1)}`
-  for (const ph of protocol.phases) {
-    const w = (ph.seconds / total) * (W - 16)
-    if (ph.scale === prevScale) {
-      x += w
-      d += ` L ${x.toFixed(1)} ${yFor(ph.scale).toFixed(1)}`
-    } else {
-      const x1 = x + w * 0.42
-      const x2 = x + w * 0.58
-      const y0 = yFor(prevScale)
-      const y1 = yFor(ph.scale)
-      x += w
-      d += ` C ${x1.toFixed(1)} ${y0.toFixed(1)}, ${x2.toFixed(1)} ${y1.toFixed(1)}, ${x.toFixed(1)} ${y1.toFixed(1)}`
-      prevScale = ph.scale
+/** Synth cues + the breath-following ambient drone, gated by settings. */
+const AudioEngineR = {
+  ctx: null as AudioContext | null,
+  ambient: null as { g: GainNode; o1: OscillatorNode; o2: OscillatorNode; o3: OscillatorNode } | null,
+  ensure(): AudioContext | null {
+    if (!this.ctx) {
+      try {
+        this.ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+      } catch { return null }
     }
-  }
-  useEffect(() => {
-    const el = baseRef.current
-    if (!el) return
-    const len = el.getTotalLength()
-    const p = el.getPointAtLength(Math.min(0.999, Math.max(0, cycleFrac)) * len)
-    setDot({ x: p.x, y: p.y })
-  }, [cycleFrac, protocol.id])
+    if (this.ctx.state === 'suspended') void this.ctx.resume().catch(() => undefined)
+    return this.ctx
+  },
+  chime(kind: PhaseKey | 'done'): void {
+    const st = respiroStore.get()
+    if (kind === 'done' ? !st.bell : !st.cues) return
+    const ctx = this.ensure()
+    if (!ctx) return
+    const freqs: Record<string, number> = { in: 523.25, in2: 587.33, hold: 659.25, out: 392.0, hold2: 440.0, done: 783.99 }
+    const f = freqs[kind] ?? 523.25
+    const t = ctx.currentTime
+    const o = ctx.createOscillator()
+    const g = ctx.createGain()
+    o.type = 'triangle'
+    o.frequency.setValueAtTime(f, t)
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(0.16, t + 0.02)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (kind === 'done' ? 1.4 : 0.9))
+    o.connect(g).connect(ctx.destination)
+    o.start(t)
+    o.stop(t + 1.5)
+    if (kind === 'done') {
+      const o2 = ctx.createOscillator()
+      const g2 = ctx.createGain()
+      o2.type = 'triangle'
+      o2.frequency.setValueAtTime(f * 1.25, t + 0.18)
+      g2.gain.setValueAtTime(0.0001, t + 0.18)
+      g2.gain.exponentialRampToValueAtTime(0.13, t + 0.22)
+      g2.gain.exponentialRampToValueAtTime(0.0001, t + 1.6)
+      o2.connect(g2).connect(ctx.destination)
+      o2.start(t + 0.18)
+      o2.stop(t + 1.7)
+    }
+  },
+  startAmbient(): void {
+    if (!respiroStore.get().ambient || this.ambient) return
+    const ctx = this.ensure()
+    if (!ctx) return
+    const g = ctx.createGain()
+    g.gain.value = 0
+    const lp = ctx.createBiquadFilter()
+    lp.type = 'lowpass'
+    lp.frequency.value = 420
+    lp.Q.value = 0.6
+    const o1 = ctx.createOscillator()
+    o1.type = 'sine'
+    o1.frequency.value = 110
+    const o2 = ctx.createOscillator()
+    o2.type = 'sine'
+    o2.frequency.value = 110 * 1.0045
+    const o3 = ctx.createOscillator()
+    o3.type = 'sine'
+    o3.frequency.value = 220.6
+    const g3 = ctx.createGain()
+    g3.gain.value = 0.28
+    o1.connect(lp)
+    o2.connect(lp)
+    o3.connect(g3)
+    g3.connect(lp)
+    lp.connect(g)
+    g.connect(ctx.destination)
+    o1.start(); o2.start(); o3.start()
+    this.ambient = { g, o1, o2, o3 }
+  },
+  setAmbientLevel(level: number): void {
+    if (!this.ambient || !this.ctx) return
+    this.ambient.g.gain.setTargetAtTime(0.02 + level * 0.05, this.ctx.currentTime, 0.35)
+  },
+  stopAmbient(): void {
+    if (!this.ambient || !this.ctx) return
+    const { g, o1, o2, o3 } = this.ambient
+    g.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.2)
+    setTimeout(() => { try { o1.stop(); o2.stop(); o3.stop() } catch { /* gone */ } }, 700)
+    this.ambient = null
+  },
+}
+
+/** Legacy stored ids from the old engine land on their nearest technique. */
+function resolveTech(id: string, custom: CustomPhases): Technique {
+  const direct = techniqueById(id, custom)
+  if (direct) return direct
+  const legacy: Record<string, string> = { extend: 'marea', extended: 'marea', wave: 'sigh', fourseveneight: '478' }
+  return techniqueById(legacy[id] ?? 'box', custom) ?? TECHNIQUES[0]
+}
+
+/** A technique's geometry in miniature — the card glyph, drawn to scale. */
+function MiniGeo({ tech, size = 46 }: { tech: Technique; size?: number }) {
+  const g = geoFor(tech)
+  const accent = ACCENT_VAR[tech.accent]
   return (
-    <div className={'rs-curve-wrap' + (running ? ' live' : '')}>
-      <div className="rs-curve-glow" aria-hidden="true" />
-      <svg viewBox={`0 0 ${W} ${H}`} className="rs-curve" aria-hidden="true">
-        <path ref={baseRef} d={d} fill="none" stroke="var(--line)" strokeWidth="3" strokeLinecap="round" />
-        <path
-          d={d} fill="none" stroke="var(--rs-acc)" strokeWidth="3.5" strokeLinecap="round"
-          pathLength={1}
-          strokeDasharray={`${Math.max(0.001, cycleFrac)} 1`}
-          style={{ filter: 'drop-shadow(0 0 5px color-mix(in srgb, var(--rs-acc) 60%, transparent))' }}
-        />
-        {running && (
-          <>
-            <circle cx={dot.x} cy={dot.y} r="7.5" fill="var(--surface)" stroke="var(--rs-acc)" strokeWidth="2.5" />
-            <circle cx={dot.x} cy={dot.y} r="2.6" fill="var(--rs-acc)" />
-          </>
-        )}
-      </svg>
-    </div>
+    <svg viewBox={`0 0 ${VB} ${VB}`} width={size} height={size} aria-hidden="true" className="rp2-minigeo">
+      {tech.geo === 'hof' ? (
+        <>
+          <circle cx={C} cy={C} r={96} fill="none" stroke={accent} strokeWidth={10} opacity={0.35} />
+          <circle cx={C} cy={C} r={52} fill={accent} opacity={0.55} />
+        </>
+      ) : g.twin ? (
+        <>
+          <path d={g.twin.dL} fill="none" stroke={accent} strokeWidth={14} strokeLinecap="round" />
+          <path d={g.twin.dR} fill="none" stroke={accent} strokeWidth={14} strokeLinecap="round" opacity={0.5} />
+        </>
+      ) : (
+        <path d={g.d} fill="none" stroke={accent} strokeWidth={14} strokeLinecap="round" strokeLinejoin="round" />
+      )}
+    </svg>
   )
 }
 
-function ProtocolCard({ p, onOpen }: { p: Protocol; onOpen: () => void }) {
+function TechCard({ tech, onOpen }: { tech: Technique; onOpen: () => void }) {
   return (
-    <button
-      className="card card-tap rs-card"
-      style={{ ['--rs-acc' as string]: p.accentVar } as CSSProperties}
-      onClick={onOpen}
-    >
-      <span className="rs-card-glyph">
-        <Glyph kind={p.glyph} />
+    <button className="rp2-card" onClick={onOpen}>
+      <span className="glyph"><MiniGeo tech={tech} /></span>
+      <span className="mid">
+        <b>{tech.name}</b>
+        <i>{tech.sub}</i>
       </span>
-      <span className="rs-card-main">
-        <span className="rs-card-name">
-          {p.name}
-          {p.warning && <span className="rs-warn-dot" aria-label="Carries a warning">!</span>}
-        </span>
-        <span className="rs-card-desc">{p.desc}</span>
-      </span>
-      <span className="rs-card-side">
-        <span className="pat num">{p.sub}</span>
-        <span className="tag">{p.tag}</span>
+      <span className="side">
+        <span className="pat">{tech.patternStr}</span>
+        <span className="goal">{tech.goal}</span>
       </span>
     </button>
   )
 }
 
-function Library({ onOpen }: { onOpen: (id: string) => void }) {
+const PRACTICE_SECTIONS: readonly [string, string[]][] = [
+  ['Down-shift', ['sigh', 'coherent', 'marea', '478']],
+  ['Steady & focus', ['box', 'nadi']],
+  ['Energise', ['hof']],
+  ['Yours', ['custom']],
+]
+
+function PracticeTab({ onConfig }: { onConfig: (techId: string) => void }) {
   const st = useStore(respiroStore)
-  const [browse, setBrowse] = useState(false)
-  const last = st.protocolId === 'custom' ? buildCustomProtocol(st.custom) : protocolById(st.protocolId)
+  const last = resolveTech(st.protocolId, st.custom)
   return (
-    <>
-      <div
-        className="card rs-hero"
-        style={{ ['--rs-acc' as string]: last.accentVar } as CSSProperties}
-      >
-        <div className="rs-hero-kicker">Continue with</div>
-        <div className="rs-hero-name">{last.name}</div>
-        <div className="rs-hero-desc">{last.desc}</div>
-        <button className="btn btn-primary rs-hero-btn" onClick={() => onOpen(last.id)}>
-          ▷&nbsp; Begin · {last.suggestedMin} min
-        </button>
-      </div>
-      <button className="rs-browse" onClick={() => setBrowse((b) => !b)}>
-        {browse ? 'Hide the library ▴' : 'Choose a different protocol ▾'}
+    <div className="rp2">
+      <button className="rp2-hero" onClick={() => onConfig(last.id)}>
+        <span className="t1">Continue with<br />{last.name}</span>
+        <span className="t2">{last.sub}</span>
+        <span className="begin">▶ Begin · {last.defDur ?? 2} min</span>
+        <span className="heroglyph"><MiniGeo tech={last} size={120} /></span>
       </button>
-      {browse && CATEGORIES.map((c) => (
-        <div key={c.id}>
-          <div className="section-label">{c.label}</div>
-          {PROTOCOLS.filter((p) => p.category === c.id).map((p) => (
-            <ProtocolCard key={p.id} p={p} onOpen={() => onOpen(p.id)} />
-          ))}
-          {c.id === 'steady' && (
-            <ProtocolCard p={buildCustomProtocol(st.custom)} onOpen={() => onOpen('custom')} />
-          )}
+      {PRACTICE_SECTIONS.map(([title, ids]) => (
+        <div key={title}>
+          <div className="rp2-seclabel">{title}</div>
+          <div className="rp2-cards">
+            {ids.map((id) => {
+              const t = resolveTech(id, st.custom)
+              return <TechCard key={id} tech={t} onOpen={() => onConfig(t.id)} />
+            })}
+          </div>
         </div>
       ))}
-      <p className="rs-foot">
-        Nasal, quiet, unforced — that's ninety percent of every technique. Patterns differ mainly in
-        where they put the emphasis: long exhales calm, balanced sides steady, fast rounds arouse.
-      </p>
-    </>
+    </div>
   )
 }
 
-/* ---------- practice: stage ---------- */
+/* ---------------------- config sheet (the custom studio lives here) ---------------------- */
 
-function Stage({
-  protocolId,
-  plannedMin,
-  onSaved,
-  onBack,
-}: {
-  protocolId: string
-  plannedMin: number | null
-  onSaved: (s: { name: string; minutes: number; cycles: number; streak: number }) => void
-  onBack: () => void
+export interface SessionCfg { mins: number; rounds: number; breaths: number }
+
+function ConfigSheet({ techId, onStart, onClose }: {
+  techId: string | null
+  onStart: (tech: Technique, cfg: SessionCfg) => void
+  onClose: () => void
 }) {
   const st = useStore(respiroStore)
-  const protocol: Protocol =
-    protocolId === 'custom' ? buildCustomProtocol(st.custom) : protocolById(protocolId)
+  const tech = techId ? resolveTech(techId, st.custom) : null
+  const [mins, setMins] = useState(3)
+  const [rounds, setRounds] = useState(3)
+  const [breaths, setBreaths] = useState(30)
+  useEffect(() => {
+    if (tech) {
+      setMins(tech.defDur ?? 3)
+      setRounds(tech.defRounds ?? 3)
+      setBreaths(tech.defBreaths ?? 30)
+    }
+  }, [techId])
 
-  const [startTs, setStartTs] = useState<number | null>(null)
-  const [now, setNow] = useState(() => Date.now())
-  const startedRef = useRef(false)
-  const lastPhaseRef = useRef(-1)
+  const CUSTOM_FIELDS: readonly { k: keyof CustomPhases; label: string }[] = [
+    { k: 'inS', label: 'Inhale' }, { k: 'hold1', label: 'Hold' }, { k: 'outS', label: 'Exhale' }, { k: 'hold2', label: 'Hold empty' },
+  ]
+
+  return (
+    <Sheet open={tech !== null} title={tech?.name ?? ''} onClose={onClose}>
+      {tech && (
+        <div className="rp2">
+          <div className="rp2-cfgeo"><MiniGeo tech={tech} size={132} /><span className="pat">{tech.patternStr}{tech.pattern ? ' s' : ''}</span></div>
+          <p className="guide-p">{tech.desc}</p>
+          {tech.custom && (
+            <div className="rp2-studio">
+              {CUSTOM_FIELDS.map((f) => (
+                <label key={f.k} className="ph">
+                  <span>{f.label}</span>
+                  <span className="step">
+                    <button onClick={() => setCustom({ [f.k]: Math.max(0, st.custom[f.k] - 1) })} aria-label={`Less ${f.label}`}>−</button>
+                    <b className="num">{st.custom[f.k]}s</b>
+                    <button onClick={() => setCustom({ [f.k]: Math.min(20, st.custom[f.k] + 1) })} aria-label={`More ${f.label}`}>+</button>
+                  </span>
+                </label>
+              ))}
+              <p className="rs-foot">The shape redraws to scale as you tune it — every side is as long as its phase.</p>
+            </div>
+          )}
+          {tech.pattern ? (
+            <>
+              <div className="rp2-cflabel">Length</div>
+              <div className="rp2-chips">
+                {(tech.durations ?? [2, 3, 5]).map((m) => (
+                  <button key={m} className={'chip' + (m === mins ? ' on' : '')} onClick={() => setMins(m)}>{m} min</button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="rp2-cflabel">Rounds</div>
+              <div className="rp2-chips">
+                {[1, 2, 3, 4, 5].map((r) => (
+                  <button key={r} className={'chip' + (r === rounds ? ' on' : '')} onClick={() => setRounds(r)}>{r}</button>
+                ))}
+              </div>
+              <div className="rp2-cflabel">Breaths per round</div>
+              <div className="rp2-chips">
+                {[20, 25, 30, 35, 40].map((b) => (
+                  <button key={b} className={'chip' + (b === breaths ? ' on' : '')} onClick={() => setBreaths(b)}>{b}</button>
+                ))}
+              </div>
+            </>
+          )}
+          {tech.caution && <div className="rs-warning" style={{ marginTop: 12 }}><b>Read first.</b> {tech.caution}</div>}
+          <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }}
+            onClick={() => onStart(tech, { mins, rounds, breaths })}>
+            ▶ Begin
+          </button>
+        </div>
+      )}
+    </Sheet>
+  )
+}
+
+/* ---------------------- the session ---------------------- */
+
+export interface SessionRec {
+  techId: string
+  name: string
+  mins: number
+  cycles: number
+  holds?: number[]
+}
+
+interface HofState {
+  round: number
+  stage: 'breathe' | 'retain' | 'recover'
+  repIx: number
+  stageStart: number
+  lastRetain: number
+  best: number[]
+}
+
+function SessionOverlay({ tech, cfg, onDone }: {
+  tech: Technique
+  cfg: SessionCfg
+  onDone: (rec: SessionRec | null) => void
+}) {
+  const geo = useMemo(() => geoFor(tech), [tech])
+  const accent = ACCENT_VAR[tech.accent]
+  const isHof = tech.geo === 'hof'
+  const [paused, setPaused] = useState(false)
+  const [retaining, setRetaining] = useState(false)
+  const [confirmEnd, setConfirmEnd] = useState(false)
+
+  const litRef = useRef<SVGPathElement>(null)
+  const chanL = useRef<SVGPathElement>(null)
+  const chanR = useRef<SVGPathElement>(null)
+  const nosL = useRef<SVGTextElement>(null)
+  const nosR = useRef<SVGTextElement>(null)
+  const dotRef = useRef<SVGCircleElement>(null)
+  const haloRef = useRef<SVGCircleElement>(null)
+  const coreRef = useRef<SVGCircleElement>(null)
+  const glowRef = useRef<SVGCircleElement>(null)
+  const numRef = useRef<SVGTextElement>(null)
+  const labelRef = useRef<HTMLDivElement>(null)
+  const countRef = useRef<HTMLDivElement>(null)
+  const barRef = useRef<HTMLDivElement>(null)
+  const elRef = useRef<HTMLSpanElement>(null)
+  const cyRef = useRef<HTMLSpanElement>(null)
+  const leftRef = useRef<HTMLSpanElement>(null)
+
+  const eng = useRef({
+    startTs: 0, pausedTotal: 0, pauseTs: 0, raf: 0,
+    preRoll: 3.5, pathLen: 1000, twinLen: { L: 300, R: 300 },
+    segs: [] as Seg[], cycleDur: 0, totalDur: 0,
+    lastPhaseIx: -1, lastCycle: -1,
+    hof: null as HofState | null,
+    wake: null as { release: () => Promise<void> } | null,
+    done: false,
+  })
 
   useEffect(() => {
-    if (!startedRef.current && consumeAutostart()) {
-      startedRef.current = true
-      setStartTs(Date.now())
+    const E = eng.current
+    if (tech.pattern) {
+      const b = buildSegs(tech.pattern)
+      E.segs = b.segs
+      E.cycleDur = b.cycleDur
+      E.totalDur = cfg.mins * 60
+    } else {
+      E.hof = { round: 1, stage: 'breathe', repIx: -1, stageStart: 0, lastRetain: 0, best: [] }
     }
+    try { E.pathLen = litRef.current?.getTotalLength() ?? 1000 } catch { E.pathLen = 1000 }
+    try {
+      E.twinLen = { L: chanL.current?.getTotalLength() ?? 300, R: chanR.current?.getTotalLength() ?? 300 }
+    } catch { /* keep defaults */ }
+    if (litRef.current && !geo.twin) {
+      litRef.current.style.strokeDasharray = String(E.pathLen)
+      litRef.current.style.strokeDashoffset = String(E.pathLen)
+    }
+    AudioEngineR.ensure()
+    AudioEngineR.startAmbient()
+    try {
+      const nl = navigator as Navigator & { wakeLock?: { request: (t: string) => Promise<{ release: () => Promise<void> }> } }
+      nl.wakeLock?.request('screen').then((wl) => { E.wake = wl }).catch(() => undefined)
+    } catch { /* no wake lock */ }
+    document.body.style.overflow = 'hidden'
+    E.startTs = performance.now()
+    E.raf = requestAnimationFrame(tick)
+    return () => {
+      cancelAnimationFrame(E.raf)
+      AudioEngineR.stopAmbient()
+      E.wake?.release().catch(() => undefined)
+      document.body.style.overflow = ''
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const running = startTs !== null
-  useEffect(() => {
-    if (!running) return
-    const t = setInterval(() => setNow(Date.now()), 100)
-    return () => clearInterval(t)
-  }, [running])
+  function now(): number {
+    const E = eng.current
+    return (performance.now() - E.startTs - E.pausedTotal) / 1000
+  }
+  const set = (el: { current: SVGElement | null }, attr: string, v: string | number) => el.current?.setAttribute(attr, String(v))
+  const txt = (el: { current: { textContent: string | null } | null }, v: string) => { if (el.current) el.current.textContent = v }
 
-  const elapsedSec = running ? (now - startTs) / 1000 : 0
-  const pos = phaseAt(protocol, elapsedSec)
-  const progress = pos.phase.seconds > 0 ? 1 - pos.remaining / pos.phase.seconds : 0
-  const cycle = running ? Math.floor(elapsedSec / cycleSeconds(protocol)) + 1 : 0
-
-  useEffect(() => {
-    if (!running) {
-      lastPhaseRef.current = -1
+  function tick(): void {
+    const E = eng.current
+    if (E.done) return
+    if (E.pauseTs) { E.raf = requestAnimationFrame(tick); return }
+    const t = now()
+    if (t < E.preRoll) {
+      const left = Math.ceil(E.preRoll - t)
+      txt(labelRef, 'Settle in')
+      txt(countRef, String(left))
+      set(numRef, 'opacity', 1)
+      txt(numRef, String(left))
+      E.raf = requestAnimationFrame(tick)
       return
     }
-    if (pos.index !== lastPhaseRef.current) {
-      if (lastPhaseRef.current !== -1 && respiroStore.get().cues) playCue()
-      lastPhaseRef.current = pos.index
-    }
-  }, [running, pos.index])
+    set(numRef, 'opacity', 0)
+    const e = t - E.preRoll
+    if (tech.pattern) tickPattern(e)
+    else tickHof(e)
+    if (!E.done) E.raf = requestAnimationFrame(tick)
+  }
 
-  useEffect(() => {
-    if (running) document.body.classList.add('rs-running')
-    else document.body.classList.remove('rs-running')
-    return () => document.body.classList.remove('rs-running')
-  }, [running])
-
-  function end() {
-    if (startTs === null) return
-    const ms = Date.now() - startTs
-    setStartTs(null)
-    if (ms >= MIN_SESSION_MS) {
-      const minutes = Math.round((ms / 60000) * 10) / 10
-      logEvent({
-        module: 'respiro',
-        kind: 'session',
-        value: minutes,
-        unit: 'min',
-        meta: { protocol: protocol.id },
-      })
-      if (respiroStore.get().bell) playBell()
-      const cycles = Math.max(1, Math.floor(ms / 1000 / cycleSeconds(protocol)))
-      const days = new Set(
-        eventsStore.get().filter((e) => e.module === 'respiro').map((e) => dayKey(e.ts)),
-      )
-      let streak = 0
-      let cursor = todayKey()
-      while (days.has(cursor)) {
-        streak++
-        cursor = shiftDay(cursor, -1)
+  function tickPattern(e: number): void {
+    const E = eng.current
+    if (e >= E.totalDur) { finish(false); return }
+    const cycle = Math.floor(e / E.cycleDur)
+    const cp = (e % E.cycleDur) / E.cycleDur
+    const { seg, ix, pp } = segAt(E.segs, cp)
+    if (ix !== E.lastPhaseIx || cycle !== E.lastCycle) {
+      E.lastPhaseIx = ix
+      E.lastCycle = cycle
+      AudioEngineR.chime(seg.k)
+      buzz(seg.k === 'in' || seg.k === 'in2' ? [35] : seg.k === 'out' ? [70] : [15, 50, 15])
+      let label = PHASE_LABEL[seg.k]
+      if (tech.nostril && seg.k !== 'hold') label += ' — ' + (tech.nostril[ix] === 'L' ? 'left' : 'right')
+      txt(labelRef, label)
+      if (labelRef.current) labelRef.current.style.color = PHASE_COLOR[seg.k]
+      if (tech.nostril) {
+        const side = tech.nostril[ix]
+        set(chanL, 'stroke', side === 'L' ? 'var(--rp-brass)' : 'var(--rp-line2)')
+        set(chanR, 'stroke', side === 'R' ? 'var(--rp-brass)' : 'var(--rp-line2)')
+        set(nosL, 'fill', side === 'L' ? 'var(--rp-brass)' : 'var(--rp-faint)')
+        set(nosR, 'fill', side === 'R' ? 'var(--rp-brass)' : 'var(--rp-faint)')
       }
-      onSaved({ name: protocol.name, minutes, cycles, streak })
+    }
+    txt(countRef, Math.ceil(seg.d - pp * seg.d) + 's')
+    let pt: { x: number; y: number } = { x: C, y: C }
+    if (geo.twin && tech.nostril) {
+      const side = tech.nostril[ix]
+      const going = seg.k === 'in' || seg.k === 'in2'
+      try {
+        if (seg.k === 'hold' || seg.k === 'hold2') pt = { x: C, y: 74 }
+        else if (side === 'L') pt = chanL.current!.getPointAtLength(E.twinLen.L * (going ? easeInOut(pp) : 1 - easeInOut(pp)))
+        else pt = chanR.current!.getPointAtLength(E.twinLen.R * (going ? 1 - easeInOut(pp) : easeInOut(pp)))
+      } catch { pt = { x: C, y: C } }
     } else {
-      toast('Under 30 s — not logged')
+      try { pt = litRef.current!.getPointAtLength(E.pathLen * cp) } catch { pt = { x: C, y: C } }
+      if (litRef.current) litRef.current.style.strokeDashoffset = String(E.pathLen * (1 - cp))
+    }
+    set(dotRef, 'cx', pt.x); set(dotRef, 'cy', pt.y)
+    set(haloRef, 'cx', pt.x); set(haloRef, 'cy', pt.y)
+    const hasIn2 = E.segs.some((s) => s.k === 'in2')
+    const lvl = seg.k === 'in' && hasIn2 ? 0.55 * easeInOut(pp) : breathLevel(seg.k, pp)
+    set(coreRef, 'r', Math.max(8, (26 + lvl * 78) * 0.14))
+    set(glowRef, 'r', 40 + lvl * 95)
+    set(glowRef, 'opacity', 0.25 + lvl * 0.55)
+    AudioEngineR.setAmbientLevel(lvl)
+    if (barRef.current) barRef.current.style.width = Math.min(100, (e / E.totalDur) * 100) + '%'
+    txt(elRef, fmtSec(e))
+    txt(leftRef, '-' + fmtSec(E.totalDur - e))
+    txt(cyRef, 'cycle ' + (cycle + 1))
+  }
+
+  function hofSetStage(stage: HofState['stage'], e: number): void {
+    const E = eng.current
+    const h = E.hof!
+    if (h.stage === 'retain') h.lastRetain = e - h.stageStart
+    h.stage = stage
+    h.stageStart = e
+    h.repIx = -1
+    setRetaining(stage === 'retain')
+    AudioEngineR.chime(stage === 'breathe' ? 'in' : stage === 'retain' ? 'hold2' : 'in')
+    buzz([50, 60, 50])
+  }
+
+  function tickHof(e: number): void {
+    const E = eng.current
+    const h = E.hof!
+    const stageT = e - h.stageStart
+    if (h.stage === 'breathe') {
+      const per = 3.0
+      const rep = Math.floor(stageT / per)
+      if (rep >= cfg.breaths) { hofSetStage('retain', e); return }
+      const p = (stageT % per) / per
+      const inhale = p < 0.5667
+      const pp = inhale ? p / 0.5667 : (p - 0.5667) / 0.4333
+      if (rep !== h.repIx) { h.repIx = rep; buzz([20]) }
+      const lvl = inhale ? easeInOut(pp) : 1 - easeInOut(pp)
+      set(glowRef, 'r', 40 + lvl * 95)
+      set(glowRef, 'opacity', 0.25 + lvl * 0.55)
+      set(coreRef, 'r', 8 + lvl * 10)
+      txt(labelRef, inhale ? 'Breathe in' : 'Let go')
+      if (labelRef.current) labelRef.current.style.color = inhale ? 'var(--rp-coral)' : 'var(--rp-dim)'
+      txt(countRef, `round ${h.round} · breath ${rep + 1} / ${cfg.breaths}`)
+      set(numRef, 'opacity', 1)
+      txt(numRef, String(rep + 1))
+      AudioEngineR.setAmbientLevel(lvl)
+    } else if (h.stage === 'retain') {
+      txt(labelRef, 'Hold — empty lungs')
+      if (labelRef.current) labelRef.current.style.color = 'var(--rp-moon)'
+      txt(countRef, 'tap the button when you need air')
+      set(numRef, 'opacity', 1)
+      txt(numRef, fmtSec(stageT))
+      const pulse = 0.5 + 0.5 * Math.sin(stageT * 1.6)
+      set(glowRef, 'r', 46 + pulse * 14)
+      set(glowRef, 'opacity', 0.22 + pulse * 0.15)
+    } else {
+      const left = 15 - stageT
+      if (left <= 0) {
+        h.best.push(h.lastRetain || 0)
+        if (h.round >= cfg.rounds) { finish(false); return }
+        h.round++
+        hofSetStage('breathe', e)
+        return
+      }
+      txt(labelRef, 'Deep inhale — hold')
+      if (labelRef.current) labelRef.current.style.color = 'var(--rp-jade)'
+      txt(countRef, 'recovery breath')
+      set(numRef, 'opacity', 1)
+      txt(numRef, String(Math.ceil(left)))
+      set(glowRef, 'r', 135)
+      set(glowRef, 'opacity', 0.75)
+    }
+    txt(elRef, fmtSec(e))
+    txt(cyRef, `round ${h.round} / ${cfg.rounds}`)
+    txt(leftRef, '')
+    const roundFrac = (h.round - 1 + (h.stage === 'breathe' ? Math.min(1, stageT / (cfg.breaths * 3)) * 0.6 : h.stage === 'retain' ? 0.75 : 0.9)) / cfg.rounds
+    if (barRef.current) barRef.current.style.width = Math.min(100, roundFrac * 100) + '%'
+  }
+
+  function hofTap(): void {
+    const E = eng.current
+    if (E.hof && E.hof.stage === 'retain') hofSetStage('recover', now() - E.preRoll)
+  }
+  function togglePause(): void {
+    const E = eng.current
+    if (E.pauseTs) {
+      E.pausedTotal += performance.now() - E.pauseTs
+      E.pauseTs = 0
+      setPaused(false)
+    } else {
+      E.pauseTs = performance.now()
+      setPaused(true)
+      AudioEngineR.setAmbientLevel(0)
+    }
+  }
+  function finish(early: boolean): void {
+    const E = eng.current
+    if (E.done) return
+    E.done = true
+    const e = Math.max(0, now() - E.preRoll)
+    const mins = e / 60
+    if (mins >= 0.5) {
+      const holds = isHof && E.hof ? E.hof.best.map((v) => Math.round(v)) : undefined
+      const rec: SessionRec = {
+        techId: tech.id, name: tech.name,
+        mins: Math.round(mins * 10) / 10,
+        cycles: tech.pattern ? E.lastCycle + 1 : (E.hof?.round ?? 0),
+        holds,
+      }
+      logEvent({ module: 'respiro', kind: 'session', ts: Date.now(), value: rec.mins, unit: 'min', meta: { techId: rec.techId, name: rec.name, cycles: rec.cycles } })
+      if (holds && holds.length > 0) recordHold(Math.max(...holds))
+      AudioEngineR.chime('done')
+      buzz([60, 80, 60, 80, 120])
+      onDone(rec)
+    } else {
+      toast(early ? 'Session ended' : 'Done')
+      onDone(null)
     }
   }
 
-  useEffect(() => {
-    if (running && plannedMin !== null && elapsedSec >= plannedMin * 60) end()
-  }, [running, plannedMin, Math.floor(elapsedSec)])
-
-  const custom = st.custom
-  const customFields = [
-    { key: 'inS', label: 'In' },
-    { key: 'hold1', label: 'Hold' },
-    { key: 'outS', label: 'Out' },
-    { key: 'hold2', label: 'Hold' },
-  ] as const
-
   return (
-    <>
-      {!running && (
-        <button className="rs-back" onClick={onBack}>
-          ‹ All patterns
-        </button>
-      )}
-      <div
-        className={'card rs-stage' + (running ? ' running' : '')}
-        style={{ ['--rs-acc' as string]: protocol.accentVar } as CSSProperties}
-      >
-        <BreathCurve
-          protocol={protocol}
-          cycleFrac={running ? (elapsedSec % cycleSeconds(protocol)) / cycleSeconds(protocol) : 0}
-          running={running}
-        />
-        <div className="rs-phaseblock">
-          <span className="rs-phase">{running ? pos.phase.label : 'Ready'}</span>
-          <span className="rs-count num">{running ? `${Math.ceil(pos.remaining)}s` : '—'}</span>
-          {running && pos.phase.hint && <span className="rs-hint">{pos.phase.hint}</span>}
+    <div className="rp2 rp2-sess">
+      <div className="top">
+        <button className="icon" onClick={() => setConfirmEnd(true)} aria-label="Close">✕</button>
+        <div className="title">
+          <div className="t1">{tech.name}</div>
+          <div className="t2">{tech.pattern ? tech.patternStr + ' s' : `${cfg.rounds} rounds · ${cfg.breaths} breaths`}</div>
         </div>
-        <div className="rs-dots" aria-hidden="true">
-          {protocol.phases.map((_, i) => (
-            <span key={i} className={'rs-dot' + (running && i === pos.index ? ' on' : '')} />
-          ))}
-        </div>
-        {running && <div className="rs-cycle num">Cycle {cycle}</div>}
-        <div className="rs-session num">
-          {running
-            ? plannedMin !== null
-              ? `${formatDuration(now - startTs)} · cycle ${cycle} · −${formatDuration(Math.max(0, plannedMin * 60_000 - (now - startTs)))}`
-              : `Session · ${formatDuration(now - startTs)} · cycle ${cycle}`
-            : `${protocol.sub} — suggested ${protocol.suggestedMin} min`}
-        </div>
+        <span className="icon ghost" aria-hidden="true" />
       </div>
-
-      {protocol.warning && !running && (
-        <div className="rs-warning">
-          <b>Safety first.</b> {protocol.warning}
-        </div>
-      )}
-
-      {protocolId === 'custom' && !running && (
-        <div className="rs-custom">
-          {customFields.map((f) => (
-            <label key={f.key} className="rs-custom-field">
-              <span>{f.label}</span>
-              <input
-                className="tinput"
-                inputMode="numeric"
-                value={custom[f.key]}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value, 10)
-                  setCustom({ [f.key]: Number.isFinite(v) ? v : 0 })
-                }}
-              />
-            </label>
+      <div className="stagewrap">
+        <svg viewBox={`0 0 ${VB} ${VB}`} aria-hidden="true">
+          <defs>
+            <radialGradient id="rpCore" cx="50%" cy="46%" r="60%">
+              <stop offset="0%" stopColor={tech.accent === 'coral' ? '#E8A38F' : '#9FE3CC'} stopOpacity="0.9" />
+              <stop offset="55%" stopColor={tech.accent === 'coral' ? '#C77862' : '#54B99A'} stopOpacity="0.35" />
+              <stop offset="100%" stopColor="var(--rp-ink)" stopOpacity="0" />
+            </radialGradient>
+            <filter id="rpSoft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6" /></filter>
+          </defs>
+          <circle ref={glowRef} cx={C} cy={C} r={120} fill="url(#rpCore)" opacity={0} />
+          <circle ref={coreRef} cx={C} cy={C} r={8} fill={accent} opacity={0.9} />
+          {!geo.twin && !isHof && (
+            <path d={geo.d} fill="none" stroke="var(--rp-line2)" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+          )}
+          {geo.ticks?.map((t, i) => (
+            <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="var(--rp-line2)" strokeWidth={3} strokeLinecap="round" />
           ))}
-        </div>
-      )}
-
-      <div style={{ marginTop: 16 }}>
-        {running ? (
-          <button className="btn btn-ghost" onClick={end}>
-            End session
-          </button>
-        ) : (
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              selectProtocol(protocolId)
-              setStartTs(Date.now())
-            }}
-          >
-            Begin
-          </button>
-        )}
+          {geo.verts?.map((v, i) => (
+            <circle key={i} cx={v.x} cy={v.y} r={4.5} fill="var(--rp-ink2)" stroke="var(--rp-line2)" strokeWidth={2} />
+          ))}
+          {geo.twin && (
+            <>
+              <path ref={chanL} d={geo.twin.dL} fill="none" stroke="var(--rp-line2)" strokeWidth={3} strokeLinecap="round" />
+              <path ref={chanR} d={geo.twin.dR} fill="none" stroke="var(--rp-line2)" strokeWidth={3} strokeLinecap="round" />
+              <text ref={nosL} x={C - 108} y={290} fill="var(--rp-faint)" fontSize={13} className="mono" textAnchor="middle">L</text>
+              <text ref={nosR} x={C + 108} y={290} fill="var(--rp-faint)" fontSize={13} className="mono" textAnchor="middle">R</text>
+            </>
+          )}
+          {!isHof && (
+            <path ref={litRef} d={geo.d} fill="none" stroke={accent} strokeWidth={3.5}
+              strokeLinecap="round" strokeLinejoin="round" opacity={0.95}
+              style={geo.twin ? { display: 'none' } : undefined} />
+          )}
+          {!isHof && !geo.twin && <circle ref={haloRef} r={14} fill={accent} opacity={0.25} filter="url(#rpSoft)" />}
+          {!isHof && <circle ref={dotRef} r={7} fill="#F2FBF6" stroke={accent} strokeWidth={3} style={geo.twin ? undefined : undefined} />}
+          <text ref={numRef} x={C} y={C + 16} textAnchor="middle" className="mono num" fontSize={46} fontWeight={600} fill="var(--rp-text)" opacity={0} />
+        </svg>
+        <div className="phaselabel" ref={labelRef}>Settle in</div>
+        <div className="phasecount" ref={countRef}>&nbsp;</div>
       </div>
-
-      {!running && (
-        <div className="card guide" style={{ marginTop: 16 }}>
-          <p>{protocol.detail}</p>
+      <div className="bottom">
+        <div className="stats"><span ref={elRef}>0:00</span><span ref={cyRef} /><span ref={leftRef} /></div>
+        <div className="bar"><i ref={barRef} /></div>
+        <div className="ctrl">
+          <button className="pill" onClick={togglePause}>{paused ? '▶ Resume' : '⏸ Pause'}</button>
+          {retaining && <button className="pill primary" onClick={hofTap}>I need to breathe</button>}
+          <button className="pill danger" onClick={() => setConfirmEnd(true)}>■ End</button>
         </div>
-      )}
-    </>
+        {isHof && <div className="hoftap">Sit or lie down. Tap End any time.</div>}
+      </div>
+      <ConfirmSheet
+        open={confirmEnd}
+        title="End session?"
+        body="Anything over 30 seconds is saved to your history."
+        actionLabel="End session"
+        danger
+        onConfirm={() => finish(true)}
+        onClose={() => setConfirmEnd(false)}
+      />
+    </div>
   )
 }
 
-function PracticeTab() {
-  const st = useStore(respiroStore)
-  const [view, setView] = useState<'library' | 'stage'>(st.autostart ? 'stage' : 'library')
-  const [stageId, setStageId] = useState(st.protocolId)
-  const [planned, setPlanned] = useState<number | null>(null)
-  const [pre, setPre] = useState<string | null>(null)
-  const [preDur, setPreDur] = useState(3)
-  const [saved, setSaved] = useState<{ name: string; minutes: number; cycles: number; streak: number } | null>(null)
-  const preProto = pre === null ? null : pre === 'custom' ? buildCustomProtocol(st.custom) : protocolById(pre)
+function SummarySheet({ rec, onClose }: { rec: SessionRec | null; onClose: () => void }) {
   return (
-    <>
-      {view === 'stage' ? (
-        <Stage
-          protocolId={stageId}
-          plannedMin={planned}
-          onSaved={(s) => {
-            setSaved(s)
-            setView('library')
-          }}
-          onBack={() => setView('library')}
-        />
-      ) : (
-        <Library
-          onOpen={(id) => {
-            const p = id === 'custom' ? buildCustomProtocol(st.custom) : protocolById(id)
-            setPre(id)
-            setPreDur(p.suggestedMin)
-          }}
-        />
+    <Sheet open={rec !== null} title="Session complete" onClose={onClose}>
+      {rec && (
+        <div className="rp2 rp2-sum">
+          <div className="big">{rec.mins}<small> min</small></div>
+          <div className="line">{rec.name} · {rec.holds ? `${rec.cycles} round${rec.cycles === 1 ? '' : 's'}` : `${rec.cycles} cycle${rec.cycles === 1 ? '' : 's'}`}</div>
+          {rec.holds && rec.holds.length > 0 && (
+            <div className="holds">Holds: {rec.holds.map((h) => fmtSec(h)).join(' · ')}</div>
+          )}
+          <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }} onClick={onClose}>Done</button>
+        </div>
       )}
-
-      <Sheet open={preProto !== null} title={preProto?.name ?? ''} onClose={() => setPre(null)}>
-        {preProto && (
-          <div style={{ ['--rs-acc' as string]: preProto.accentVar } as CSSProperties}>
-            <p className="guide-p">{preProto.detail}</p>
-            <div className="rs-durlabel">Duration</div>
-            <div className="rs-durs num">
-              {[1, 2, 3, 5, 10].map((m) => (
-                <button
-                  key={m}
-                  className={'rs-dur' + (preDur === m ? ' on' : '')}
-                  onClick={() => setPreDur(m)}
-                >
-                  {m} min
-                </button>
-              ))}
-            </div>
-            <button
-              className="btn btn-primary rs-begin"
-              onClick={() => {
-                const id = pre as string
-                setStageId(id)
-                selectProtocol(id)
-                setPlanned(preDur)
-                setPre(null)
-                setView('stage')
-              }}
-            >
-              ▷&nbsp; Begin
-            </button>
-          </div>
-        )}
-      </Sheet>
-
-      <Sheet open={saved !== null} title="Session saved" onClose={() => setSaved(null)}>
-        {saved && (
-          <>
-            <p className="guide-p">
-              {saved.name} · {saved.minutes} min · {saved.cycles} cycle{saved.cycles === 1 ? '' : 's'}.
-              Current streak: {saved.streak} day{saved.streak === 1 ? '' : 's'}.
-            </p>
-            <button className="btn btn-primary" style={{ width: '100%', marginTop: 10 }} onClick={() => setSaved(null)}>
-              Done
-            </button>
-          </>
-        )}
-      </Sheet>
-    </>
+    </Sheet>
   )
 }
-
-/* ---------- progress ---------- */
 
 function ProgressTab() {
   const events = useStore(eventsStore)
@@ -767,8 +825,10 @@ function HoldTest({ now, onTick }: { now: number; onTick: (active: boolean) => v
   )
 }
 
-function ToolsTab() {
+function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
   const st = useStore(respiroStore)
+  const [libUrl, setLibUrl] = useState('')
+  const [libName, setLibName] = useState('')
   const [now, setNow] = useState(() => Date.now())
   const [holdActive, setHoldActive] = useState(false)
   const [localName, setLocalName] = useState<string | null>(null)
@@ -805,6 +865,58 @@ function ToolsTab() {
         <p className="rs-foot" style={{ marginTop: 8 }}>
           All sounds are synthesised on-device — nothing to download, nothing leaves the phone.
         </p>
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <span className="label" style={{ color: 'var(--m-respiro)' }}>Sound library</span>
+        </div>
+        <p className="rs-foot" style={{ marginBottom: 10 }}>
+          Save Spotify or YouTube links — guided meditations, drones, whatever carries you.
+          Tap ▶ to dock the player above the tab bar; it keeps playing while you practise.
+          YouTube plays full-length; Spotify plays full tracks only with a Spotify login in this browser.
+        </p>
+        <input
+          className="tinput"
+          placeholder="Paste a Spotify or YouTube link…"
+          value={libUrl}
+          onChange={(e) => setLibUrl(e.target.value)}
+        />
+        <input
+          className="tinput"
+          style={{ marginTop: 8 }}
+          placeholder="Name (optional)"
+          value={libName}
+          onChange={(e) => setLibName(e.target.value)}
+        />
+        <button
+          className="btn btn-primary btn-sm"
+          style={{ marginTop: 10 }}
+          onClick={() => {
+            const item = addSoundItem(libUrl, libName)
+            if (!item) {
+              toast('That link is neither Spotify nor YouTube')
+              return
+            }
+            setLibUrl('')
+            setLibName('')
+            toast('Saved to library')
+          }}
+        >
+          + Save to library
+        </button>
+        {st.soundLibrary.length > 0 && (
+          <div className="rp2-liblist">
+            {st.soundLibrary.map((item) => (
+              <div key={item.id} className="rp2-libitem">
+                <span className={'kind ' + item.kind}>{item.kind === 'youtube' ? 'YT' : 'SP'}</span>
+                <span className="nm">{item.name}</span>
+                <button className="play" onClick={() => onDock(item)} aria-label={`Play ${item.name}`}>▶</button>
+                <button className="rm" onClick={() => removeSoundItem(item.id)} aria-label={`Remove ${item.name}`}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="card">
@@ -911,7 +1023,78 @@ function ToolsTab() {
 /* ---------- screen ---------- */
 
 export default function RespiroScreen({ tab = 'practice' }: { tab?: string }) {
-  if (tab === 'progress') return <ProgressTab />
-  if (tab === 'sound') return <ToolsTab />
-  return <PracticeTab />
+  const st = useStore(respiroStore)
+  const [config, setConfig] = useState<string | null>(null)
+  const [session, setSession] = useState<{ tech: Technique; cfg: SessionCfg } | null>(null)
+  const [summary, setSummary] = useState<SessionRec | null>(null)
+  const [dock, setDock] = useState<SoundItem | null>(null)
+
+  /* A quick action on Today can request an immediate session. */
+  useEffect(() => {
+    if (consumeAutostart()) setConfig(respiroStore.get().protocolId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const dockRef = dock
+    ? dock.kind === 'youtube'
+      ? { kind: 'youtube' as const, ref: parseYouTube(dock.url) }
+      : { kind: 'spotify' as const, ref: parseSpotify(dock.url) }
+    : null
+
+  return (
+    <>
+      {tab === 'practice' && (
+        <PracticeTab
+          onConfig={(techId) => {
+            selectProtocol(techId)
+            setConfig(techId)
+          }}
+        />
+      )}
+      {tab === 'progress' && <ProgressTab />}
+      {tab === 'tools' && <ToolsTab onDock={setDock} />}
+
+      <ConfigSheet
+        techId={config}
+        onClose={() => setConfig(null)}
+        onStart={(tech, cfg) => {
+          setConfig(null)
+          setSession({ tech, cfg })
+        }}
+      />
+      {session && (
+        <SessionOverlay
+          tech={session.tech}
+          cfg={session.cfg}
+          onDone={(rec) => {
+            setSession(null)
+            if (rec) setSummary(rec)
+          }}
+        />
+      )}
+      <SummarySheet rec={summary} onClose={() => setSummary(null)} />
+
+      {dockRef && dockRef.ref && (
+        <div className="rp2 rp2-dock">
+          {dockRef.kind === 'youtube' ? (
+            <iframe
+              className="yt"
+              src={youtubeEmbedUrl(dockRef.ref)}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              title="YouTube player"
+            />
+          ) : (
+            <iframe
+              className="sp"
+              src={spotifyEmbedUrl(dockRef.ref)}
+              height={80}
+              allow="encrypted-media"
+              title="Spotify player"
+            />
+          )}
+          <button className="close" onClick={() => setDock(null)} aria-label="Close player">✕</button>
+        </div>
+      )}
+    </>
+  )
 }

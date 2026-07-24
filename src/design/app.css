@@ -5243,3 +5243,184 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
 }
 .cd-fracbar i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--hc, var(--m-cadence)); }
 .cd-fracrow b { font-size: 11px; color: var(--dim); }
+
+/* ============================================================
+   v0.10.9 — RESPIRO rebuild (rp2): the instrument.
+   Dark = the prototype's exact palette; light maps to app tokens.
+   ============================================================ */
+
+.rp2 {
+  --rp-ink: var(--bg);
+  --rp-ink2: var(--surface);
+  --rp-panel: var(--surface);
+  --rp-panel2: var(--raised);
+  --rp-line: var(--line);
+  --rp-line2: color-mix(in srgb, var(--ink) 16%, var(--line));
+  --rp-text: var(--ink);
+  --rp-dim: var(--dim);
+  --rp-faint: color-mix(in srgb, var(--dim) 62%, var(--surface));
+  --rp-jade: #2f9678;
+  --rp-jade-deep: #3FA88B;
+  --rp-brass: #b07f35;
+  --rp-moon: #6d8291;
+  --rp-coral: #cf6f56;
+  --rp-danger: #cf5f5f;
+  font-variant-numeric: tabular-nums;
+}
+:root:not([data-theme='light']) .rp2 {
+  --rp-ink: #0A0F14;
+  --rp-ink2: #101922;
+  --rp-panel: #101922;
+  --rp-panel2: #141F29;
+  --rp-line: #1C2933;
+  --rp-line2: #24333F;
+  --rp-text: #E9EFEA;
+  --rp-dim: #84939A;
+  --rp-faint: #5A6870;
+  --rp-jade: #86D8BE;
+  --rp-brass: #D9A566;
+  --rp-moon: #B9C7CF;
+  --rp-coral: #E08D79;
+  --rp-danger: #E07979;
+}
+.rp2 .mono, .rp2 .num { font-family: var(--font-mono, ui-monospace, monospace); }
+
+/* ---------- practice ---------- */
+.rp2-hero {
+  position: relative; display: block; width: 100%; text-align: left; overflow: hidden;
+  background: linear-gradient(135deg, var(--rp-panel2), var(--rp-panel));
+  border: 1px solid var(--rp-line); border-radius: 22px; padding: 20px 20px 18px; margin-bottom: 18px;
+}
+.rp2-hero .t1 { display: block; font-family: var(--font-display, serif); font-size: 26px; line-height: 1.15; color: var(--rp-text); }
+.rp2-hero .t2 { display: block; font-size: 13px; color: var(--rp-dim); margin-top: 8px; max-width: 34ch; line-height: 1.5; }
+.rp2-hero .begin {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+  background: var(--rp-jade); color: var(--rp-ink); font-weight: 700; font-size: 14px;
+  border-radius: 99px; padding: 11px 18px;
+}
+.rp2-hero .heroglyph { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); opacity: 0.16; pointer-events: none; }
+.rp2-seclabel {
+  font-family: var(--font-mono, monospace); font-size: 10.5px; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--rp-faint); margin: 18px 2px 8px;
+}
+.rp2-cards { display: flex; flex-direction: column; gap: 8px; }
+.rp2-card {
+  display: flex; align-items: center; gap: 12px; text-align: left; width: 100%;
+  background: linear-gradient(180deg, var(--rp-panel2), var(--rp-panel));
+  border: 1px solid var(--rp-line); border-radius: 18px; padding: 13px 14px;
+}
+.rp2-card .glyph {
+  width: 46px; height: 46px; border-radius: 13px; background: var(--rp-ink2);
+  border: 1px solid var(--rp-line); display: grid; place-items: center; flex: none;
+}
+.rp2-card .mid { flex: 1; min-width: 0; }
+.rp2-card .mid b { display: block; font-family: var(--font-display, serif); font-weight: 600; font-size: 17px; color: var(--rp-text); }
+.rp2-card .mid i { display: block; font-style: normal; font-size: 12.5px; color: var(--rp-dim); line-height: 1.45; margin-top: 2px; }
+.rp2-card .side { text-align: right; flex: none; }
+.rp2-card .side .pat { display: block; font-family: var(--font-mono, monospace); font-size: 12.5px; color: var(--rp-coral); }
+.rp2-card .side .goal { display: block; font-family: var(--font-mono, monospace); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rp-faint); margin-top: 4px; }
+.rp2-minigeo { display: block; }
+
+/* ---------- config sheet ---------- */
+.rp2-cfgeo { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 2px 0 10px; }
+.rp2-cfgeo .pat { font-family: var(--font-mono, monospace); font-size: 13px; color: var(--rp-dim); }
+.rp2-cflabel {
+  font-family: var(--font-mono, monospace); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--rp-faint); margin: 14px 2px 7px;
+}
+.rp2-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.rp2-chips .chip {
+  font-family: var(--font-mono, monospace); font-size: 12.5px; padding: 8px 14px; border-radius: 99px;
+  border: 1px solid var(--rp-line2); background: none; color: var(--rp-dim); transition: all 0.15s;
+}
+.rp2-chips .chip.on { border-color: var(--rp-jade); background: color-mix(in srgb, var(--rp-jade) 16%, transparent); color: var(--rp-text); }
+.rp2-studio { margin: 6px 0 4px; border: 1px solid var(--rp-line); border-radius: 14px; padding: 4px 12px; }
+.rp2-studio .ph { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--rp-line); font-size: 14px; color: var(--rp-text); }
+.rp2-studio .ph:last-of-type { border-bottom: 0; }
+.rp2-studio .step { display: inline-flex; align-items: center; background: var(--rp-ink2); border: 1px solid var(--rp-line); border-radius: 9px; }
+.rp2-studio .step button { width: 34px; height: 34px; color: var(--rp-dim); font-size: 16px; }
+.rp2-studio .step b { min-width: 42px; text-align: center; font-size: 13.5px; color: var(--rp-text); font-weight: 500; }
+
+/* ---------- session overlay ---------- */
+.rp2-sess {
+  position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column;
+  background:
+    radial-gradient(1200px 600px at 50% -220px, #12202A 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 110%, #0F1B1A 0%, transparent 55%),
+    var(--rp-ink);
+}
+:root[data-theme='light'] .rp2-sess {
+  background:
+    radial-gradient(1200px 600px at 50% -220px, color-mix(in srgb, var(--rp-jade) 10%, var(--rp-ink)) 0%, transparent 60%),
+    var(--rp-ink);
+}
+.rp2-sess .top {
+  display: grid; grid-template-columns: 38px 1fr 38px; align-items: center; gap: 10px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 6px;
+}
+.rp2-sess .icon {
+  width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--rp-line);
+  background: var(--rp-panel); display: grid; place-items: center; color: var(--rp-dim); font-size: 15px;
+}
+.rp2-sess .icon.ghost { visibility: hidden; }
+.rp2-sess .title { text-align: center; min-width: 0; }
+.rp2-sess .title .t1 { font-family: var(--font-display, serif); font-size: 17px; color: var(--rp-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp2-sess .title .t2 { font-family: var(--font-mono, monospace); font-size: 11px; color: var(--rp-faint); margin-top: 2px; }
+.rp2-sess .stagewrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; padding: 0 16px; }
+.rp2-sess .stagewrap svg { width: min(88vw, 420px, 52vh); height: auto; display: block; }
+.rp2-sess .phaselabel { font-family: var(--font-display, serif); font-size: 24px; color: var(--rp-jade); margin-top: 6px; transition: color 0.4s; }
+.rp2-sess .phasecount { font-family: var(--font-mono, monospace); font-size: 13px; color: var(--rp-dim); margin-top: 5px; min-height: 18px; }
+.rp2-sess .bottom { padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px)); }
+.rp2-sess .stats { display: flex; justify-content: space-between; font-family: var(--font-mono, monospace); font-size: 12px; color: var(--rp-dim); margin-bottom: 8px; }
+.rp2-sess .bar { height: 4px; border-radius: 3px; background: var(--rp-line); overflow: hidden; }
+.rp2-sess .bar i { display: block; height: 100%; width: 0; background: var(--rp-jade); border-radius: 3px; }
+.rp2-sess .ctrl { display: flex; justify-content: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.rp2-sess .pill {
+  display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 650;
+  border: 1px solid var(--rp-line2); border-radius: 99px; padding: 11px 20px; color: var(--rp-text); background: var(--rp-panel);
+}
+.rp2-sess .pill.primary { background: var(--rp-jade); border-color: var(--rp-jade); color: var(--rp-ink); }
+.rp2-sess .pill.danger { color: var(--rp-coral); border-color: color-mix(in srgb, var(--rp-coral) 45%, var(--rp-line2)); background: none; }
+.rp2-sess .hoftap { text-align: center; font-size: 11.5px; color: var(--rp-faint); margin-top: 10px; }
+
+/* ---------- summary ---------- */
+.rp2-sum { text-align: center; }
+.rp2-sum .big { font-family: var(--font-display, serif); font-size: 46px; color: var(--rp-text); }
+.rp2-sum .big small { font-size: 16px; color: var(--rp-dim); }
+.rp2-sum .line { font-size: 13.5px; color: var(--rp-dim); margin-top: 4px; }
+.rp2-sum .holds { font-family: var(--font-mono, monospace); font-size: 12.5px; color: var(--rp-moon); margin-top: 10px; }
+
+/* ---------- sound library + dock ---------- */
+.rp2-liblist { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.rp2-libitem {
+  display: flex; align-items: center; gap: 10px; padding: 9px 10px;
+  background: var(--rp-ink2); border: 1px solid var(--rp-line); border-radius: 12px;
+}
+.rp2-libitem .kind {
+  font-family: var(--font-mono, monospace); font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em;
+  border-radius: 6px; padding: 4px 6px; flex: none;
+}
+.rp2-libitem .kind.youtube { background: color-mix(in srgb, #e04f4f 22%, transparent); color: #e08d79; }
+.rp2-libitem .kind.spotify { background: color-mix(in srgb, #35c46f 20%, transparent); color: #5fce8f; }
+.rp2-libitem .nm { flex: 1; min-width: 0; font-size: 13.5px; color: var(--rp-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp2-libitem .play, .rp2-libitem .rm {
+  width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none;
+  border: 1px solid var(--rp-line2); color: var(--rp-dim); font-size: 12px;
+}
+.rp2-libitem .play { color: var(--rp-jade); border-color: color-mix(in srgb, var(--rp-jade) 40%, var(--rp-line2)); }
+.rp2-dock {
+  position: fixed; left: 14px; right: 14px; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 45;
+  background: var(--rp-panel); border: 1px solid var(--rp-line2); border-radius: 16px; overflow: hidden;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+}
+.rp2-dock iframe { display: block; width: 100%; border: 0; }
+.rp2-dock iframe.sp { height: 80px; }
+.rp2-dock iframe.yt { aspect-ratio: 16 / 9; max-height: 220px; }
+.rp2-dock .close {
+  position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 9px;
+  background: rgba(10, 15, 20, 0.72); color: #E9EFEA; font-size: 12px; display: grid; place-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rp2 *, .rp2 *::before, .rp2 *::after { transition-duration: 0.001s !important; }
+}
