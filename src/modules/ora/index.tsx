@@ -1,4 +1,8 @@
 import { oraStore, weekFastScore, elapsedH, targetHoursFor } from './model'
+import { wireOraIntegrations } from './integrations'
+
+/* Registration-time side effect: fast minutes stream into CADENCE. */
+wireOraIntegrations()
 import type { ModuleDefinition } from '../../core/types'
 import OraScreen, { OraSettingsExtra } from './Screen'
 import OraWidget from './Widget'
@@ -56,7 +60,7 @@ const ora: ModuleDefinition = {
   },
   accentVar: 'var(--m-ora)',
   Icon: DialIcon,
-  schemaVersion: 1,
+  schemaVersion: 2,
   tabs: [
     { id: 'timer', label: 'Timer', Icon: DialIcon },
     { id: 'body', label: 'Body', Icon: BodyIcon },

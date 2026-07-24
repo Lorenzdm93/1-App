@@ -1,4 +1,8 @@
 import { eventsStore } from '../../core/events'
+import { wireRespiroIntegrations } from './integrations'
+
+/* Registration-time side effect: minutes stream into CADENCE. */
+wireRespiroIntegrations()
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import Screen from './Screen'

@@ -661,6 +661,8 @@ const DAY_CHIPS: { dow: number; label: string }[] = [
   { dow: 4, label: 'Thu' }, { dow: 5, label: 'Fri' }, { dow: 6, label: 'Sat' }, { dow: 0, label: 'Sun' },
 ]
 
+const PRESET_TARGETS: Record<string, number> = { 'Focus time': 120, 'Breathwork': 10, 'Fasting': 960 }
+
 function HabitForm({
   mode,
   habit,
@@ -675,6 +677,7 @@ function HabitForm({
   const [color, setColor] = useState<string>(habit?.color ?? PALETTE[0])
   const [type, setType] = useState<HabitType>(habit?.type ?? 'build')
   const [cue, setCue] = useState(habit?.cue ?? '')
+  const [targetMin, setTargetMin] = useState(habit?.targetMin ?? 0)
   const [schedMode, setSchedMode] = useState<'daily' | 'days'>(habit?.schedule.mode ?? 'daily')
   const [days, setDays] = useState<number[]>(
     habit?.schedule.mode === 'days' ? [...habit.schedule.days] : [1, 2, 3, 4, 5],
@@ -696,10 +699,10 @@ function HabitForm({
         ? ({ mode: 'daily' } as const)
         : ({ mode: 'days', days: [...days].sort((a, b) => a - b) } as const)
     if (mode === 'add') {
-      addHabit({ name, emoji, color, type, schedule, startDate, cue })
+      addHabit({ name, emoji, color, type, schedule, startDate, cue, targetMin })
       toast(`${emoji} “${name.trim()}” added.`)
     } else if (habit) {
-      editHabit(habit.id, { name, emoji, color, type, schedule, startDate, cue })
+      editHabit(habit.id, { name, emoji, color, type, schedule, startDate, cue, targetMin })
       toast('Habit updated')
     }
     onClose()
@@ -713,7 +716,7 @@ function HabitForm({
             <div className="cd-qk">Build</div>
             <div className="cd-qchips">
               {PRESETS.build.map(([em, nm]) => (
-                <button key={nm} className="cd-qchip" onClick={() => { setName(nm); setEmoji(em); setType('build') }}>
+                <button key={nm} className="cd-qchip" onClick={() => { setName(nm); setEmoji(em); setType('build'); setTargetMin(PRESET_TARGETS[nm] ?? 0) }}>
                   {em} {nm}
                 </button>
               ))}
@@ -826,6 +829,16 @@ function HabitForm({
         />
         <p className="cd-hint">A specific “when/where” cue makes habits far more likely to stick.</p>
       </Field>
+
+      {!isQuit && (
+        <Field label="Daily time goal — links Grove / Respiro / Ora minutes to this habit (0 = off)">
+          <div className="cd-target">
+            <button onClick={() => setTargetMin(Math.max(0, targetMin - 15))} aria-label="Less">−</button>
+            <b className="num">{targetMin === 0 ? 'off' : targetMin >= 60 ? `${Math.floor(targetMin / 60)}h ${String(targetMin % 60).padStart(2, '0')}` : `${targetMin}m`}</b>
+            <button onClick={() => setTargetMin(Math.min(1440, targetMin + 15))} aria-label="More">+</button>
+          </div>
+        </Field>
+      )}
 
       <button className="btn btn-primary cd-commit" onClick={commit}>
         {mode === 'add' ? 'Add habit' : 'Save changes'}

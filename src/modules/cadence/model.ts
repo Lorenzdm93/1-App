@@ -22,6 +22,8 @@ export interface Habit {
   startDate: string
   /** Implementation intention — "after coffee", "before bed". */
   cue?: string
+  /** Daily time goal in minutes for module-linked habits (grove/respiro/ora). 0/absent = off. */
+  targetMin?: number
   createdTs: number
   archived?: boolean
 }
@@ -112,6 +114,7 @@ export const PRESETS = {
   build: [
     ['💪', 'Workout'], ['🏃', 'Run'], ['📚', 'Read'], ['🧘', 'Meditate'], ['💧', 'Drink water'],
     ['✍️', 'Journal'], ['🥦', 'Eat vegetables'], ['🌱', 'Stretch'], ['😴', 'Sleep by 11pm'], ['💊', 'Supplements'],
+    ['🎯', 'Focus time'], ['🌬️', 'Breathwork'], ['⏳', 'Fasting'],
   ],
   quit: [
     ['🚭', 'No smoking'], ['🍺', 'No alcohol'], ['📵', 'No doomscrolling'], ['🍬', 'No sugar'],
@@ -192,6 +195,7 @@ export function addHabit(input: {
   schedule: HabitSchedule
   startDate: string
   cue?: string
+  targetMin?: number
 }): void {
   const clean = input.name.trim()
   if (!clean) return
@@ -209,6 +213,7 @@ export function addHabit(input: {
         schedule: input.type === 'quit' ? { mode: 'daily' } : normalizedSchedule(input.schedule),
         startDate: input.startDate > today ? today : input.startDate,
         ...(input.cue && input.cue.trim() ? { cue: input.cue.trim() } : {}),
+    ...(input.targetMin && input.targetMin > 0 ? { targetMin: Math.round(input.targetMin) } : {}),
         createdTs: Date.now(),
       },
     ],
@@ -217,7 +222,7 @@ export function addHabit(input: {
 
 export function editHabit(
   habitId: string,
-  patch: Partial<Pick<Habit, 'name' | 'emoji' | 'color' | 'type' | 'schedule' | 'startDate' | 'cue'>>,
+  patch: Partial<Pick<Habit, 'name' | 'emoji' | 'color' | 'type' | 'schedule' | 'startDate' | 'cue' | 'targetMin'>>,
 ): void {
   const today = todayKey()
   cadenceStore.set((st) => ({

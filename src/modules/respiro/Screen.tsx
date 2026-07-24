@@ -1052,7 +1052,7 @@ export default function RespiroScreen({ tab = 'practice' }: { tab?: string }) {
         />
       )}
       {tab === 'progress' && <ProgressTab />}
-      {tab === 'tools' && <ToolsTab onDock={setDock} />}
+      {tab === 'sound' && <ToolsTab onDock={setDock} />}
 
       <ConfigSheet
         techId={config}

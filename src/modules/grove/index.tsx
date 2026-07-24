@@ -1,4 +1,8 @@
 import { eventsStore } from '../../core/events'
+import { wireGroveIntegrations } from './integrations'
+
+/* Registration-time side effect: minutes stream into CADENCE. */
+wireGroveIntegrations()
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import Screen, { GroveSettingsExtra } from './Screen'

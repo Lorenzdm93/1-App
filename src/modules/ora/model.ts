@@ -16,7 +16,7 @@ export interface Protocol {
   fastH: number
   eatH: number
   desc: string
-  kind: 'rhythm' | 'custom' | 'window'
+  kind: 'rhythm' | 'custom' | 'window' | 'extended'
 }
 
 export const PROTOCOLS: readonly Protocol[] = [
@@ -34,6 +34,14 @@ export const PROTOCOLS: readonly Protocol[] = [
     desc: 'The "warrior" pattern — one main meal plus a snack inside 4 hours. Deep daily fat-burning; best for experienced fasters.' },
   { id: 'omad', name: 'OMAD', fastH: 23, eatH: 1, kind: 'rhythm',
     desc: 'One meal a day. Roughly 23 hours fasted, one unrushed plate. Simple to run, demanding to hold.' },
+  { id: 'e24', name: '24h', fastH: 24, eatH: 0, kind: 'extended',
+    desc: 'A full day, dinner to dinner. Touches the start of autophagy without seriously disrupting your week.' },
+  { id: 'e36', name: '36h', fastH: 36, eatH: 0, kind: 'extended',
+    desc: 'The "monk fast" — a whole calendar day without eating. Deep ketosis and rising autophagy. Plan a quiet day.' },
+  { id: 'e48', name: '48h', fastH: 48, eatH: 0, kind: 'extended',
+    desc: 'Two days. Autophagy and growth-hormone peak territory. Electrolytes are essential; keep effort low.' },
+  { id: 'e72', name: '72h', fastH: 72, eatH: 0, kind: 'extended',
+    desc: 'Three days — deep cellular renewal and immune reset territory. For experienced fasters, ideally with medical guidance.' },
 ]
 
 export function protocolById(id: string): Protocol {
@@ -53,25 +61,25 @@ export interface Stage {
 }
 
 export const STAGES: readonly Stage[] = [
-  { name: 'Fed', fromH: 0, toH: 4, color: 'var(--dim)',
+  { name: 'Fed', fromH: 0, toH: 4, color: '#6C8B9E',
     body: 'Digestion is underway. Blood sugar and insulin rise while nutrients from your last meal are absorbed and stored.',
     noteKind: 'Now', note: 'Insulin is up, so fat-burning is paused — completely normal. Sip water and let digestion settle.' },
-  { name: 'Winding down', fromH: 4, toH: 12, color: 'var(--m-grove)',
+  { name: 'Winding down', fromH: 4, toH: 12, color: '#5FA79C',
     body: 'Insulin is falling and your body leans on stored glycogen for fuel. Blood sugar returns to baseline.',
     noteKind: 'Tip', note: 'A good stretch to stay busy. Water, black coffee and plain tea are fine and can soften early hunger.' },
-  { name: 'Fat burning', fromH: 12, toH: 16, color: 'var(--m-sana)',
+  { name: 'Fat burning', fromH: 12, toH: 16, color: '#D9A15C',
     body: 'Glycogen is running low, so your body pivots to burning fat. The first ketones begin to appear.',
     noteKind: 'Tip', note: 'Hunger often comes in waves and passes. A pinch of salt in water helps if you feel flat.' },
-  { name: 'Ketosis', fromH: 16, toH: 24, color: 'var(--m-sana)',
+  { name: 'Ketosis', fromH: 16, toH: 24, color: '#E8834E',
     body: 'Ketones become a main fuel. Mental clarity often rises as appetite drops.',
     noteKind: 'Tip', note: 'Many people feel clear and even here. Mind your electrolytes — sodium, potassium, magnesium. Break gently whenever you\'re ready.' },
-  { name: 'Autophagy', fromH: 24, toH: 48, color: 'var(--m-grove)',
+  { name: 'Autophagy', fromH: 24, toH: 48, color: '#6FB394',
     body: 'Autophagy ramps up as cells recycle damaged parts. Growth hormone rises to protect muscle, and insulin sits at its lowest.',
     noteKind: 'Care', note: 'Electrolytes matter more now. Move gently and rest well. If you feel dizzy, faint or unwell, break the fast.' },
-  { name: 'Deep autophagy', fromH: 48, toH: 72, color: 'var(--m-respiro, var(--m-grove))',
+  { name: 'Deep autophagy', fromH: 48, toH: 72, color: '#4E9E86',
     body: 'Cellular cleanup and immune renewal near their peak, and IGF-1 drops. This is extended-fast territory.',
     noteKind: 'Care', note: 'Best for experienced fasters, ideally with medical guidance. Prioritise electrolytes and hydration; plan a gentle refeed.' },
-  { name: 'Extended renewal', fromH: 72, toH: null, color: 'var(--m-caliber)',
+  { name: 'Extended renewal', fromH: 72, toH: null, color: '#3E8F7C',
     body: 'Deep cellular renewal continues. Both benefits and risks rise the longer you go.',
     noteKind: 'Care', note: 'Multi-day fasts warrant medical supervision. Break carefully with small, simple foods to avoid refeeding problems.' },
 ]
@@ -106,6 +114,10 @@ export interface OraState {
   weights: WeightEntry[] // newest first
   hydration: Record<string, number>
   phaseAlerts: boolean
+  /** Post-fast eating window (IF rhythms) — a gentle countdown, never an alarm. */
+  eating: { startTs: number; windowH: number } | null
+  /** Milestone ids already celebrated — so unlocks toast exactly once. */
+  celebrated: string[]
 }
 
 const DEFAULTS: OraState = {
@@ -117,9 +129,25 @@ const DEFAULTS: OraState = {
   weights: [],
   hydration: {},
   phaseAlerts: false,
+  eating: null,
+  celebrated: [],
 }
 
-export const oraStore = createPersistedStore<OraState>('ora', DEFAULTS, 1)
+export function migrateOra(data: unknown, _from: number): OraState {
+  const d = (data && typeof data === 'object' ? data : {}) as Partial<OraState>
+  const st: OraState = {
+    ...DEFAULTS,
+    ...d,
+    eating: d.eating && typeof d.eating === 'object' ? d.eating : null,
+    celebrated: Array.isArray(d.celebrated) ? d.celebrated : [],
+    fasts: Array.isArray(d.fasts) ? d.fasts : [],
+    weights: Array.isArray(d.weights) ? d.weights : [],
+    hydration: d.hydration && typeof d.hydration === 'object' ? d.hydration : {},
+  }
+  return st
+}
+
+export const oraStore = createPersistedStore<OraState>('ora', DEFAULTS, 2, migrateOra)
 
 /* ---------- window math (overnight-safe) ---------- */
 
@@ -198,7 +226,13 @@ export function endFast(now = Date.now()): Fast | null {
     protocolId: st.current.protocolId,
     hit: hours >= st.current.targetH,
   }
-  oraStore.set((s) => ({ ...s, current: null, fasts: [fast, ...s.fasts].slice(0, 1000) }))
+  const winH = fast.targetH < 24 ? Math.round((24 - fast.targetH) * 10) / 10 : 0
+  oraStore.set((s) => ({
+    ...s,
+    current: null,
+    fasts: [fast, ...s.fasts].slice(0, 1000),
+    eating: winH > 0 ? { startTs: now, windowH: winH } : null,
+  }))
   logEvent({
     module: 'ora',
     kind: 'fast',
@@ -328,4 +362,57 @@ export function weekFastScore(st: OraState, start: string, end: string): number 
     0,
   )
   return sum / inRange.length
+}
+
+/* ---------------- v2 additions ---------------- */
+
+export function dismissEating(): void {
+  oraStore.set((s) => ({ ...s, eating: null }))
+}
+
+/** Edit a logged fast's boundaries; `hit` is recomputed. */
+export function editFast(id: string, patch: { startTs?: number; endTs?: number }): void {
+  oraStore.set((s) => ({
+    ...s,
+    fasts: s.fasts.map((f) => {
+      if (f.id !== id) return f
+      const startTs = patch.startTs ?? f.startTs
+      const endTs = patch.endTs ?? f.endTs
+      if (endTs <= startTs) return f
+      return { ...f, startTs, endTs, hit: elapsedH(startTs, endTs) >= f.targetH }
+    }),
+  }))
+}
+
+/** Newly earned, not-yet-celebrated milestones — marks them and returns them. */
+export function claimNewMilestones(): Milestone[] {
+  const st = oraStore.get()
+  const s = oraStats(st.fasts)
+  const fresh = MILESTONES.filter((m) => m.test(st.fasts, s) && !st.celebrated.includes(m.id))
+  if (fresh.length > 0) {
+    oraStore.set((x) => ({ ...x, celebrated: [...x.celebrated, ...fresh.map((m) => m.id)] }))
+  }
+  return fresh
+}
+
+/* One-time v2 reconciliation, safely AFTER every declaration above: users
+   arriving with history but no celebration record get their already-earned
+   milestones marked quietly — no confetti storm for ancient history. */
+;(function seedCelebratedOnce() {
+  const st = oraStore.get()
+  if (st.celebrated.length === 0 && st.fasts.length > 0) {
+    const s = oraStats(st.fasts)
+    const ids = MILESTONES.filter((m) => m.test(st.fasts, s)).map((m) => m.id)
+    if (ids.length > 0) oraStore.set((x) => ({ ...x, celebrated: ids }))
+  }
+})()
+
+/** Minutes fasted attributed to each end-day — the CADENCE feed. */
+export function fastMinutesByDay(fasts: readonly Fast[]): Map<string, number> {
+  const m = new Map<string, number>()
+  for (const f of fasts) {
+    const d = dayKey(f.endTs)
+    m.set(d, (m.get(d) ?? 0) + (f.endTs - f.startTs) / 60_000)
+  }
+  return m
 }
