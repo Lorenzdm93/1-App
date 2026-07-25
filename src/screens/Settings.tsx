@@ -5,9 +5,10 @@ import { settingsStore, setTheme, type Theme } from '../core/settings'
 import { exportAll, importAll, clearAll } from '../core/storage'
 import { todayKey } from '../core/dates'
 import { toast } from '../core/toast'
-import { ConfirmSheet, Seg } from '../app/ui'
+import { ConfirmSheet, Seg, Chevron } from '../app/ui'
+import { navigate } from '../core/router'
 
-const APP_VERSION = '0.9.10'
+const APP_VERSION = '0.11.4'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
@@ -50,6 +51,20 @@ export default function Settings() {
         <div className="eyebrow">The instrument</div>
         <h1 className="screen-title">Settings</h1>
       </div>
+
+      <button className="card navrow" onClick={() => navigate('/modules')}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="13.1" y="3.5" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="3.5" y="13.1" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="13.1" y="13.1" width="7.4" height="7.4" rx="2" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
+        <span className="mid">
+          <b>Modules</b>
+          <i>Enable, disable &amp; reorder your toolkit</i>
+        </span>
+        <Chevron />
+      </button>
 
 
       <div className="card">

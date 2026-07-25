@@ -27,6 +27,12 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.11.4 — the live workout fits, and the shell slims to three tabs**
+
+The live-workout set rows were overflowing on phones: the two number inputs refused to shrink below the browser's intrinsic input width, blowing the grid so PREV wrapped vertically and the ✓ column fell off-screen. The grid now uses shrinkable minmax columns with fixed rails for the set-number and check, inputs carry `min-width: 0`, and PREV truncates with an ellipsis instead of wrapping — the header row mirrors the same template. Anti-zoom 16px inputs stay.
+
+The main tab bar is down to **Today · Profile · Settings** — three equal columns, identical icon sizes, the same fixed-width active underline whichever tab is selected. **Modules moved into Settings** as the first row (enable, disable & reorder), with a back link from the Modules screen; the Settings tab stays lit while you're in there. Settings' version line now reads the truth again.
+
 **New in v0.11.3 — chart polish for the MVP**
 
 GHISA's Home chart now follows the period control instead of always showing eight weeks: Week shows daily bars, Month shows the last five weeks, Year shows twelve months, All shows months since your first workout. The Profile chart's Year view buckets by month too, both charts (and Statistics) **start where the data starts** — no leading dead space — and the angled, spilling month labels are gone: labels are horizontal and thinned to at most six, so they always fit. SANA's Consistency is now the full calendar year like CADENCE, month labels on top, horizontally scrollable and landing with the current week around the middle. Also fixed a latent audit blind spot: generic hook calls like `useRef<T>()` weren't matched by the import audit — pattern upgraded, platform clean.

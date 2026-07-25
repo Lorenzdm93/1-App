@@ -4553,20 +4553,20 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
 .gh2-discard { width: 100%; padding: 12px 0; border: 0; background: none; font-size: 14px; font-weight: 600; color: #F87171; }
 
 .gh2-sslabel { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
-.gh2-cols { display: grid; grid-template-columns: 2fr 3fr 3fr 2fr 2fr; gap: 8px; margin-bottom: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--g-muted); text-align: center; }
+.gh2-cols { display: grid; grid-template-columns: 34px minmax(0, 2.3fr) minmax(0, 2.6fr) minmax(0, 2fr) 40px; gap: 6px; margin-bottom: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--g-muted); text-align: center; }
 
-.gh2-setrow { display: grid; grid-template-columns: 2fr 3fr 3fr 2fr 2fr; gap: 8px; align-items: center; padding: 4px 0; }
+.gh2-setrow { display: grid; grid-template-columns: 34px minmax(0, 2.3fr) minmax(0, 2.6fr) minmax(0, 2fr) 40px; gap: 6px; align-items: center; padding: 4px 0; }
 .gh2-setrow.done { background: color-mix(in srgb, var(--g-ember) 7%, transparent); margin: 0 -16px; padding: 4px 16px; }
-.gh2-setrow .type { height: 40px; border: 0; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: var(--font-display); background: var(--g-surface2); color: var(--g-muted); }
+.gh2-setrow .type { height: 40px; width: 100%; border: 0; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: var(--font-display); background: var(--g-surface2); color: var(--g-muted); }
 .gh2-setrow .type.w { background: color-mix(in srgb, #FBBF24 14%, var(--g-surface)); color: #b45309; }
 .gh2-setrow .type.d { background: color-mix(in srgb, #A78BFA 14%, var(--g-surface)); color: #6d28d9; }
 .gh2-setrow .type.f { background: color-mix(in srgb, #F87171 14%, var(--g-surface)); color: #b91c1c; }
 :root:not([data-theme='light']) .gh2-setrow .type.w { color: #FBBF24; }
 :root:not([data-theme='light']) .gh2-setrow .type.d { color: #A78BFA; }
 :root:not([data-theme='light']) .gh2-setrow .type.f { color: #F87171; }
-.gh2-setrow .prev { height: 40px; border: 0; background: none; font-size: 14px; font-weight: 500; text-align: center; color: var(--g-muted); }
+.gh2-setrow .prev { height: 40px; border: 0; background: none; font-size: 12.5px; font-weight: 500; text-align: center; color: var(--g-muted); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gh2-setrow .prev:active { opacity: 0.6; }
-.gh2-setrow .in { height: 40px; border-radius: 10px; text-align: center; font-size: 16px; font-weight: 700; outline: none; background: var(--g-surface2); color: var(--g-text); border: 1px solid var(--g-border); }
+.gh2-setrow .in { height: 40px; border-radius: 10px; text-align: center; font-size: 16px; font-weight: 700; outline: none; background: var(--g-surface2); color: var(--g-text); border: 1px solid var(--g-border); width: 100%; min-width: 0; padding: 0 2px; }
 .gh2-setrow.done .in { background: transparent; border-color: transparent; }
 .gh2-setrow .check { display: flex; align-items: center; justify-content: center; height: 40px; border: 0; border-radius: 10px; background: var(--g-surface2); color: var(--g-muted); transition: transform 0.1s ease; }
 .gh2-setrow .check:active { transform: scale(0.9); }
@@ -5649,3 +5649,11 @@ img, svg { -webkit-user-drag: none; }
 .sn-yheat { display: flex; gap: 2px; }
 .sn-yheat .sn-heat-col { display: flex; flex-direction: column; gap: 2px; flex: none; }
 .sn-yheat .sn-heat-cell { width: 11px; height: 11px; flex: none; }
+
+/* v0.11.4 — settings nav row + back link (Modules lives under Settings now) */
+.navrow { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; margin-bottom: 14px; color: var(--ink); }
+.navrow svg { color: var(--ember); flex: none; }
+.navrow .mid { flex: 1; min-width: 0; }
+.navrow .mid b { display: block; font-size: 14.5px; }
+.navrow .mid i { display: block; font-style: normal; font-size: 12px; color: var(--dim); margin-top: 2px; }
+.backlink { display: inline-flex; align-items: center; gap: 2px; font-size: 13.5px; color: var(--dim); margin-bottom: 6px; background: none; border: 0; padding: 4px 0; }

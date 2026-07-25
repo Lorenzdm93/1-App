@@ -44,6 +44,7 @@ export default function Modules() {
 
   return (
     <>
+      <button className="backlink" onClick={() => navigate('/settings')}>‹ Settings</button>
       <div className="screen-head">
         <div className="eyebrow">Your toolkit</div>
         <h1 className="screen-title">Modules</h1>
