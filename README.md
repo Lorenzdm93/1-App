@@ -27,6 +27,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.11.3 — chart polish for the MVP**
+
+GHISA's Home chart now follows the period control instead of always showing eight weeks: Week shows daily bars, Month shows the last five weeks, Year shows twelve months, All shows months since your first workout. The Profile chart's Year view buckets by month too, both charts (and Statistics) **start where the data starts** — no leading dead space — and the angled, spilling month labels are gone: labels are horizontal and thinned to at most six, so they always fit. SANA's Consistency is now the full calendar year like CADENCE, month labels on top, horizontally scrollable and landing with the current week around the middle. Also fixed a latent audit blind spot: generic hook calls like `useRef<T>()` weren't matched by the import audit — pattern upgraded, platform clean.
+
 **New in v0.11.2 — the engine lights up + the GHISA settings crash**
 
 GHISA's settings crash ("SampleDataBlock is not defined") was a wiring script inserting imports after "line 1" — which in GHISA's screen is the opening of a doc comment, so both imports became comment text. Fixed, and the pre-delivery audit now strips comments before checking imports, so presence can never again masquerade as liveness.

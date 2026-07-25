@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
@@ -628,6 +628,49 @@ function startOfWeek(day: string): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+/* The calendar-year heat: month labels above, one column per week, and the
+   scroll position lands with the current week around the middle of the view. */
+function SnYearHeat({ weeks, today, cellFor }: { weeks: string[][]; today: string; cellFor: (d: string) => string }) {
+  const wrap = useRef<HTMLDivElement>(null)
+  const COL = 13
+  useEffect(() => {
+    const node = wrap.current
+    if (!node) return
+    const idx = weeks.findIndex((wk) => wk.includes(today))
+    if (idx >= 0 && node.scrollWidth > node.clientWidth) {
+      node.scrollLeft = Math.max(0, idx * COL - node.clientWidth * 0.55)
+    }
+  }, [weeks, today])
+  const year = today.slice(0, 4)
+  const months: { left: number; text: string }[] = []
+  let last = ''
+  weeks.forEach((wk, i) => {
+    const anchor = wk.find((d) => d >= `${year}-01-01`) ?? wk[0]
+    const m = anchor.slice(5, 7)
+    if (m !== last) {
+      months.push({ left: i * COL, text: new Date(anchor + 'T12:00:00').toLocaleDateString('en-GB', { month: 'short' }) })
+      last = m
+    }
+  })
+  return (
+    <div className="sn-yheatwrap" ref={wrap}>
+      <div className="sn-yheat-months" style={{ width: weeks.length * COL }}>
+        {months.map((m) => <span key={m.left} style={{ left: m.left }}>{m.text}</span>)}
+      </div>
+      <div className="sn-yheat" style={{ width: weeks.length * COL }}>
+        {weeks.map((wk, w) => (
+          <div key={w} className="sn-heat-col">
+            {wk.map((d) => {
+              if (d > today || d.slice(0, 4) !== year) return <span key={d} className="sn-heat-cell future" />
+              return <span key={d} className={'sn-heat-cell' + cellFor(d)} />
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function HistoryTab() {
   const st = useStore(sanaStore)
   const today = todayKey()
@@ -647,8 +690,17 @@ function HistoryTab() {
   const daysInMonth = new Date(mYear, mMonth + 1, 0).getDate()
   const monthLabel = mDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 
-  const heatWeeks = 26
-  const heatStart = shiftDay(startOfWeek(today), -(heatWeeks - 1) * 7)
+  /* Year-aligned consistency, like CADENCE: the whole calendar year, scrolled to now. */
+  const heatYear = today.slice(0, 4)
+  const yearWeeks = useMemo(() => {
+    let cursor = startOfWeek(`${heatYear}-01-01`)
+    const weeks: string[][] = []
+    while (cursor <= `${heatYear}-12-31`) {
+      weeks.push(Array.from({ length: 7 }, (_, r) => shiftDay(cursor, r)))
+      cursor = shiftDay(cursor, 7)
+    }
+    return weeks
+  }, [heatYear])
 
   const cellFor = (day: string): string => {
     const c = dayCount(st, day)
@@ -710,18 +762,8 @@ function HistoryTab() {
       </div>
 
       <div className="card">
-        <div className="sn-hist-head"><span className="sn-hist-title">Consistency</span><span className="rs-foot" style={{ margin: 0 }}>last {heatWeeks} weeks</span></div>
-        <div className="sn-heat">
-          {Array.from({ length: heatWeeks }).map((_, w) => (
-            <div key={w} className="sn-heat-col">
-              {Array.from({ length: 7 }).map((_, r) => {
-                const d = shiftDay(heatStart, w * 7 + r)
-                if (d > today) return <span key={r} className="sn-heat-cell future" />
-                return <span key={r} className={'sn-heat-cell' + (cellFor(d))} />
-              })}
-            </div>
-          ))}
-        </div>
+        <div className="sn-hist-head"><span className="sn-hist-title">Consistency</span><span className="rs-foot" style={{ margin: 0 }}>{heatYear}</span></div>
+        <SnYearHeat weeks={yearWeeks} today={today} cellFor={cellFor} />
       </div>
       <div className="card guide">
         <p>

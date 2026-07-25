@@ -849,6 +849,52 @@ export function weeklyMetric(
   return out
 }
 
+/** Adaptive bucketing for the charts: days, weeks, or months. `count: null`
+    (months only) starts at the first workout's month. */
+export function bucketMetric(
+  workouts: Workout[],
+  mode: 'day' | 'week' | 'month',
+  count: number | null,
+  metric: ProfileMetric,
+  now = Date.now(),
+): { label: string; vol: number; ts: number }[] {
+  const val = (w: Workout) => (metric === 'duration' ? w.duration : metric === 'volume' ? w.volume : w.reps)
+  if (mode === 'week') return weeklyMetric(workouts, count ?? 8, metric, now)
+  const out: { label: string; vol: number; ts: number }[] = []
+  if (mode === 'day') {
+    const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0)
+    for (let i = (count ?? 7) - 1; i >= 0; i--) {
+      const start = todayStart.getTime() - i * DAY
+      let v = 0
+      for (const w of workouts) if (w.startedAt >= start && w.startedAt < start + DAY) v += val(w)
+      out.push({ label: new Date(start).toLocaleDateString('en-GB', { weekday: 'short' }), vol: Math.round(v), ts: start })
+    }
+    return out
+  }
+  /* months */
+  const d0 = new Date(now); d0.setDate(1); d0.setHours(0, 0, 0, 0)
+  let months = count
+  if (months === null) {
+    if (workouts.length === 0) return []
+    const first = new Date(Math.min(...workouts.map((w) => w.startedAt)))
+    months = (d0.getFullYear() - first.getFullYear()) * 12 + (d0.getMonth() - first.getMonth()) + 1
+  }
+  for (let i = months - 1; i >= 0; i--) {
+    const s = new Date(d0.getFullYear(), d0.getMonth() - i, 1)
+    const e = new Date(d0.getFullYear(), d0.getMonth() - i + 1, 1)
+    let v = 0
+    for (const w of workouts) if (w.startedAt >= s.getTime() && w.startedAt < e.getTime()) v += val(w)
+    out.push({ label: s.toLocaleDateString('en-GB', { month: 'short' }), vol: Math.round(v), ts: s.getTime() })
+  }
+  return out
+}
+
+/** Charts start where the data starts — leading empty buckets carry no story. */
+export function trimLeading<T extends { vol: number }>(series: T[]): T[] {
+  const i = series.findIndex((b) => b.vol > 0)
+  return i <= 0 ? series : series.slice(i)
+}
+
 const dayFloor = (ts: number): number => {
   const d = new Date(ts)
   d.setHours(0, 0, 0, 0)

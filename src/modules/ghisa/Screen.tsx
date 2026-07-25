@@ -38,6 +38,8 @@ ghisaStore,
   setHeight,
   latestWeight,
   weeklyMetric,
+  bucketMetric,
+  trimLeading,
   totalRestDays,
   workoutDaySet,
   epley,
@@ -270,13 +272,16 @@ function ExMedia({ exerciseId, name, size = 44, animate = false, onClick }: {
 function GBarChart({ data }: { data: { label: string; vol: number; ts?: number }[] }) {
   const W = 320
   const H = 150
-  const dense = data.length > 12
-  const pad = { t: 6, b: dense ? 30 : 18, l: 4, r: 4 }
+  const pad = { t: 6, b: 18, l: 4, r: 4 }
   const max = Math.max(1, ...data.map((d) => d.vol))
-  const iw = (W - pad.l - pad.r) / data.length
+  const iw = (W - pad.l - pad.r) / Math.max(1, data.length)
   const bw = Math.min(26, iw * 0.62)
+  /* Horizontal labels, thinned to at most ~6 so nothing ever spills. */
+  const step = Math.max(1, Math.ceil(data.length / 6))
+  const showLabel = (i: number): boolean =>
+    i === data.length - 1 || (i % step === 0 && data.length - 1 - i >= Math.ceil(step / 2))
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="none" className="gh2-chart" role="img" aria-label="Weekly volume">
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="none" className="gh2-chart" role="img" aria-label="Volume by period">
       {data.map((d, i) => {
         const h = Math.max(d.vol > 0 ? 3 : 0, ((H - pad.t - pad.b) * d.vol) / max)
         const x = pad.l + i * iw + (iw - bw) / 2
@@ -284,24 +289,13 @@ function GBarChart({ data }: { data: { label: string; vol: number; ts?: number }
         return <rect key={i} x={x} y={y} width={bw} height={h} rx={5} className="bar"
           style={{ animationDelay: `${Math.min(i * 22, 500)}ms` }} />
       })}
-      {dense && data.every((d) => typeof d.ts === 'number')
-        ? data.map((d, i) => {
-            const m = new Date(d.ts as number).getMonth()
-            const prev = i > 0 ? new Date(data[i - 1].ts as number).getMonth() : -1
-            if (m === prev) return null
-            const lx = pad.l + i * iw + iw / 2
-            return (
-              <text key={'t' + i} x={lx} y={H - 4} textAnchor="end" className="lbl"
-                transform={`rotate(-32 ${lx} ${H - 4})`}>
-                {new Date(d.ts as number).toLocaleDateString('en-GB', { month: 'short' })}
-              </text>
-            )
-          })
-        : data.map((d, i) =>
-            i % 2 === 1 ? (
-              <text key={'t' + i} x={pad.l + i * iw + iw / 2} y={H - 5} textAnchor="middle" className="lbl">{d.label}</text>
-            ) : null,
-          )}
+      {data.map((d, i) => {
+        if (!showLabel(i)) return null
+        const lx = pad.l + i * iw + iw / 2
+        return (
+          <text key={'t' + i} x={lx} y={H - 4} textAnchor="middle" className="lbl">{d.label}</text>
+        )
+      })}
     </svg>
   )
 }
@@ -796,17 +790,18 @@ function HomeScreen({ st, hasActive, onOpenSettings, onOpenCalc, onResume }: {
   }, [filtered, st.workouts])
 
   const volSeries = useMemo(() => {
-    const weeks: { label: string; vol: number }[] = []
-    const thisMon = mondayOf(Date.now())
-    for (let i = 7; i >= 0; i--) {
-      const start = thisMon - i * 7 * DAY
-      const vol = st.workouts
-        .filter((w) => w.startedAt >= start && w.startedAt < start + 7 * DAY)
-        .reduce((a, w) => a + w.volume, 0)
-      weeks.push({ label: fmtDateShort(start), vol: Math.round(vol) })
-    }
-    return weeks
-  }, [st.workouts])
+    const spec =
+      period === 'week' ? (['day', 7] as const)
+      : period === 'month' ? (['week', 5] as const)
+      : period === 'year' ? (['month', 12] as const)
+      : (['month', null] as const)
+    return trimLeading(bucketMetric(st.workouts, spec[0], spec[1], 'volume'))
+  }, [st.workouts, period])
+  const volTitle =
+    period === 'week' ? 'Daily volume · this week'
+    : period === 'month' ? 'Weekly volume · last 5 weeks'
+    : period === 'year' ? 'Monthly volume · last 12 months'
+    : 'Monthly volume · all time'
 
   const recent = useMemo(
     () => [...st.workouts].sort((a, b) => b.startedAt - a.startedAt).slice(0, 3),
@@ -860,7 +855,7 @@ function HomeScreen({ st, hasActive, onOpenSettings, onOpenCalc, onResume }: {
           </div>
 
           <div className="gh2-card gh2-rise" style={{ marginTop: 16, animationDelay: '240ms' }}>
-            <div className="gh2-k">Weekly volume · last 8 weeks</div>
+            <div className="gh2-k">{volTitle}</div>
             <div style={{ height: 150 }}><GBarChart data={volSeries} /></div>
           </div>
 
@@ -999,7 +994,10 @@ function ProfileScreen({ st }: { st: GhisaState }) {
 
   const sorted = useMemo(() => [...st.workouts].sort((a, b) => b.startedAt - a.startedAt), [st.workouts])
   const w = sorted.find((x) => x.id === detail)
-  const series = useMemo(() => weeklyMetric(st.workouts, range, metric), [st.workouts, range, metric])
+  const series = useMemo(
+    () => trimLeading(range === 52 ? bucketMetric(st.workouts, 'month', 12, metric) : bucketMetric(st.workouts, 'week', range, metric)),
+    [st.workouts, range, metric],
+  )
   const rangeTotal = series.reduce((a, x) => a + x.vol, 0)
   const kg = latestWeight(st.measures)
   const bodyline = [st.settings.heightCm ? st.settings.heightCm + ' cm' : null, kg ? kg + ' kg' : null]
