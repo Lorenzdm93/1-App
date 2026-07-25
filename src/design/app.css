@@ -2941,7 +2941,7 @@ button.card:active { transform: scale(0.988); transition: transform var(--dur-1)
 
 /* --- the ring language --- */
 .ring { position: relative; display: grid; place-items: center; }
-.ring svg { display: block; }
+.ring svg { display: block; overflow: visible; }
 .ring-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 2px; }
 .wp-ring-wrap, .one-ring-wrap { display: grid; place-items: center; padding: 6px 0 2px; }
 .wp-ring-v { font-family: var(--font-display); font-size: 40px; font-weight: 650; line-height: 1; }
@@ -5680,3 +5680,7 @@ img, svg { -webkit-user-drag: none; }
 .rcp-item:last-child { border-bottom: 0; }
 .rcp-item .rcp-row { border-bottom: 0; }
 .rcp-adv { font-size: 12px; color: var(--dim); line-height: 1.55; padding: 0 0 11px 21px; margin-top: -3px; }
+
+/* v0.12.2 — ring glow may breathe past the SVG box; never clip it square */
+.ring, .ring-wrap, .ring-item { overflow: visible; }
+.ring-item svg { overflow: visible; }

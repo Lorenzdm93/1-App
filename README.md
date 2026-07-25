@@ -27,6 +27,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.12.2 — the glow breathes, SANA goes gold**
+
+The ring gauges' soft glow was being clipped square: the value arc's drop-shadow extends past the SVG viewport, and SVG hides overflow by default — so the fade died at the box edge. Rings (hero and per-module) now declare `overflow: visible` and the glow falls off naturally in every direction. SANA's accent moved from teal-green to **gold** (`#e0bf5c` dark / `#a8821f` light) — unmistakable next to GROVE's green, RESPIRO's jade and ORA's teal, and it suits the supplement-brass vibe.
+
 **New in v0.12.1 — recap coaching, a general philosophy, and the pill finally equal**
 
 The Profile weekly recap now carries each module's **own coaching line** — the same generators behind Today's Next moves — so a short week reads "add ~240 kg across your remaining sessions" or "ten breathing minutes a day closes it," per module, under its numbers. The Philosophy was rewritten as a **general introduction**: 1% weekly, compounded; every module an instrument feeding one weekly score; the bar grows from your own pace — with the exact arithmetic deliberately left to the engine page (no more duplicated mechanics). The floating pill's active highlight was content-sized, so SETTINGS made a wider blob than TODAY — tabs are now fixed at 88px each, identical blob whichever is active. And the **settings icon is one design everywhere**: the slider-rails glyph now serves the main tab, every module's Settings tab, and GHISA's header.
