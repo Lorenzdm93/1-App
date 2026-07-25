@@ -1,7 +1,7 @@
 import { cadenceStore, weekCompletion, weekAdvice } from './model'
 import { weekStartKey, todayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import Screen from './Screen'
+import Screen, { CadenceSettingsExtra } from './Screen'
 import Widget from './Widget'
 
 /** The prototype's waveform mark — the Cadence logo, unboxed. */
@@ -66,6 +66,7 @@ const cadence: ModuleDefinition = {
   ],
   Icon,
   Screen,
+  SettingsExtra: CadenceSettingsExtra,
   Widget,
   weekly: {
     label: 'habits',

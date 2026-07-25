@@ -277,3 +277,27 @@ export function useNumField(initial: string) {
   const [raw, setRaw] = useState(initial)
   return { raw, setRaw, value: parseNum(raw) }
 }
+
+/**
+ * Pre-launch only: every module offers tagged sample data so the product can
+ * be seen fully alive. Seeding is idempotent (it re-rolls); removal is
+ * surgical — only tagged records leave, user data is never touched.
+ */
+export function SampleDataBlock({ seeded, onSeed, onRemove }: {
+  seeded: boolean
+  onSeed: () => void
+  onRemove: () => void
+}) {
+  return (
+    <div className="setx-demo">
+      <p>
+        <b>Sample data.</b> Fill this module with plausible history to see it fully
+        alive — tagged throughout, removable in one tap, never mixed into your own records.
+      </p>
+      <div className="row">
+        <button className="btn btn-primary btn-sm" onClick={onSeed}>{seeded ? 'Re-roll sample data' : 'Load sample data'}</button>
+        {seeded && <button className="btn btn-ghost btn-sm" onClick={onRemove}>Remove sample data</button>}
+      </div>
+    </div>
+  )
+}

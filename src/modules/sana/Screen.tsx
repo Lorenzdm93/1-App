@@ -4,13 +4,14 @@ import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
 import { todayKey, shiftDay } from '../../core/dates'
 import { toast } from '../../core/toast'
-import { Sheet, ConfirmSheet, Empty, Seg, Field, StatBox } from '../../app/ui'
+import { Sheet, ConfirmSheet, Empty, Seg, Field, StatBox, SampleDataBlock } from '../../app/ui'
 import {
-  sanaStore, setStackDays, untakeMany, setLogMethod, SLOTS, FORMS, STACK_COLORS, STACK_EMOJIS,
+sanaStore, setStackDays, untakeMany, setLogMethod, SLOTS, FORMS, STACK_COLORS, STACK_EMOJIS,
   dueOn, isTaken, takeDose, takeMany, followedOn, toggleFollow,
   addStack, updateStack, deleteStack, addCompound, linkCompound, unlinkCompound, updateCompound,
   dayCount, historyStats, compoundById,
-  type Compound, type Stack, type Slot, type Form,
+  type Compound, type Stack, type Slot, type Form, seedDemo, removeDemo, hasDemo,
+
 } from './model'
 import { LIBRARY, libraryByName, type LibraryEntry } from './library'
 
@@ -805,4 +806,15 @@ export default function SanaScreen({ tab = 'today' }: { tab?: string }) {
   if (tab === 'history') return <HistoryTab />
   if (tab === 'library') return <LibraryTab />
   return <TodayTab onGoStacks={() => navigate('/m/sana/stacks')} />
+}
+
+export function SanaSettingsExtra() {
+  const st = useStore(sanaStore)
+  return (
+    <SampleDataBlock
+      seeded={hasDemo(st)}
+      onSeed={() => { seedDemo(); toast('Sample stacks loaded') }}
+      onRemove={() => { removeDemo(); toast('Sample data removed') }}
+    />
+  )
 }

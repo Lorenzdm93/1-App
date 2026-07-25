@@ -1,4 +1,6 @@
 /**
+import { SampleDataBlock } from '../../app/ui'
+import { toast } from '../../core/toast'
  * GHISA — 1:1 port of the standalone prototype (forged-iron dark UI,
  * chalk text, ember accent). No Tailwind, no lucide, no recharts:
  * gh2-* classes, local stroke icons, hand-rolled SVG charts.
@@ -10,7 +12,7 @@ import { navigate } from '../../core/router'
 import { mediaUrls } from './media'
 import { runFinishIntegrations, type IntegrationResult } from './integrations'
 import {
-  ghisaStore,
+ghisaStore,
   ghisaUi,
   exerciseById,
   startWorkout,
@@ -69,7 +71,8 @@ import {
   type Period,
   type FinishResult,
   type Measure,
-  type ProfileMetric,
+  type ProfileMetric, removeDemo, hasDemo,
+
 } from './model'
 
 const pf = (v: string): number => parseFloat(v.replace(',', '.')) || 0
@@ -1600,5 +1603,16 @@ export default function GhisaScreen({ tab = 'home' }: { tab?: string }) {
       <SettingsSheet st={st} open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <RMCalcSheet open={calcOpen} onClose={() => setCalcOpen(false)} />
     </>
+  )
+}
+
+export function GhisaSettingsExtra() {
+  const st = useStore(ghisaStore)
+  return (
+    <SampleDataBlock
+      seeded={hasDemo(st)}
+      onSeed={() => { seedDemo(); toast('Sample training history loaded') }}
+      onRemove={() => { removeDemo(); toast('Sample data removed') }}
+    />
   )
 }

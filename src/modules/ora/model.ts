@@ -118,6 +118,8 @@ export interface OraState {
   eating: { startTs: number; windowH: number } | null
   /** Milestone ids already celebrated — so unlocks toast exactly once. */
   celebrated: string[]
+  /** Sample-data bookkeeping — which weight/hydration entries the seeder created. */
+  demo?: { weightTs: number[]; hydrationDays: string[] }
 }
 
 const DEFAULTS: OraState = {
@@ -415,4 +417,91 @@ export function fastMinutesByDay(fasts: readonly Fast[]): Map<string, number> {
     m.set(d, (m.get(d) ?? 0) + (f.endTs - f.startTs) / 60_000)
   }
   return m
+}
+
+/* ---------------- pre-launch sample data (tagged '-demo') ---------------- */
+
+export function hasDemo(st: OraState): boolean {
+  return st.fasts.some((f) => f.id.endsWith('-demo'))
+}
+
+/** Eleven fasts over ~3 weeks (16:8 rhythm, a couple early, one 24h), a gentle
+    weight trend and a few hydrated days. Events are tagged too, so Today stays honest. */
+export function seedDemo(now = Date.now()): void {
+  removeDemo()
+  const DAY = 86_400_000
+  const HOUR = 3_600_000
+  const plan: { daysAgo: number; targetH: number; actualH: number; protocolId: string }[] = [
+    { daysAgo: 20, targetH: 16, actualH: 16.4, protocolId: 'p168' },
+    { daysAgo: 19, targetH: 16, actualH: 16.1, protocolId: 'p168' },
+    { daysAgo: 17, targetH: 16, actualH: 12.5, protocolId: 'p168' },
+    { daysAgo: 16, targetH: 16, actualH: 17.2, protocolId: 'p168' },
+    { daysAgo: 14, targetH: 18, actualH: 18.3, protocolId: 'p186' },
+    { daysAgo: 12, targetH: 16, actualH: 16.6, protocolId: 'p168' },
+    { daysAgo: 10, targetH: 24, actualH: 24.8, protocolId: 'e24' },
+    { daysAgo: 7, targetH: 16, actualH: 14.1, protocolId: 'p168' },
+    { daysAgo: 5, targetH: 16, actualH: 16.2, protocolId: 'p168' },
+    { daysAgo: 3, targetH: 16, actualH: 16.9, protocolId: 'p168' },
+    { daysAgo: 1, targetH: 16, actualH: 16.3, protocolId: 'p168' },
+  ]
+  const fasts: Fast[] = plan.map((p) => {
+    const endTs = now - p.daysAgo * DAY - 4 * HOUR
+    return {
+      id: uid() + '-demo',
+      startTs: endTs - p.actualH * HOUR,
+      endTs,
+      targetH: p.targetH,
+      protocolId: p.protocolId,
+      hit: p.actualH >= p.targetH,
+    }
+  })
+  const weightTs: number[] = []
+  const weights: WeightEntry[] = [21, 16, 11, 6, 1].map((d, i) => {
+    const ts = now - d * DAY - 2 * HOUR
+    weightTs.push(ts)
+    return { ts, kg: Math.round((79.6 - i * 0.4) * 10) / 10 }
+  })
+  const hydrationDays: string[] = []
+  const hydration = { ...oraStore.get().hydration }
+  for (const d of [3, 2, 1]) {
+    const key = dayKey(now - d * DAY)
+    if (hydration[key] === undefined) {
+      hydration[key] = 5 + d
+      hydrationDays.push(key)
+    }
+  }
+  const events = fasts.map((f) => ({
+    id: uid() + '-demo',
+    module: 'ora',
+    kind: 'fast',
+    ts: f.endTs,
+    value: Math.round(elapsedH(f.startTs, f.endTs) * 10) / 10,
+    unit: 'h',
+    meta: { target: f.targetH, hit: f.hit },
+  }))
+  oraStore.set((x) => ({
+    ...x,
+    fasts: [...fasts].sort((a, b) => b.endTs - a.endTs).concat(x.fasts).sort((a, b) => b.endTs - a.endTs),
+    weights: [...weights.reverse(), ...x.weights],
+    hydration,
+    demo: { weightTs, hydrationDays },
+  }))
+  eventsStore.set((evs) => [...events, ...evs].sort((a, b) => b.ts - a.ts))
+}
+
+export function removeDemo(): void {
+  const marks = oraStore.get().demo
+  oraStore.set((x) => {
+    const hydration = { ...x.hydration }
+    for (const d of marks?.hydrationDays ?? []) delete hydration[d]
+    const wts = new Set(marks?.weightTs ?? [])
+    return {
+      ...x,
+      fasts: x.fasts.filter((f) => !f.id.endsWith('-demo')),
+      weights: x.weights.filter((w) => !wts.has(w.ts)),
+      hydration,
+      demo: undefined,
+    }
+  })
+  eventsStore.set((evs) => evs.filter((e) => !(e.module === 'ora' && e.id.endsWith('-demo'))))
 }

@@ -27,6 +27,12 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.11.1 — mobile hardening + sample data everywhere**
+
+The app now behaves like an instrument, not a document: long-pressing no longer selects text or pops the iOS Copy/Translate callout, and images can't be drag-lifted — while every input and textarea keeps normal text selection for actual typing. Inputs are pinned to 16px so iOS stops zoom-jumping the page when a field gains focus. Notch fixes: GHISA's full-screen exercise sheet, the live-workout header and the media lightbox all pad below the status bar via safe-area insets (the tab bar and bottom sheets were already safe).
+
+Every module now offers **Sample data** in its settings (gear → module): load a few weeks of plausible history to see the product fully alive, re-roll it, or remove it in one tap. All of it is tagged end to end — workout/habit/stack/fast ids carry a marker, and entries without ids (Caliber tests, SANA doses, ORA weight/hydration) are tracked by explicit bookkeeping — so removal is surgical and user data is never touched. GHISA's older demo loader was retro-tagged and gained the surgical remove it never had. Sample focus minutes, breathing sessions and fasts flow through the real integration seams, so the CADENCE bars and ticks light up too. The whole feature strips out before launch with one grep for the tagged blocks.
+
 **New in v0.11.0 — ORA, and the modules start talking to each other**
 
 The Respiro **Sound tab is fixed** — the rebuilt root was routing on a tab id that didn't exist ('tools' vs the real 'sound'), so the tab rendered nothing. One word.

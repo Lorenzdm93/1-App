@@ -4,9 +4,9 @@ import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
 import { todayKey, shiftDay, lastNDayKeys } from '../../core/dates'
 import { toast } from '../../core/toast'
-import { Sheet, ConfirmSheet, Empty, Field, StatBox } from '../../app/ui'
+import { Sheet, ConfirmSheet, Empty, Field, StatBox, SampleDataBlock } from '../../app/ui'
 import {
-  cadenceStore,
+cadenceStore,
   activeHabits,
   habitById,
   isChecked,
@@ -42,7 +42,8 @@ import {
   PALETTE,
   type Habit,
   type HabitType,
-  type YearCell,
+  type YearCell, seedDemo, removeDemo, hasDemo,
+
 } from './model'
 
 /* Cross-tab handoff: Month/Year cells open their day in Today. Consumed on mount. */
@@ -953,5 +954,16 @@ export default function CadenceScreen({ tab = 'today' }: { tab?: string }) {
         key={managing ? managing.id : 'none'}
       />
     </>
+  )
+}
+
+export function CadenceSettingsExtra() {
+  const st = useStore(cadenceStore)
+  return (
+    <SampleDataBlock
+      seeded={hasDemo(st)}
+      onSeed={() => { seedDemo(); toast('Sample habits loaded') }}
+      onRemove={() => { removeDemo(); toast('Sample data removed') }}
+    />
   )
 }

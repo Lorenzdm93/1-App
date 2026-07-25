@@ -62,6 +62,8 @@ export interface SanaState {
   followOverrides: Record<string, string[]>
   /** dayKey → compound ids taken. */
   taken: Record<string, string[]>
+  /** Sample-data bookkeeping: exactly which doses the seeder added, per day. */
+  demoTaken?: Record<string, string[]>
 }
 
 export const STACK_COLORS: readonly string[] = [
@@ -401,4 +403,78 @@ export function weekAdherence(st: SanaState, weekStart: string, today = todayKey
 
 export function setLogMethod(m: 'stack' | 'slot'): void {
   sanaStore.set((s) => ({ ...s, logMethod: m }))
+}
+
+/* ---------------- pre-launch sample data (tagged '-demo') ---------------- */
+
+export function hasDemo(st: SanaState): boolean {
+  return st.stacks.some((k) => k.id.endsWith('-demo'))
+}
+
+/** Two stacks + two weeks of mostly-taken days. Compounds are found in your
+    library by name, or created as tagged samples when absent — a fresh install
+    seeds just as fully. Removal is surgical either way. */
+export function seedDemo(now = Date.now()): void {
+  removeDemo()
+  const st = sanaStore.get()
+  const created: Compound[] = []
+  const ensure = (re: RegExp, spec: Omit<Compound, 'id' | 'createdTs'>): string => {
+    const hit = st.compounds.find((c) => re.test(c.name))
+    if (hit) return hit.id
+    const c: Compound = { id: uid() + '-demo', createdTs: now - 15 * 86_400_000, ...spec }
+    created.push(c)
+    return c.id
+  }
+  const morning = [
+    ensure(/vitamin d/i, { name: 'Vitamin D3', chem: 'cholecalciferol', amount: '4000', unit: 'IU', form: 'softgel', slot: 'morning', note: 'With a fatty meal' }),
+    ensure(/omega/i, { name: 'Omega-3', chem: 'EPA · DHA', amount: '1000', unit: 'mg', form: 'softgel', slot: 'morning', note: 'With food' }),
+    ensure(/creatine/i, { name: 'Creatine', chem: 'monohydrate', amount: '5', unit: 'g', form: 'powder', slot: 'morning', note: 'Any time — consistency beats timing' }),
+  ]
+  const evening = [
+    ensure(/magnesium/i, { name: 'Magnesium', chem: 'glycinate', amount: '300', unit: 'mg', form: 'capsule', slot: 'evening', note: 'An hour before bed' }),
+    ensure(/^zinc/i, { name: 'Zinc', chem: 'picolinate', amount: '15', unit: 'mg', form: 'capsule', slot: 'evening', note: 'Away from coffee' }),
+  ]
+  const stacks: Stack[] = [
+    { id: uid() + '-demo', name: 'Morning · sample', emoji: '☀️', color: STACK_COLORS[0], compoundIds: morning, createdTs: now - 15 * 86_400_000 },
+    { id: uid() + '-demo', name: 'Evening · sample', emoji: '😴', color: STACK_COLORS[3], compoundIds: evening, createdTs: now - 15 * 86_400_000 },
+  ]
+  const added: Record<string, string[]> = {}
+  const taken = { ...st.taken }
+  for (let i = 14; i >= 1; i--) {
+    if (i % 6 === 2) continue
+    const d = shiftDay(dayKey(now), -i)
+    const ids = [...morning, ...(i % 4 === 1 ? [] : evening)]
+    const existing = new Set(taken[d] ?? [])
+    const fresh = ids.filter((id) => !existing.has(id))
+    if (fresh.length === 0) continue
+    added[d] = fresh
+    taken[d] = [...(taken[d] ?? []), ...fresh]
+  }
+  sanaStore.set((x) => ({
+    ...x,
+    compounds: [...x.compounds, ...created],
+    stacks: [...x.stacks, ...stacks],
+    taken,
+    demoTaken: added,
+  }))
+}
+
+export function removeDemo(): void {
+  sanaStore.set((x) => {
+    const taken = { ...x.taken }
+    const marks = x.demoTaken ?? {}
+    for (const d of Object.keys(marks)) {
+      const drop = new Set(marks[d])
+      const kept = (taken[d] ?? []).filter((id) => !drop.has(id))
+      if (kept.length) taken[d] = kept
+      else delete taken[d]
+    }
+    return {
+      ...x,
+      compounds: x.compounds.filter((c) => !c.id.endsWith('-demo')),
+      stacks: x.stacks.filter((k) => !k.id.endsWith('-demo')),
+      taken,
+      demoTaken: undefined,
+    }
+  })
 }

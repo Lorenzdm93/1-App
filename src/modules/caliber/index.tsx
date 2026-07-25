@@ -2,7 +2,7 @@ import { caliberStore } from './model'
 import { oneStore } from '../../core/one'
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import Screen from './Screen'
+import Screen, { CaliberSettingsExtra } from './Screen'
 import Widget from './Widget'
 import QuickActions from './QuickActions'
 
@@ -68,6 +68,7 @@ const caliber: ModuleDefinition = {
   ],
   Icon,
   Screen,
+  SettingsExtra: CaliberSettingsExtra,
   Widget,
   QuickActions,
   weekly: {

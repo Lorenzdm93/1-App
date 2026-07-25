@@ -3,7 +3,7 @@ import { useStore } from '../../core/hooks'
 import { logEvent, eventsStore } from '../../core/events'
 import { formatDuration, dayKey, todayKey, lastNDayKeys } from '../../core/dates'
 import { toast } from '../../core/toast'
-import { Sheet, ConfirmSheet, Toggle, StatBox } from '../../app/ui'
+import { Sheet, ConfirmSheet, Toggle, StatBox, SampleDataBlock } from '../../app/ui'
 import { Bars } from '../../app/charts'
 import {
   TECHNIQUES,
@@ -23,7 +23,7 @@ import {
   type CustomPhases,
 } from './stage'
 import {
-  respiroStore,
+respiroStore,
   selectProtocol,
   consumeAutostart,
   setCustom,
@@ -36,7 +36,8 @@ import {
   removeSoundItem,
   parseYouTube,
   youtubeEmbedUrl,
-  type SoundItem,
+  type SoundItem, seedDemo, removeDemo, hasDemo,
+
 } from './model'
 
 const MIN_SESSION_MS = 30_000
@@ -1096,5 +1097,16 @@ export default function RespiroScreen({ tab = 'practice' }: { tab?: string }) {
         </div>
       )}
     </>
+  )
+}
+
+export function RespiroSettingsExtra() {
+  useStore(respiroStore)
+  return (
+    <SampleDataBlock
+      seeded={hasDemo()}
+      onSeed={() => { seedDemo(); toast('Sample sessions loaded') }}
+      onRemove={() => { removeDemo(); toast('Sample data removed') }}
+    />
   )
 }

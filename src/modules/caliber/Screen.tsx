@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { toast } from '../../core/toast'
-import { Seg, Field, parseNum, StatBox } from '../../app/ui'
+import { Seg, Field, parseNum, StatBox, SampleDataBlock } from '../../app/ui'
 import { Line } from '../../app/charts'
 import {
   LIFTS,
@@ -21,7 +21,7 @@ import {
   liftById,
   type Sex,
 } from './formulas'
-import { caliberStore, patchCaliber, logTest } from './model'
+import { caliberStore, patchCaliber, logTest, seedDemo, removeDemo, hasDemo } from './model'
 
 /* ---------- percentile axis (YOU vs AIM) ---------- */
 
@@ -442,4 +442,15 @@ export default function CaliberScreen({ tab = 'test' }: { tab?: string }) {
   if (tab === 'progress') return <ProgressTab />
   if (tab === 'standards') return <StandardsTab />
   return <TestTab />
+}
+
+export function CaliberSettingsExtra() {
+  const st = useStore(caliberStore)
+  return (
+    <SampleDataBlock
+      seeded={hasDemo(st)}
+      onSeed={() => { seedDemo(); toast('Sample strength tests loaded') }}
+      onRemove={() => { removeDemo(); toast('Sample data removed') }}
+    />
+  )
 }

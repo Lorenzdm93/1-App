@@ -388,13 +388,13 @@ export function makeDemoWorkouts(now = Date.now()): Workout[] {
           const drop = i === nSets - 1 ? 0.95 : 1
           const weight = round2p5((base + prog) * drop + (Math.random() < 0.3 ? 2.5 : 0))
           const reps = 8 + Math.floor(Math.random() * 3) - (i === 0 ? 0 : Math.floor(Math.random() * 2))
-          sets.push({ id: uid(), type: 'N', weight, reps: Math.max(5, reps), done: true, prs: [] })
+          sets.push({ id: uid() + '-demo', type: 'N', weight, reps: Math.max(5, reps), done: true, prs: [] })
         }
-        return { id: uid(), exerciseId: exId, supersetGroup: null, sets }
+        return { id: uid() + '-demo', exerciseId: exId, supersetGroup: null, sets }
       })
       const totals = workoutTotals(entries)
       workouts.push({
-        id: uid(), name: plan.name, startedAt: start,
+        id: uid() + '-demo', name: plan.name, startedAt: start,
         duration: 52 + Math.floor(Math.random() * 22),
         entries, ...totals, prCount: 0,
       })
@@ -454,7 +454,7 @@ function resolveExercise(name: string, pool: Exercise[]): { id: string; pool: Ex
   const alias = NAME_ALIAS[key]
   if (alias && pool.some((e) => e.id === alias)) return { id: alias, pool }
   const custom: Exercise = {
-    id: 'custom-' + uid(),
+    id: 'custom-' + uid() + '-demo',
     name: name.trim(),
     muscle: guessMuscle(name),
     equipment: 'Custom',
@@ -494,7 +494,7 @@ export function migrateGhisa(data: unknown, _fromVersion: number): GhisaState {
         const sets: WSet[] = (ex.sets ?? [])
           .filter((x) => x.done)
           .map((x) => ({
-            id: x.id ?? uid(),
+            id: x.id ?? uid() + '-demo',
             type: OLD_TYPE[x.type ?? 'normal'] ?? 'N',
             weight: Number(x.weight) || 0,
             reps: Number(x.reps) || 0,
@@ -504,13 +504,13 @@ export function migrateGhisa(data: unknown, _fromVersion: number): GhisaState {
         if (sets.length === 0) continue
         const r = resolveExercise(ex.name, pool)
         pool = r.pool
-        entries.push({ id: ex.id ?? uid(), exerciseId: r.id, supersetGroup: null, sets })
+        entries.push({ id: ex.id ?? uid() + '-demo', exerciseId: r.id, supersetGroup: null, sets })
       }
       if (entries.length === 0) continue
       const totals = workoutTotals(entries)
       const startTs = s.startTs ?? Date.now()
       workouts.push({
-        id: s.id ?? uid(),
+        id: s.id ?? uid() + '-demo',
         name: s.name?.trim() || 'Workout',
         startedAt: startTs,
         duration: Math.max(1, ((s.endTs ?? startTs + 45 * 60000) - startTs) / 60000),
@@ -530,7 +530,7 @@ export function migrateGhisa(data: unknown, _fromVersion: number): GhisaState {
         pool = r.pool
         items.push({ exerciseId: r.id, sets: Math.max(1, Math.min(10, te.targetSets ?? 3)) })
       }
-      if (items.length > 0) templates.push({ id: t.id ?? 'tpl-' + uid(), name: t.name?.trim() || 'Template', items })
+      if (items.length > 0) templates.push({ id: t.id ?? 'tpl-' + uid() + '-demo', name: t.name?.trim() || 'Template', items })
     }
 
     let active: ActiveWorkout | null = null
@@ -542,11 +542,11 @@ export function migrateGhisa(data: unknown, _fromVersion: number): GhisaState {
         const r = resolveExercise(ex.name, pool)
         pool = r.pool
         entries.push({
-          id: ex.id ?? uid(),
+          id: ex.id ?? uid() + '-demo',
           exerciseId: r.id,
           supersetGroup: null,
           sets: (ex.sets ?? []).map((x) => ({
-            id: x.id ?? uid(),
+            id: x.id ?? uid() + '-demo',
             type: OLD_TYPE[x.type ?? 'normal'] ?? 'N',
             weight: x.weight && x.weight > 0 ? String(x.weight) : '',
             reps: x.reps && x.reps > 0 ? String(x.reps) : '',
@@ -555,7 +555,7 @@ export function migrateGhisa(data: unknown, _fromVersion: number): GhisaState {
           })),
         })
       }
-      active = { id: oa.id ?? uid(), name: oa.name ?? '', startedAt: oa.startTs ?? Date.now(), entries }
+      active = { id: oa.id ?? uid() + '-demo', name: oa.name ?? '', startedAt: oa.startTs ?? Date.now(), entries }
     }
 
     return {
@@ -601,7 +601,7 @@ export function exerciseById(st: GhisaState, id: string): Exercise | undefined {
 }
 
 function blankSet(type: SetType = 'N', weight = ''): ActiveSet {
-  return { id: uid(), type, weight, reps: '', done: false, prs: [] }
+  return { id: uid() + '-demo', type, weight, reps: '', done: false, prs: [] }
 }
 
 /** Start empty or from a template. If a workout is already running, this is a no-op. */
@@ -610,13 +610,13 @@ export function startWorkout(tpl: Template | null): void {
     if (st.active) return st
     const entries: ActiveEntry[] = tpl
       ? tpl.items.map((it) => ({
-          id: uid(),
+          id: uid() + '-demo',
           exerciseId: it.exerciseId,
           supersetGroup: null,
           sets: Array.from({ length: it.sets }, () => blankSet()),
         }))
       : []
-    return { ...st, active: { id: uid(), name: tpl ? tpl.name : '', startedAt: Date.now(), entries } }
+    return { ...st, active: { id: uid() + '-demo', name: tpl ? tpl.name : '', startedAt: Date.now(), entries } }
   })
 }
 
@@ -666,7 +666,7 @@ export function addEntryFor(exerciseId: string): void {
     ...a,
     entries: [
       ...a.entries,
-      { id: uid(), exerciseId, supersetGroup: null, sets: [blankSet(), blankSet(), blankSet()] },
+      { id: uid() + '-demo', exerciseId, supersetGroup: null, sets: [blankSet(), blankSet(), blankSet()] },
     ],
   }))
 }
@@ -675,7 +675,7 @@ export function supersetWithNext(entryId: string): void {
   setActive((a) => {
     const idx = a.entries.findIndex((e) => e.id === entryId)
     if (idx < 0 || idx >= a.entries.length - 1) return a
-    const group = a.entries[idx].supersetGroup || a.entries[idx + 1].supersetGroup || uid()
+    const group = a.entries[idx].supersetGroup || a.entries[idx + 1].supersetGroup || uid() + '-demo'
     return {
       ...a,
       entries: a.entries.map((e, i) => (i === idx || i === idx + 1 ? { ...e, supersetGroup: group } : e)),
@@ -769,7 +769,17 @@ export function setRestSec(sec: number): void {
 }
 
 export function seedDemo(): void {
+  removeDemo()
   ghisaStore.set((st) => ({ ...st, workouts: [...st.workouts, ...makeDemoWorkouts()] }))
+}
+
+export function hasDemo(st: GhisaState): boolean {
+  return st.workouts.some((w) => w.id.endsWith('-demo'))
+}
+
+/** Surgical: only tagged sample workouts leave; user history is untouched. */
+export function removeDemo(): void {
+  ghisaStore.set((st) => ({ ...st, workouts: st.workouts.filter((w) => !w.id.endsWith('-demo')) }))
 }
 
 /** Removes demo/all workouts + custom exercises + templates back to seeds. Active survives nothing. */

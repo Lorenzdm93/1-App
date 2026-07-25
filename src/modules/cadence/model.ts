@@ -714,3 +714,75 @@ export function setCheckFraction(habitId: string, day: string, frac: number): vo
     return { ...s, progress }
   })
 }
+
+/* ---------------- pre-launch sample data (tagged '-demo') ---------------- */
+
+export function hasDemo(st: CadenceState): boolean {
+  return st.habits.some((h) => h.id.endsWith('-demo'))
+}
+
+/** Four habits with ~3 weeks of honest history: streaks, gaps, one slip, partial focus days. */
+export function seedDemo(now = Date.now()): void {
+  removeDemo()
+  const start = shiftDay(dayKey(now), -21)
+  const mk = (name: string, emoji: string, color: string, type: HabitType, targetMin?: number): Habit => ({
+    id: uid() + '-demo', name, emoji, color, type,
+    schedule: { mode: 'daily' }, startDate: start,
+    ...(targetMin ? { targetMin } : {}),
+    createdTs: now - 22 * 86_400_000,
+  })
+  const habits = [
+    mk('Focus time · sample', '🎯', PALETTE[0], 'build', 120),
+    mk('Read · sample', '📚', PALETTE[2], 'build'),
+    mk('Stretch · sample', '🌱', PALETTE[8], 'build'),
+    mk('No sugar · sample', '🍬', PALETTE[4], 'quit'),
+  ]
+  const checks: Record<string, string[]> = {}
+  const progress: Record<string, Record<string, number>> = {}
+  const slips: Record<string, string[]> = {}
+  for (let i = 21; i >= 1; i--) {
+    const d = shiftDay(dayKey(now), -i)
+    const done: string[] = []
+    if (i % 7 !== 3) done.push(habits[1].id)
+    if (i % 3 !== 1) done.push(habits[2].id)
+    if (i % 2 === 0) done.push(habits[0].id)
+    else if (i % 5 === 1) (progress[d] = progress[d] ?? {})[habits[0].id] = 0.5
+    if (done.length) checks[d] = done
+  }
+  slips[habits[3].id] = [shiftDay(dayKey(now), -9)]
+  const mergeDays = (a: Record<string, string[]>, b: Record<string, string[]>): Record<string, string[]> => {
+    const out = { ...a }
+    for (const d of Object.keys(b)) out[d] = [...(out[d] ?? []), ...b[d]]
+    return out
+  }
+  const mergeProg = (a: Record<string, Record<string, number>>, b: Record<string, Record<string, number>>): Record<string, Record<string, number>> => {
+    const out = { ...a }
+    for (const d of Object.keys(b)) out[d] = { ...(out[d] ?? {}), ...b[d] }
+    return out
+  }
+  cadenceStore.set((x) => ({
+    ...x,
+    habits: [...x.habits, ...habits],
+    checks: mergeDays(x.checks, checks),
+    progress: mergeProg(x.progress ?? {}, progress),
+    slips: { ...x.slips, ...slips },
+  }))
+}
+
+export function removeDemo(): void {
+  cadenceStore.set((x) => {
+    const ids = new Set(x.habits.filter((h) => h.id.endsWith('-demo')).map((h) => h.id))
+    const checks: Record<string, string[]> = {}
+    for (const d of Object.keys(x.checks)) {
+      const kept = x.checks[d].filter((id) => !ids.has(id))
+      if (kept.length) checks[d] = kept
+    }
+    const progress: Record<string, Record<string, number>> = {}
+    for (const d of Object.keys(x.progress ?? {})) {
+      const kept = Object.fromEntries(Object.entries((x.progress ?? {})[d]).filter(([id]) => !ids.has(id)))
+      if (Object.keys(kept).length) progress[d] = kept
+    }
+    const slips = Object.fromEntries(Object.entries(x.slips).filter(([id]) => !ids.has(id)))
+    return { ...x, habits: x.habits.filter((h) => !ids.has(h.id)), checks, progress, slips }
+  })
+}

@@ -5,7 +5,7 @@ import { wireSanaIntegrations } from './integrations'
 wireSanaIntegrations()
 import { todayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import SanaScreen from './Screen'
+import SanaScreen, { SanaSettingsExtra } from './Screen'
 import SanaWidget from './Widget'
 import SanaQuickActions from './QuickActions'
 
@@ -81,6 +81,7 @@ const sana: ModuleDefinition = {
     { id: 'library', label: 'Library', Icon: BookIcon },
   ],
   Screen: SanaScreen,
+  SettingsExtra: SanaSettingsExtra,
   Widget: SanaWidget,
   QuickActions: SanaQuickActions,
   weekly: {

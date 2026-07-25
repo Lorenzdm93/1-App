@@ -8,12 +8,13 @@ import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { todayKey, dayKey, lastNDayKeys } from '../../core/dates'
 import { toast } from '../../core/toast'
-import { Sheet, ConfirmSheet, Toggle, Field } from '../../app/ui'
+import { Sheet, ConfirmSheet, Toggle, Field, SampleDataBlock } from '../../app/ui'
 import {
-  oraStore, PROTOCOLS, protocolById, STAGES, stageFor, targetHoursFor, windowFastHours,
+oraStore, PROTOCOLS, protocolById, STAGES, stageFor, targetHoursFor, windowFastHours,
   setProtocol, setCustomH, setWindow, beginFast, setStartTime, endFast, deleteFast, editFast,
   logWeight, addGlass, setPhaseAlerts, elapsedH, oraStats, MILESTONES, claimNewMilestones,
-  dismissEating, type Fast, type Milestone, type OraState, type Stage,
+  dismissEating, type Fast, type Milestone, type OraState, type Stage, seedDemo, removeDemo, hasDemo,
+
 } from './model'
 
 const H = 3_600_000
@@ -677,6 +678,11 @@ export function OraSettingsExtra() {
         <b>Not medical advice.</b> Don't fast if you're pregnant, under 18, or have a history of disordered
         eating — talk to a doctor first. Break any fast that makes you feel faint, dizzy or unwell.
       </div>
+      <SampleDataBlock
+        seeded={hasDemo(st)}
+        onSeed={() => { seedDemo(); toast('Sample fasting history loaded') }}
+        onRemove={() => { removeDemo(); toast('Sample data removed') }}
+      />
     </div>
   )
 }

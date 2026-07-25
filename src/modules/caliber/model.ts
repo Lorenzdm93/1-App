@@ -23,6 +23,8 @@ export interface CaliberState {
   prs: Record<string, PR>
   /** Every logged test per lift, oldest → newest — chart fuel. */
   tests: Record<string, TestEntry[]>
+  /** Sample-data bookkeeping — timestamps the seeder created (tests carry no ids). */
+  demoTs?: number[]
   /** The aim: "top X%". 30 = stronger than 70% of the population. */
   aimTop: number
   /** Which lifts this lifter actually chases — no squat for a bad back is a valid life. */
@@ -116,4 +118,62 @@ export function logTest(liftId: string, estimate: number): boolean {
     meta: { lift: liftById(liftId).name },
   })
   return isPr
+}
+
+/* ---------------- pre-launch sample data (marker-tracked) ---------------- */
+
+export function hasDemo(st: CaliberState): boolean {
+  return (st.demoTs ?? []).length > 0
+}
+
+/** Eight weeks of believable strength tests on three lifts — enough for charts
+    and percentile movement. Entries carry no ids, so we track their timestamps. */
+export function seedDemo(now = Date.now()): void {
+  removeDemo()
+  const WEEK = 7 * 86_400_000
+  const plan: [string, number, number][] = [
+    ['squat', 92.5, 2.5],
+    ['bench', 72.5, 1.5],
+    ['deadlift', 120, 3],
+  ]
+  const demoTs: number[] = []
+  caliberStore.set((x) => {
+    const tests = { ...x.tests }
+    const prs = { ...x.prs }
+    for (const [lift, base, inc] of plan) {
+      if (!liftById(lift)) continue
+      const rows = [...(tests[lift] ?? [])]
+      for (let w = 8; w >= 1; w--) {
+        const ts = now - w * WEEK - 5 * 3_600_000 + (w % 3) * 3_600_000
+        const e1rm = Math.round((base + (8 - w) * inc) * 2) / 2
+        rows.push({ ts, e1rm })
+        demoTs.push(ts)
+        if (!prs[lift] || e1rm > prs[lift].e1rm) prs[lift] = { e1rm, ts }
+      }
+      tests[lift] = rows.sort((a, b) => a.ts - b.ts)
+    }
+    return { ...x, tests, prs, demoTs }
+  })
+}
+
+export function removeDemo(): void {
+  caliberStore.set((x) => {
+    const drop = new Set(x.demoTs ?? [])
+    if (drop.size === 0) return { ...x, demoTs: undefined }
+    const tests: typeof x.tests = {}
+    for (const lift of Object.keys(x.tests)) {
+      const kept = x.tests[lift].filter((t) => !drop.has(t.ts))
+      if (kept.length) tests[lift] = kept
+    }
+    const prs: typeof x.prs = {}
+    for (const lift of Object.keys(x.prs)) {
+      if (!drop.has(x.prs[lift].ts)) { prs[lift] = x.prs[lift]; continue }
+      const rest = tests[lift] ?? []
+      if (rest.length) {
+        const best = rest.reduce((a, b) => (b.e1rm > a.e1rm ? b : a))
+        prs[lift] = { e1rm: best.e1rm, ts: best.ts }
+      }
+    }
+    return { ...x, tests, prs, demoTs: undefined }
+  })
 }

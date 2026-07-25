@@ -1,5 +1,6 @@
 import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
+import { eventsStore } from '../../core/events'
 import { logEvent } from '../../core/events'
 import type { CustomPattern } from './protocols'
 
@@ -188,4 +189,30 @@ export function addSoundItem(url: string, name: string): SoundItem | null {
 
 export function removeSoundItem(id: string): void {
   respiroStore.set((s) => ({ ...s, soundLibrary: s.soundLibrary.filter((x) => x.id !== id) }))
+}
+
+/* ---------------- pre-launch sample data (tagged '-demo') ---------------- */
+
+export function hasDemo(): boolean {
+  return eventsStore.get().some((e) => e.module === 'respiro' && e.id.endsWith('-demo'))
+}
+
+/** Twelve sessions over two weeks — box, coherent, one long marea. Events only; your settings are untouched. */
+export function seedDemo(now = Date.now()): void {
+  removeDemo()
+  const DAY = 86_400_000
+  const mins = [6, 10, 5, 12, 8, 5, 15, 6, 10, 7, 5, 9]
+  const fresh = mins.map((m, i) => ({
+    id: uid() + '-demo',
+    module: 'respiro',
+    kind: 'session',
+    ts: now - (14 - i) * DAY - (i % 3) * 3_600_000,
+    value: m,
+    unit: 'min',
+  }))
+  eventsStore.set((evs) => [...fresh, ...evs].sort((a, b) => b.ts - a.ts))
+}
+
+export function removeDemo(): void {
+  eventsStore.set((evs) => evs.filter((e) => !(e.module === 'respiro' && e.id.endsWith('-demo'))))
 }

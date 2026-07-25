@@ -5,7 +5,7 @@ import { wireRespiroIntegrations } from './integrations'
 wireRespiroIntegrations()
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import Screen from './Screen'
+import Screen, { RespiroSettingsExtra } from './Screen'
 import Widget from './Widget'
 import QuickActions from './QuickActions'
 
@@ -64,6 +64,7 @@ const respiro: ModuleDefinition = {
   ],
   Icon,
   Screen,
+  SettingsExtra: RespiroSettingsExtra,
   Widget,
   QuickActions,
   weekly: {

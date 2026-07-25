@@ -1,7 +1,7 @@
 import { eventsStore } from '../../core/events'
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import Screen from './Screen'
+import Screen, { GhisaSettingsExtra } from './Screen'
 import Widget from './Widget'
 import QuickActions from './QuickActions'
 
@@ -72,6 +72,7 @@ const ghisa: ModuleDefinition = {
   ],
   Icon,
   Screen,
+  SettingsExtra: GhisaSettingsExtra,
   Widget,
   QuickActions,
   weekly: {
