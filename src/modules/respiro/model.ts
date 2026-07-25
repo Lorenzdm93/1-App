@@ -1,6 +1,7 @@
 import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
 import { eventsStore } from '../../core/events'
+import { resetLedger } from '../../core/one'
 import { logEvent } from '../../core/events'
 import type { CustomPattern } from './protocols'
 
@@ -201,7 +202,8 @@ export function hasDemo(): boolean {
 export function seedDemo(now = Date.now()): void {
   removeDemo()
   const DAY = 86_400_000
-  const mins = [6, 10, 5, 12, 8, 5, 15, 6, 10, 7, 5, 9]
+  /* Week-over-week growth: days 14–8 sum 42 min, days 7–3 sum 54 min. */
+  const mins = [5, 6, 5, 8, 6, 5, 7, 10, 12, 9, 8, 15]
   const fresh = mins.map((m, i) => ({
     id: uid() + '-demo',
     module: 'respiro',
@@ -211,8 +213,10 @@ export function seedDemo(now = Date.now()): void {
     unit: 'min',
   }))
   eventsStore.set((evs) => [...fresh, ...evs].sort((a, b) => b.ts - a.ts))
+  resetLedger()
 }
 
 export function removeDemo(): void {
   eventsStore.set((evs) => evs.filter((e) => !(e.module === 'respiro' && e.id.endsWith('-demo'))))
+  resetLedger()
 }

@@ -1,5 +1,6 @@
 import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
+import { resetLedger } from '../../core/one'
 import { logEvent, eventsStore } from '../../core/events'
 import { toast } from '../../core/toast'
 import { dayKey, todayKey, shiftDay, dayDiff, weekStartKey } from '../../core/dates'
@@ -724,7 +725,7 @@ export function hasDemo(st: CadenceState): boolean {
 /** Four habits with ~3 weeks of honest history: streaks, gaps, one slip, partial focus days. */
 export function seedDemo(now = Date.now()): void {
   removeDemo()
-  const start = shiftDay(dayKey(now), -21)
+  const start = shiftDay(dayKey(now), -28)
   const mk = (name: string, emoji: string, color: string, type: HabitType, targetMin?: number): Habit => ({
     id: uid() + '-demo', name, emoji, color, type,
     schedule: { mode: 'daily' }, startDate: start,
@@ -732,7 +733,7 @@ export function seedDemo(now = Date.now()): void {
     createdTs: now - 22 * 86_400_000,
   })
   const habits = [
-    mk('Focus time · sample', '🎯', PALETTE[0], 'build', 120),
+    mk('Focus time · sample', '🎯', PALETTE[0], 'build', 15),
     mk('Read · sample', '📚', PALETTE[2], 'build'),
     mk('Stretch · sample', '🌱', PALETTE[8], 'build'),
     mk('No sugar · sample', '🍬', PALETTE[4], 'quit'),
@@ -740,16 +741,27 @@ export function seedDemo(now = Date.now()): void {
   const checks: Record<string, string[]> = {}
   const progress: Record<string, Record<string, number>> = {}
   const slips: Record<string, string[]> = {}
-  for (let i = 21; i >= 1; i--) {
+  /* The two most recent CLOSED weeks (Monday-aligned) are perfect — those are
+     the weeks the 1% engine will crown; the third closed week is honestly
+     human, and days inside the current week ride the live score. */
+  const curWeek = weekStartKey(dayKey(now))
+  const perfectFrom = shiftDay(curWeek, -14)
+  const humanFrom = shiftDay(curWeek, -21)
+  for (let i = 27; i >= 1; i--) {
     const d = shiftDay(dayKey(now), -i)
+    if (d < humanFrom) continue
     const done: string[] = []
-    if (i % 7 !== 3) done.push(habits[1].id)
-    if (i % 3 !== 1) done.push(habits[2].id)
-    if (i % 2 === 0) done.push(habits[0].id)
-    else if (i % 5 === 1) (progress[d] = progress[d] ?? {})[habits[0].id] = 0.5
+    if (d >= perfectFrom && d < curWeek) {
+      done.push(habits[0].id, habits[1].id, habits[2].id)
+    } else {
+      if (i % 7 !== 3) done.push(habits[1].id)
+      if (i % 3 !== 1) done.push(habits[2].id)
+      if (i % 2 === 0) done.push(habits[0].id)
+      else if (i % 5 === 1) (progress[d] = progress[d] ?? {})[habits[0].id] = 0.5
+    }
     if (done.length) checks[d] = done
   }
-  slips[habits[3].id] = [shiftDay(dayKey(now), -9)]
+  slips[habits[3].id] = [shiftDay(humanFrom, 2)]
   const mergeDays = (a: Record<string, string[]>, b: Record<string, string[]>): Record<string, string[]> => {
     const out = { ...a }
     for (const d of Object.keys(b)) out[d] = [...(out[d] ?? []), ...b[d]]
@@ -767,6 +779,7 @@ export function seedDemo(now = Date.now()): void {
     progress: mergeProg(x.progress ?? {}, progress),
     slips: { ...x.slips, ...slips },
   }))
+  resetLedger()
 }
 
 export function removeDemo(): void {
@@ -785,4 +798,5 @@ export function removeDemo(): void {
     const slips = Object.fromEntries(Object.entries(x.slips).filter(([id]) => !ids.has(id)))
     return { ...x, habits: x.habits.filter((h) => !ids.has(h.id)), checks, progress, slips }
   })
+  resetLedger()
 }

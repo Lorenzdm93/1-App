@@ -7,8 +7,9 @@
  */
 import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
-import { logEvent } from '../../core/events'
-import { dayKey, todayKey, shiftDay } from '../../core/dates'
+import { logEvent, eventsStore } from '../../core/events'
+import { resetLedger } from '../../core/one'
+import { dayKey, todayKey, shiftDay, weekStartKey } from '../../core/dates'
 
 export type Mode = 'focus' | 'short' | 'long'
 export type PlantKind = 'shrub' | 'birch' | 'pine' | 'oak' | 'flower' | 'fern'
@@ -464,8 +465,11 @@ const DEMO_TASKS: readonly { name: string; planned: number; done: number }[] = [
   { name: 'Reading — sample', planned: 3, done: 1 },
 ]
 
-/** Six weeks of plausible tagged sessions + two tagged tasks. Idempotent-ish: call removeDemo first to re-roll. */
+/** Six weeks of tagged sessions shaped into a gentle growth curve (closed
+    weeks sum to exact rising totals, so the 1% engine reads real progress),
+    mirrored 1:1 into tagged focus events. Fully idempotent. */
 export function seedDemo(now = Date.now()): void {
+  removeDemo()
   const plants: Plant[] = []
   const MIN_CHOICES = [15, 25, 25, 25, 45, 60]
   for (let day = 0; day < 42; day++) {
@@ -473,9 +477,14 @@ export function seedDemo(now = Date.now()): void {
     const dow = d.getDay()
     const weekend = dow === 0 || dow === 6
     const roll = Math.random()
-    const count = weekend
+    let count = weekend
       ? (roll < 0.5 ? 0 : roll < 0.85 ? 1 : 2)
       : (roll < 0.12 ? 0 : roll < 0.4 ? 1 : roll < 0.75 ? 2 : roll < 0.93 ? 3 : 4)
+    /* The linked CADENCE habit needs every day of the two most recent CLOSED
+       weeks to carry focus — guarantee at least one session there. */
+    const dk = dayKey(d.getTime())
+    const cw = weekStartKey(dayKey(now))
+    if (dk < cw && dk >= shiftDay(cw, -14)) count = Math.max(1, count)
     for (let i = 0; i < count; i++) {
       const minutes = MIN_CHOICES[Math.floor(Math.random() * MIN_CHOICES.length)]
       const hour = 9 + Math.floor(Math.random() * 10)
@@ -485,6 +494,61 @@ export function seedDemo(now = Date.now()): void {
     }
   }
   plants.sort((a, b) => b.ts - a.ts)
+
+  /* Reshape closed demo weeks onto an exact growth curve: week -5 → 160 min,
+     each week +1.5%, largest plant absorbs the rounding residual. */
+  const curWeek = weekStartKey(dayKey(now))
+  const byWeek = new Map<string, Plant[]>()
+  for (const p of plants) {
+    const ws = weekStartKey(dayKey(p.ts))
+    if (ws >= curWeek) continue
+    const arr = byWeek.get(ws) ?? []
+    arr.push(p)
+    byWeek.set(ws, arr)
+  }
+  const floorDays = new Set<string>()
+  {
+    const cw = weekStartKey(dayKey(now))
+    for (let d = 1; d <= 14; d++) floorDays.add(shiftDay(cw, -d))
+  }
+  const weeks = [...byWeek.keys()].sort()
+  weeks.forEach((ws, idx) => {
+    const arr = byWeek.get(ws) as Plant[]
+    const target = Math.round(160 * Math.pow(1.02, idx))
+    const sum = arr.reduce((a, p) => a + p.minutes, 0)
+    if (sum <= 0) return
+    for (const p of arr) {
+      const floor = floorDays.has(dayKey(p.ts)) ? 15 : 5
+      p.minutes = Math.max(floor, Math.round((p.minutes * target) / sum / 5) * 5)
+    }
+  })
+  /* Growth guarantee: each closed week clears the previous by ≥2%. Boosts
+     only, so the per-day floors survive. */
+  let prevSum = 0
+  for (const ws of weeks) {
+    const arr = byWeek.get(ws) as Plant[]
+    let sum = arr.reduce((a, p) => a + p.minutes, 0)
+    const need = prevSum > 0 ? Math.ceil(prevSum * 1.02) + 2 : sum
+    if (sum < need) {
+      const big = arr.reduce((a, b) => (b.minutes > a.minutes ? b : a))
+      big.minutes += need - sum
+      sum = need
+    }
+    for (const p of arr) p.kind = kindForFocus(p.minutes)
+    prevSum = sum
+  }
+
+  const events = plants.map((p) => ({
+    id: uid() + '-demo',
+    module: 'grove',
+    kind: 'focus',
+    ts: p.ts,
+    value: p.minutes,
+    unit: 'min',
+    meta: { kind: p.kind },
+  }))
+  eventsStore.set((evs) => [...events, ...evs].sort((a, b) => b.ts - a.ts))
+
   const tasks: Task[] = DEMO_TASKS.map((t) => ({
     id: uid(), name: t.name, planned: t.planned, done: t.done, finished: false, createdTs: now, demo: true,
   }))
@@ -493,6 +557,7 @@ export function seedDemo(now = Date.now()): void {
     plants: [...plants, ...s.plants].slice(0, 800),
     tasks: [...s.tasks, ...tasks],
   }))
+  resetLedger()
 }
 
 /** Strips ONLY tagged sample entries — real sessions and tasks are untouchable here. */
@@ -506,6 +571,8 @@ export function removeDemo(): void {
       activeTaskId: tasks.some((t) => t.id === s.activeTaskId) ? s.activeTaskId : null,
     }
   })
+  eventsStore.set((evs) => evs.filter((e) => !(e.module === 'grove' && e.id.endsWith('-demo'))))
+  resetLedger()
 }
 
 export function hasDemo(st: GroveState): boolean {

@@ -35,3 +35,12 @@ export function setGoal(key: keyof OneState['goals'], value: number | undefined)
     return { ...s, goals }
   })
 }
+
+/**
+ * Pre-launch: sample-data loaders call this after touching history. Frozen
+ * weeks are recomputed from actual data on the next pulse — which also heals
+ * ledgers frozen before a module started emitting events.
+ */
+export function resetLedger(): void {
+  oneStore.set((s) => ({ ...s, weekLog: {} }))
+}

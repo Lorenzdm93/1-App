@@ -5,9 +5,10 @@
  * it never makes them.
  */
 import { uid } from '../../core/id'
+import { resetLedger } from '../../core/one'
 import { createPersistedStore } from '../../core/store'
 import { logEvent, eventsStore } from '../../core/events'
-import { dayKey, todayKey, shiftDay } from '../../core/dates'
+import { dayKey, todayKey, shiftDay, weekStartKey } from '../../core/dates'
 
 export type Slot = 'morning' | 'midday' | 'evening' | 'night'
 export type Form = 'capsule' | 'softgel' | 'tablet' | 'powder' | 'liquid'
@@ -440,10 +441,13 @@ export function seedDemo(now = Date.now()): void {
   ]
   const added: Record<string, string[]> = {}
   const taken = { ...st.taken }
-  for (let i = 14; i >= 1; i--) {
-    if (i % 6 === 2) continue
+  const curWeek = weekStartKey(dayKey(now))
+  const perfectFrom = shiftDay(curWeek, -14)
+  for (let i = 27; i >= 1; i--) {
     const d = shiftDay(dayKey(now), -i)
-    const ids = [...morning, ...(i % 4 === 1 ? [] : evening)]
+    const perfect = d >= perfectFrom
+    if (!perfect && i % 6 === 2) continue
+    const ids = [...morning, ...(!perfect && i % 4 === 1 ? [] : evening)]
     const existing = new Set(taken[d] ?? [])
     const fresh = ids.filter((id) => !existing.has(id))
     if (fresh.length === 0) continue
@@ -457,6 +461,7 @@ export function seedDemo(now = Date.now()): void {
     taken,
     demoTaken: added,
   }))
+  resetLedger()
 }
 
 export function removeDemo(): void {
@@ -477,4 +482,5 @@ export function removeDemo(): void {
       demoTaken: undefined,
     }
   })
+  resetLedger()
 }

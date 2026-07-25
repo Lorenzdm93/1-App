@@ -1,4 +1,5 @@
 import { createPersistedStore } from '../../core/store'
+import { resetLedger } from '../../core/one'
 import { logEvent } from '../../core/events'
 import { liftById, type Sex } from './formulas'
 
@@ -154,6 +155,7 @@ export function seedDemo(now = Date.now()): void {
     }
     return { ...x, tests, prs, demoTs }
   })
+  resetLedger()
 }
 
 export function removeDemo(): void {
@@ -176,4 +178,5 @@ export function removeDemo(): void {
     }
     return { ...x, tests, prs, demoTs: undefined }
   })
+  resetLedger()
 }

@@ -1,11 +1,11 @@
 /**
-import { SampleDataBlock } from '../../app/ui'
-import { toast } from '../../core/toast'
  * GHISA — 1:1 port of the standalone prototype (forged-iron dark UI,
  * chalk text, ember accent). No Tailwind, no lucide, no recharts:
  * gh2-* classes, local stroke icons, hand-rolled SVG charts.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { SampleDataBlock } from '../../app/ui'
+import { toast } from '../../core/toast'
 import type { ReactNode, CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'

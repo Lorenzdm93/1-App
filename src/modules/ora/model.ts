@@ -7,8 +7,9 @@
  */
 import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
+import { resetLedger } from '../../core/one'
 import { logEvent, eventsStore, removeEvent } from '../../core/events'
-import { dayKey, todayKey, shiftDay } from '../../core/dates'
+import { dayKey, todayKey, shiftDay, weekStartKey } from '../../core/dates'
 
 export interface Protocol {
   id: string
@@ -431,21 +432,25 @@ export function seedDemo(now = Date.now()): void {
   removeDemo()
   const DAY = 86_400_000
   const HOUR = 3_600_000
-  const plan: { daysAgo: number; targetH: number; actualH: number; protocolId: string }[] = [
-    { daysAgo: 20, targetH: 16, actualH: 16.4, protocolId: 'p168' },
-    { daysAgo: 19, targetH: 16, actualH: 16.1, protocolId: 'p168' },
-    { daysAgo: 17, targetH: 16, actualH: 12.5, protocolId: 'p168' },
-    { daysAgo: 16, targetH: 16, actualH: 17.2, protocolId: 'p168' },
-    { daysAgo: 14, targetH: 18, actualH: 18.3, protocolId: 'p186' },
-    { daysAgo: 12, targetH: 16, actualH: 16.6, protocolId: 'p168' },
-    { daysAgo: 10, targetH: 24, actualH: 24.8, protocolId: 'e24' },
-    { daysAgo: 7, targetH: 16, actualH: 14.1, protocolId: 'p168' },
-    { daysAgo: 5, targetH: 16, actualH: 16.2, protocolId: 'p168' },
-    { daysAgo: 3, targetH: 16, actualH: 16.9, protocolId: 'p168' },
-    { daysAgo: 1, targetH: 16, actualH: 16.3, protocolId: 'p168' },
+  /* Week-aligned: both recent closed weeks are all goal-hits (they carry the
+     engine's won weeks); the third closed week holds the honest early ends. */
+  const curWeekStart = new Date(weekStartKey(dayKey(now)) + 'T12:00:00').getTime()
+  const wk = (weeksBack: number, dayInWeek: number): number => curWeekStart - weeksBack * 7 * DAY + dayInWeek * DAY
+  const plan: { endTs: number; targetH: number; actualH: number; protocolId: string }[] = [
+    { endTs: wk(4, 2), targetH: 16, actualH: 16.4, protocolId: 'p168' },
+    { endTs: wk(4, 5), targetH: 24, actualH: 24.8, protocolId: 'e24' },
+    { endTs: wk(3, 0), targetH: 16, actualH: 12.5, protocolId: 'p168' },
+    { endTs: wk(3, 2), targetH: 16, actualH: 16.1, protocolId: 'p168' },
+    { endTs: wk(3, 4), targetH: 16, actualH: 13.4, protocolId: 'p168' },
+    { endTs: wk(2, 0), targetH: 16, actualH: 16.5, protocolId: 'p168' },
+    { endTs: wk(2, 2), targetH: 18, actualH: 18.3, protocolId: 'p186' },
+    { endTs: wk(2, 4), targetH: 16, actualH: 16.6, protocolId: 'p168' },
+    { endTs: wk(1, 1), targetH: 16, actualH: 16.2, protocolId: 'p168' },
+    { endTs: wk(1, 3), targetH: 16, actualH: 16.9, protocolId: 'p168' },
+    { endTs: wk(1, 5), targetH: 16, actualH: 16.3, protocolId: 'p168' },
   ]
   const fasts: Fast[] = plan.map((p) => {
-    const endTs = now - p.daysAgo * DAY - 4 * HOUR
+    const endTs = p.endTs - 4 * HOUR
     return {
       id: uid() + '-demo',
       startTs: endTs - p.actualH * HOUR,
@@ -456,7 +461,7 @@ export function seedDemo(now = Date.now()): void {
     }
   })
   const weightTs: number[] = []
-  const weights: WeightEntry[] = [21, 16, 11, 6, 1].map((d, i) => {
+  const weights: WeightEntry[] = [26, 20, 14, 8, 2].map((d, i) => {
     const ts = now - d * DAY - 2 * HOUR
     weightTs.push(ts)
     return { ts, kg: Math.round((79.6 - i * 0.4) * 10) / 10 }
@@ -487,6 +492,7 @@ export function seedDemo(now = Date.now()): void {
     demo: { weightTs, hydrationDays },
   }))
   eventsStore.set((evs) => [...events, ...evs].sort((a, b) => b.ts - a.ts))
+  resetLedger()
 }
 
 export function removeDemo(): void {
@@ -504,4 +510,5 @@ export function removeDemo(): void {
     }
   })
   eventsStore.set((evs) => evs.filter((e) => !(e.module === 'ora' && e.id.endsWith('-demo'))))
+  resetLedger()
 }

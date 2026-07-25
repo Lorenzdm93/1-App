@@ -5,7 +5,8 @@
  * v4 state (name-based sessions/templates) migrates losslessly.
  */
 import { createPersistedStore, createStore } from '../../core/store'
-import { logEvent } from '../../core/events'
+import { logEvent, eventsStore } from '../../core/events'
+import { resetLedger } from '../../core/one'
 import { epley as coreEpley, brzycki as coreBrzycki } from '../../core/strength'
 
 /* ------------------------------ types ------------------------------ */
@@ -382,7 +383,7 @@ export function makeDemoWorkouts(now = Date.now()): Workout[] {
       const start = thisMonday - week * 7 * DAY + plan.day * DAY + 18 * 3600000
       if (start > now) return
       const entries: WEntry[] = plan.items.map(([exId, nSets, base]) => {
-        const prog = (8 - week) * (base >= 60 ? 2.5 : 1)
+        const prog = (8 - week) * (base >= 60 ? 4 : 1.5)
         const sets: WSet[] = []
         for (let i = 0; i < nSets; i++) {
           const drop = i === nSets - 1 ? 0.95 : 1
@@ -770,7 +771,20 @@ export function setRestSec(sec: number): void {
 
 export function seedDemo(): void {
   removeDemo()
-  ghisaStore.set((st) => ({ ...st, workouts: [...st.workouts, ...makeDemoWorkouts()] }))
+  const fresh = makeDemoWorkouts()
+  ghisaStore.set((st) => ({ ...st, workouts: [...st.workouts, ...fresh] }))
+  /* The 1% engine measures GHISA through session events — mirror each sample
+     workout so demo weeks score exactly like real ones. */
+  const events = fresh.map((w) => ({
+    id: uid() + '-demo',
+    module: 'ghisa',
+    kind: 'session',
+    ts: w.startedAt + w.duration * 60_000,
+    value: w.volume,
+    unit: 'kg',
+  }))
+  eventsStore.set((evs) => [...events, ...evs].sort((a, b) => b.ts - a.ts))
+  resetLedger()
 }
 
 export function hasDemo(st: GhisaState): boolean {
@@ -780,6 +794,8 @@ export function hasDemo(st: GhisaState): boolean {
 /** Surgical: only tagged sample workouts leave; user history is untouched. */
 export function removeDemo(): void {
   ghisaStore.set((st) => ({ ...st, workouts: st.workouts.filter((w) => !w.id.endsWith('-demo')) }))
+  eventsStore.set((evs) => evs.filter((e) => !(e.module === 'ghisa' && e.id.endsWith('-demo'))))
+  resetLedger()
 }
 
 /** Removes demo/all workouts + custom exercises + templates back to seeds. Active survives nothing. */

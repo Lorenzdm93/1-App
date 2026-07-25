@@ -27,6 +27,12 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.11.2 — the engine lights up + the GHISA settings crash**
+
+GHISA's settings crash ("SampleDataBlock is not defined") was a wiring script inserting imports after "line 1" — which in GHISA's screen is the opening of a doc comment, so both imports became comment text. Fixed, and the pre-delivery audit now strips comments before checking imports, so presence can never again masquerade as liveness.
+
+"Your 1%" showing zero weeks won had four stacked causes, all fixed. (1) The engine measures GHISA and GROVE through session/focus **events**, but their sample loaders wrote only store state — demo weeks contributed nothing; both now mirror every sample workout and focus session into tagged events (exactly like real finishes do). (2) Completed weeks **freeze** into the ledger, so weeks frozen before data existed stayed junk forever; every sample loader now calls `resetLedger()`, and the next visit to Your 1% refreezes all closed weeks from actual data. (3) The sample histories themselves never cleared 100%; they're now **week-boundary-aligned**: the two most recent closed weeks are genuinely strong across every module (perfect habits and doses, all fasts on target, growing volume/focus/breathwork, a strength test up), the third closed week is an honestly human miss. (4) Grove's forest is reshaped onto an exact ≥2% weekly growth curve with a per-day focus floor across both closed weeks, so the linked CADENCE habit ticks through the real integration rather than around it. Verified end-to-end by a mini-engine over the seeded state: week −1 scores 106, week −2 scores 104 (both won, +2.01% compounded), week −3 scores 97.
+
 **New in v0.11.1 — mobile hardening + sample data everywhere**
 
 The app now behaves like an instrument, not a document: long-pressing no longer selects text or pops the iOS Copy/Translate callout, and images can't be drag-lifted — while every input and textarea keeps normal text selection for actual typing. Inputs are pinned to 16px so iOS stops zoom-jumping the page when a field gains focus. Notch fixes: GHISA's full-screen exercise sheet, the live-workout header and the media lightbox all pad below the status bar via safe-area insets (the tab bar and bottom sheets were already safe).
