@@ -225,6 +225,8 @@ export interface RecapRow {
   gap: number
   perDay: number | null
   met: boolean
+  /** The module's own coaching line — same generator as Today's Next moves. */
+  advice: string | null
 }
 
 /** This week so far vs last week, per module — the honest deltas and exactly
@@ -253,23 +255,29 @@ export function weekRecap(today = todayKey()): RecapRow[] {
       const goal = scorer.goalKey ? one.goals[scorer.goalKey] : undefined
       const target = baseline !== null ? computeGrowthTarget(baseline, one.rate, goal) : null
       const gap = target !== null ? Math.max(0, target - value) : 0
+      const met = target !== null ? value >= target : value > 0
       rows.push({
         ...base, cur: value, prev, target,
         deltaPct: prev !== null ? Math.round(((value - prev) / prev) * 1000) / 10 : null,
         gap: Math.round(gap * 10) / 10,
         perDay: gap > 0 ? Math.ceil(gap / daysLeft) : null,
-        met: target !== null ? value >= target : value > 0,
+        met,
+        advice: !met && target !== null ? scorer.advice({ value, target, gap, unit: scorer.unit }) : null,
       })
     } else {
       const scale = scorer.mode === 'completion' ? 100 : 1
       const value = Math.round((cur ?? 0) * scale)
       const prev = prevFull !== null ? Math.round(prevFull * scale) : null
+      const met = value >= 100
       rows.push({
         ...base, cur: value, prev, target: 100,
         deltaPct: prev !== null && prev > 0 ? Math.round((value - prev) * 10) / 10 : null,
         gap: Math.max(0, 100 - value),
         perDay: null,
-        met: value >= 100,
+        met,
+        advice: met ? null : scorer.mode === 'completion'
+          ? scorer.advice({ value: (cur ?? 0), target: 1, gap: 1 - (cur ?? 0), unit: scorer.unit })
+          : scorer.advice({ value, target: 100, gap: 100 - value, unit: scorer.unit }),
       })
     }
   }

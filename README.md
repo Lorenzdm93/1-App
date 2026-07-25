@@ -27,6 +27,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.12.1 — recap coaching, a general philosophy, and the pill finally equal**
+
+The Profile weekly recap now carries each module's **own coaching line** — the same generators behind Today's Next moves — so a short week reads "add ~240 kg across your remaining sessions" or "ten breathing minutes a day closes it," per module, under its numbers. The Philosophy was rewritten as a **general introduction**: 1% weekly, compounded; every module an instrument feeding one weekly score; the bar grows from your own pace — with the exact arithmetic deliberately left to the engine page (no more duplicated mechanics). The floating pill's active highlight was content-sized, so SETTINGS made a wider blob than TODAY — tabs are now fixed at 88px each, identical blob whichever is active. And the **settings icon is one design everywhere**: the slider-rails glyph now serves the main tab, every module's Settings tab, and GHISA's header.
+
 **New in v0.12.0 — navigation that thinks in structure, and the app explains itself**
 
 GROVE's timer trap is fixed: breaks now have a true stop — tap any mode chip mid-break and it cancels and switches in one motion, or use the new "Stop the break" button. Focus runs stay protected (Give up and Skip remain their only early exits — the tree is the point), and the mode chips dim during focus to say so.

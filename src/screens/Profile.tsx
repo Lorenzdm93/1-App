@@ -96,16 +96,19 @@ export default function Profile() {
                   : `${fmtN(r.gap)} ${r.unit} short${r.perDay !== null ? ` · ~${fmtN(r.perDay)}/day left` : ''}`
                 : `${r.gap}% short of a clean week`
             return (
-              <div key={r.id} className="rcp-row" style={{ ['--wc' as string]: r.accentVar } as CSSProperties}>
-                <span className="dot" />
-                <span className="mid">
-                  <b>{r.label}</b>
-                  <i className={d !== null && d < 0 ? 'down' : 'up'}>{deltaTxt}</i>
-                </span>
-                <span className={'state num' + (r.met ? ' good' : '')}>
-                  {r.mode === 'growth' ? `${fmtN(r.cur)} ${r.unit}` : `${r.cur}%`}
-                  <i>{stateTxt}</i>
-                </span>
+              <div key={r.id} className="rcp-item" style={{ ['--wc' as string]: r.accentVar } as CSSProperties}>
+                <div className="rcp-row">
+                  <span className="dot" />
+                  <span className="mid">
+                    <b>{r.label}</b>
+                    <i className={d !== null && d < 0 ? 'down' : 'up'}>{deltaTxt}</i>
+                  </span>
+                  <span className={'state num' + (r.met ? ' good' : '')}>
+                    {r.mode === 'growth' ? `${fmtN(r.cur)} ${r.unit}` : `${r.cur}%`}
+                    <i>{stateTxt}</i>
+                  </span>
+                </div>
+                {r.advice && <div className="rcp-adv">{r.advice}</div>}
               </div>
             )
           })

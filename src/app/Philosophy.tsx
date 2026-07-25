@@ -1,30 +1,28 @@
 /**
- * The 1% philosophy — one source of truth, shown in onboarding before the
- * module picker and again inside the engine deep-dive.
+ * The 1% philosophy — the general idea, shown before module selection and in
+ * the engine deep-dive. The exact arithmetic deliberately lives elsewhere
+ * (the engine page), so this stays an introduction, not a spec.
  */
 export default function Philosophy() {
   return (
     <div className="phil">
       <p>
-        <b>One percent better, compounded.</b> You don't chase heroic days here. You chase
-        winnable weeks: each week's target is your own trailing four-week pace plus your chosen
-        rate. Beat it and the week is <b>won</b> — it freezes into the ledger and compounds.
-        Fifty-two won weeks at 1% aren't +52%; they're <b>+68%</b>.
+        <b>One percent better, every week.</b> Not heroic days — small, repeatable weekly
+        improvements that stack. Win a week and it's banked forever; a year of 1% weeks doesn't
+        add up to 52%, it compounds to about <b>+68%</b>. The whole app exists to make that one
+        weekly win visible, honest and repeatable.
       </p>
       <p>
-        <b>The bar follows you, not a fantasy.</b> Because the target is your own recent pace,
-        one heroic week never sets a trap and one bad week never lowers the bar to nothing.
-        Miss a week and nothing is taken from you — the ledger only ever adds.
+        <b>Many instruments, one practice.</b> Training and strength, deep-work focus,
+        breathwork, daily habits, supplements, fasting — each module is an instrument on the
+        same panel. Enable only what fits your life; everything you turn on feeds a single
+        weekly score, so you're never juggling seven apps. You're playing one.
       </p>
       <p>
-        <b>Ceilings make holding a win.</b> Growth can't ratchet forever — at some point 40
-        focused hours is the healthy maximum, not a failure to reach 41. Set a ceiling and the
-        target stops there: <b>holding the ceiling is a 100% week</b>, by design.
-      </p>
-      <p>
-        <b>Consistency is the growth.</b> The week score is the plain average of every module
-        that took part — no weighting, no cleverness, recomputable in your head. Showing up
-        again is the whole game; the compounding is just its honest arithmetic.
+        <b>The bar is yours.</b> Each week's target grows out of your own recent pace — hard
+        weeks never punish you, and "enough" can be a deliberate win. The exact arithmetic
+        lives in the engine page, one tap away, and it's simple enough to recompute in your
+        head.
       </p>
     </div>
   )
