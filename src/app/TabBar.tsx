@@ -3,9 +3,9 @@ import { navigate, type Route } from '../core/router'
 function RingIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.4" stroke="currentColor" strokeWidth="1.6" opacity="0.45" />
-      <path d="M12 3.6a8.4 8.4 0 0 1 5.2 1.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-      <circle cx="12" cy="12" r="1.9" fill="currentColor" />
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" opacity="0.45" />
+      <path d="M12 4a8 8 0 0 1 5 1.7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" />
     </svg>
   )
 }
@@ -13,8 +13,8 @@ function RingIcon() {
 function PersonIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="8.2" r="3.6" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M4.8 20c.9-3.6 3.8-5.4 7.2-5.4s6.3 1.8 7.2 5.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M4 20c1-3.9 4.2-5.9 8-5.9s7 2 8 5.9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   )
 }
@@ -22,9 +22,9 @@ function PersonIcon() {
 function SlidersIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7Z" />
-        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.03-1.51 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.51-1.03 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.04A1.7 1.7 0 0 0 10.03 3.1V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.51 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.04a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.03Z" />
+      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+        <path d="M4 7.5h9M17.5 7.5H20" /><circle cx="15.2" cy="7.5" r="2.1" />
+        <path d="M4 16.5h2.5M11 16.5h9" /><circle cx="8.8" cy="16.5" r="2.1" />
       </g>
     </svg>
   )

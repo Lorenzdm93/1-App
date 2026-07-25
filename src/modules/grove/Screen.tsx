@@ -15,6 +15,7 @@ import {
   groveStore,
   minutesFor,
   setMode,
+  stop,
   setRoundMinutes,
   setModeDefault,
   updateFlow,
@@ -208,7 +209,12 @@ function FocusTab({ st, now, flashTs }: { st: GroveState; now: number; flashTs: 
         <div className="gv2-modes" role="tablist" aria-label="Timer mode">
           {MODES.map((m) => (
             <button key={m.id} role="tab" aria-pressed={st.mode === m.id}
-              onClick={() => { if (!run) setMode(m.id) }}>{m.label}</button>
+              className={run && run.mode === 'focus' ? 'locked' : undefined}
+              onClick={() => {
+                if (run && run.mode === 'focus') return
+                if (run) stop()
+                setMode(m.id)
+              }}>{m.label}</button>
           ))}
         </div>
 
@@ -246,6 +252,11 @@ function FocusTab({ st, now, flashTs }: { st: GroveState; now: number; flashTs: 
         {run && run.mode === 'focus' && (
           <button className="gv2-giveup" onClick={() => { giveUp(); toast('Session abandoned — the tree withered') }}>
             Give up — the tree withers
+          </button>
+        )}
+        {run && run.mode !== 'focus' && (
+          <button className="gv2-giveup calm" onClick={() => { stop(); toast('Break ended') }}>
+            Stop the break
           </button>
         )}
         <p className="gv2-kbd"><kbd>space</kbd> start · pause &nbsp; <kbd>R</kbd> reset &nbsp; <kbd>S</kbd> skip &nbsp; <kbd>1·2·3</kbd> mode</p>

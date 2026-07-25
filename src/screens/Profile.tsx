@@ -6,6 +6,7 @@ import { oneStore } from '../core/one'
 import { eventsStore } from '../core/events'
 import { Bars } from '../app/charts'
 import { StatBox } from '../app/ui'
+import { weekRecap } from '../core/score'
 import { ghisaStore } from '../modules/ghisa/model'
 import { oraStore, oraStats } from '../modules/ora/model'
 import type { CSSProperties } from 'react'
@@ -74,6 +75,41 @@ export default function Profile() {
         <button className="btn btn-ghost" style={{ width: '100%', marginTop: 12 }} onClick={() => navigate('/one')}>
           The 1% engine — rate, goals, philosophy
         </button>
+      </div>
+
+      <div className="section-label">This week vs last</div>
+      <div className="card rcp">
+        {(() => {
+          const rows = weekRecap()
+          if (rows.length === 0) return <div className="rcp-empty">Log something this week and the deltas appear here.</div>
+          const fmtN = (v: number) => (v >= 1000 ? `${(Math.round(v / 100) / 10).toLocaleString()}k` : Math.round(v).toLocaleString())
+          return rows.map((r) => {
+            const d = r.deltaPct
+            const deltaTxt = d === null ? 'first measured week' : r.mode === 'growth'
+              ? `${d >= 0 ? '+' : ''}${d}% vs last week`
+              : `${d >= 0 ? '+' : ''}${d} pts vs last week`
+            const stateTxt = r.met
+              ? 'pace met'
+              : r.mode === 'growth'
+                ? r.target === null
+                  ? 'first week sets the pace'
+                  : `${fmtN(r.gap)} ${r.unit} short${r.perDay !== null ? ` · ~${fmtN(r.perDay)}/day left` : ''}`
+                : `${r.gap}% short of a clean week`
+            return (
+              <div key={r.id} className="rcp-row" style={{ ['--wc' as string]: r.accentVar } as CSSProperties}>
+                <span className="dot" />
+                <span className="mid">
+                  <b>{r.label}</b>
+                  <i className={d !== null && d < 0 ? 'down' : 'up'}>{deltaTxt}</i>
+                </span>
+                <span className={'state num' + (r.met ? ' good' : '')}>
+                  {r.mode === 'growth' ? `${fmtN(r.cur)} ${r.unit}` : `${r.cur}%`}
+                  <i>{stateTxt}</i>
+                </span>
+              </div>
+            )
+          })
+        })()}
       </div>
 
       <div className="section-label">Per module — all time</div>

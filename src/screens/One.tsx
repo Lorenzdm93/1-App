@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import Philosophy from '../app/Philosophy'
 import type { CSSProperties } from 'react'
 import { useStore } from '../core/hooks'
 import { eventsStore, currentStreak } from '../core/events'
@@ -226,6 +227,9 @@ export default function One() {
           point.
         </p>
       </div>
+
+      <div className="section-label">The philosophy</div>
+      <div className="card"><Philosophy /></div>
     </>
   )
 }

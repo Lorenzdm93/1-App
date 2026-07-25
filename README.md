@@ -27,6 +27,18 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.12.0 — navigation that thinks in structure, and the app explains itself**
+
+GROVE's timer trap is fixed: breaks now have a true stop — tap any mode chip mid-break and it cancels and switches in one motion, or use the new "Stop the break" button. Focus runs stay protected (Give up and Skip remain their only early exits — the tree is the point), and the mode chips dim during focus to say so.
+
+The **back gesture is remapped to structure**: from any module tab it returns to the module's start page, from there to the Today overview, from Settings/Profile/the engine to Today — never back through five hops of tab-flipping. Modules → Settings, since that's where it lives now.
+
+Today's module reorder now uses the **same live-swap mechanic as Settings → Modules**, ported to variable-height cards: the card follows your finger and the list reorders the instant you cross a neighbour's midpoint. The tab bar icons were redrawn to matched optical weight (the gear was visually the heaviest, the ring the lightest) — three tabs, genuinely identical.
+
+The **1% philosophy** now has a home: a first-run page before module selection ("here's the whole idea"), and the same text inside the engine deep-dive. The plateau nudge ("held at your goal for N weeks") gained a shelf life — it appears after 3 held weeks, retires after 6, and multiple holds condense into one line.
+
+**Profile gains a weekly recap** between the ledger and the module list: this week vs last, per module, straight from the engine's own measures — "+2.1% vs last week · pace met" in green, or the exact shortfall with a per-day hint ("240 kg short · ~80/day left"), habit and dose weeks in percentage points. Nothing in it can disagree with the ring, because it's computed by the same code.
+
 **New in v0.11.4 — the live workout fits, and the shell slims to three tabs**
 
 The live-workout set rows were overflowing on phones: the two number inputs refused to shrink below the browser's intrinsic input width, blowing the grid so PREV wrapped vertically and the ✓ column fell off-screen. The grid now uses shrinkable minmax columns with fixed rails for the set-number and check, inputs carry `min-width: 0`, and PREV truncates with an ellipsis instead of wrapping — the header row mirrors the same template. Anti-zoom 16px inputs stay.

@@ -120,13 +120,17 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
             }
             return null
           })()}
-          {pulse.modules
-            .filter((m) => m.plateauNote)
-            .map((m) => (
-              <div key={m.id} className="wp-note">
-                {m.plateauNote}
+          {(() => {
+            const held = pulse.modules.filter((m) => m.plateauNote)
+            if (held.length === 0) return null
+            if (held.length === 1) return <div className="wp-note">{held[0].plateauNote}</div>
+            return (
+              <div className="wp-note">
+                Holding your ceilings — {held.map((m) => m.scorer.label).join(', ')}. Raise any in
+                the engine if there's genuinely room; holding is winning.
               </div>
-            ))}
+            )
+          })()}
           {won && moves.length === 0 && (
             <div className="wp-note">Everything above target. Rest is also training.</div>
           )}
@@ -149,50 +153,59 @@ export default function Today() {
     month: 'long',
   })
 
-  /* ---- module reorder: grip-drag with a drop indicator, commit on release ---- */
-  const [dragState, setDragState] = useState<{ id: string; startY: number; dy: number; target: number } | null>(null)
-  const dragRef = useRef<typeof dragState>(null)
-  dragRef.current = dragState
+  /* ---- module reorder: live-swap drag, the Settings > Modules mechanic
+     ported to variable-height cards — the card follows the finger and the
+     list reorders the instant you cross a neighbour's midpoint. ---- */
+  const [dragState, setDragState] = useState<{ id: string; dy: number } | null>(null)
+  const dragMeta = useRef<{ startY: number; order: string[]; heights: Map<string, number> } | null>(null)
 
-  function cardMids(): { id: string; mid: number }[] {
-    return Array.from(document.querySelectorAll<HTMLElement>('[data-mid]')).map((el) => {
-      const r = el.getBoundingClientRect()
-      return { id: el.dataset.mid!, mid: r.top + r.height / 2 }
-    })
-  }
-  function onGripDown(e: RPointerEvent<HTMLSpanElement>, id: string, index: number) {
+  function onGripDown(e: RPointerEvent<HTMLSpanElement>, id: string, _index: number) {
     e.preventDefault()
     e.stopPropagation()
-    const startY = e.clientY
-    setDragState({ id, startY, dy: 0, target: index })
+    const heights = new Map<string, number>()
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-mid]'))) {
+      heights.set(el.dataset.mid as string, el.getBoundingClientRect().height)
+    }
+    dragMeta.current = { startY: e.clientY, order: modules.map((x) => x.id), heights }
+    setDragState({ id, dy: 0 })
+    const GAP = 14
     const move = (ev: globalThis.PointerEvent) => {
-      const cur = dragRef.current
-      if (!cur) return
-      const dy = ev.clientY - cur.startY
-      const mids = cardMids()
-      let target = mids.length - 1
-      for (let i = 0; i < mids.length; i++) {
-        if (ev.clientY < mids[i].mid) { target = i; break }
-        if (i === mids.length - 1) target = mids.length
+      const meta = dragMeta.current
+      if (!meta) return
+      let dy = ev.clientY - meta.startY
+      const order = meta.order
+      const from = order.indexOf(id)
+      /* crossing half of a neighbour (plus the gap) swaps live and rebases */
+      if (dy > 0 && from < order.length - 1) {
+        const nextH = (meta.heights.get(order[from + 1]) ?? 0) + GAP
+        if (dy > nextH / 2) {
+          const next = [...order]
+          next.splice(from, 1)
+          next.splice(from + 1, 0, id)
+          meta.order = next
+          meta.startY += nextH
+          dy -= nextH
+          setModuleOrder(next)
+        }
+      } else if (dy < 0 && from > 0) {
+        const prevH = (meta.heights.get(order[from - 1]) ?? 0) + GAP
+        if (-dy > prevH / 2) {
+          const next = [...order]
+          next.splice(from, 1)
+          next.splice(from - 1, 0, id)
+          meta.order = next
+          meta.startY -= prevH
+          dy += prevH
+          setModuleOrder(next)
+        }
       }
-      setDragState({ ...cur, dy, target: Math.min(target, mids.length) })
+      setDragState({ id, dy })
     }
     const up = () => {
       document.removeEventListener('pointermove', move)
       document.removeEventListener('pointerup', up)
       document.removeEventListener('pointercancel', up)
-      const cur = dragRef.current
-      if (cur) {
-        const ids = modules.map((x) => x.id)
-        const from = ids.indexOf(cur.id)
-        let to = cur.target
-        if (from !== -1 && to !== from && to !== from + 1) {
-          ids.splice(from, 1)
-          if (to > from) to -= 1
-          ids.splice(to, 0, cur.id)
-          setModuleOrder(ids)
-        }
-      }
+      dragMeta.current = null
       setDragState(null)
     }
     document.addEventListener('pointermove', move)
@@ -220,7 +233,6 @@ export default function Today() {
           data-mid={m.id}
           style={dragState && dragState.id === m.id ? { transform: `translateY(${dragState.dy}px)` } : undefined}
         >
-          {dragState && dragState.target === mi && dragState.id !== m.id && <div className="drop-line" />}
           <button className="card-head" onClick={() => navigate('/m/' + m.id)}>
             <span className="mark">
               <m.Icon />

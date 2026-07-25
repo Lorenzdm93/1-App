@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { MODULES } from '../core/registry'
 import { completeOnboarding } from '../core/settings'
 import { OnePercentRing, Toggle } from '../app/ui'
+import Philosophy from '../app/Philosophy'
 
 interface Goal {
   id: string
@@ -18,6 +19,7 @@ const GOALS: Goal[] = [
 ]
 
 export default function Onboarding() {
+  const [step, setStep] = useState<'why' | 'pick'>('why')
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
   function toggle(id: string) {
@@ -50,9 +52,22 @@ export default function Onboarding() {
         <div className="ob-mark">
           1<span className="pct">%</span>
         </div>
-        <div className="ob-line">Small daily gains, compounded. Pick your instruments.</div>
+        <div className="ob-line">{step === 'why' ? 'Small daily gains, compounded. Here\u2019s the whole idea.' : 'Pick your instruments.'}</div>
       </div>
 
+      {step === 'why' && (
+        <>
+          <div className="card"><Philosophy /></div>
+          <div className="ob-cta">
+            <button className="btn btn-primary" onClick={() => setStep('pick')}>
+              Got it — choose my modules
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === 'pick' && (<>
+      <button className="backlink" onClick={() => setStep('why')}>‹ The idea</button>
       <div className="section-label">What are you here for?</div>
       <div className="chips">
         {GOALS.map((g) => {
@@ -95,6 +110,7 @@ export default function Onboarding() {
           {count === 0 ? 'Pick at least one' : `Start with ${count} module${count > 1 ? 's' : ''}`}
         </button>
       </div>
+      </>)}
     </div>
   )
 }

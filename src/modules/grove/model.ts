@@ -236,6 +236,14 @@ export function resume(now = Date.now()): void {
 }
 
 /** Restart the current phase from zero. */
+/** Ends a break dead — breaks grow nothing, so walking away costs nothing.
+    Focus runs stay protected: their only early exits are Give up or Skip. */
+export function stop(): void {
+  groveStore.set((s) =>
+    s.running && s.running.mode !== 'focus' ? { ...s, running: null, roundOverride: null } : s,
+  )
+}
+
 export function reset(now = Date.now()): void {
   groveStore.set((s) =>
     s.running

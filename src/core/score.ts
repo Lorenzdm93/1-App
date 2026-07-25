@@ -11,11 +11,11 @@
  * The overall number is the mean of participating modules. Completed weeks
  * freeze into the ledger; the current week is always live.
  */
-import { MODULES } from './registry'
+import { MODULES, enabledModules } from './registry'
 import { settingsStore } from './settings'
 import { oneStore } from './one'
 import { eventsStore } from './events'
-import { todayKey, shiftDay, dayKey, weekStartKey } from './dates'
+import { todayKey, shiftDay, dayKey, weekStartKey, dayDiff } from './dates'
 import type { ModuleDefinition, WeeklyScorer } from './types'
 
 export interface ModulePulse {
@@ -173,14 +173,17 @@ export function computePulse(today = todayKey()): WeekPulse {
   for (const m of mods) {
     if (!m.goalCapped || m.score === null || m.score < 100) continue
     let held = 0
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 8; i++) {
       const ws = shiftDay(weekStart, -7 * i)
       const rec = log[ws]
       if (rec && rec.per[m.id] !== undefined && rec.per[m.id] >= 100) held++
       else break
     }
-    if (held >= 3) {
-      m.plateauNote = `Held at your ${m.scorer.label} goal for ${held + 1} weeks — raise it in Settings if there's genuinely room, or enjoy the plateau. Holding a ceiling is winning.`
+    /* The nudge has a shelf life: it appears once a hold is established (3
+       closed weeks) and retires after 6 — past that you've clearly chosen the
+       plateau, and a chosen plateau needs no commentary. */
+    if (held >= 3 && held <= 5) {
+      m.plateauNote = `Held at your ${m.scorer.label} goal for ${held + 1} weeks — raise it in the engine if there's genuinely room, or enjoy the plateau. Holding a ceiling is winning.`
     }
   }
 
@@ -203,4 +206,72 @@ export function nextMoves(
     .sort((a, b) => (a.score as number) - (b.score as number))
     .slice(0, 3)
     .map((m) => ({ id: m.id, name: m.name, accentVar: m.accentVar, text: m.advice as string }))
+}
+
+/* ---------------- weekly recap (Profile) ---------------- */
+
+export interface RecapRow {
+  id: string
+  name: string
+  accentVar: string
+  label: string
+  unit: string
+  mode: 'growth' | 'completion' | 'event'
+  /** growth: native units; completion/event: 0–100. */
+  cur: number
+  prev: number | null
+  target: number | null
+  deltaPct: number | null
+  gap: number
+  perDay: number | null
+  met: boolean
+}
+
+/** This week so far vs last week, per module — the honest deltas and exactly
+    what's still owed to the pace. Same measures, targets and goals as the
+    engine; nothing here can disagree with the ring. */
+export function weekRecap(today = todayKey()): RecapRow[] {
+  const one = oneStore.get()
+  const curWs = weekStartKey(today)
+  const prevWs = shiftDay(curWs, -7)
+  const daysLeft = Math.max(1, 7 - dayDiff(curWs, today))
+  const rows: RecapRow[] = []
+  for (const mod of enabledModules(settingsStore.get().enabled)) {
+    const scorer = mod.weekly
+    if (!scorer) continue
+    const cur = scorer.measure(curWs, today)
+    const prevFull = scorer.measure(prevWs, shiftDay(prevWs, 6))
+    if (cur === null && prevFull === null) continue
+    const base = {
+      id: mod.id, name: mod.name, accentVar: mod.accentVar,
+      label: scorer.label, unit: scorer.unit, mode: scorer.mode,
+    }
+    if (scorer.mode === 'growth') {
+      const value = cur ?? 0
+      const prev = prevFull !== null && prevFull > 0 ? prevFull : null
+      const baseline = baselineFor(scorer, curWs)
+      const goal = scorer.goalKey ? one.goals[scorer.goalKey] : undefined
+      const target = baseline !== null ? computeGrowthTarget(baseline, one.rate, goal) : null
+      const gap = target !== null ? Math.max(0, target - value) : 0
+      rows.push({
+        ...base, cur: value, prev, target,
+        deltaPct: prev !== null ? Math.round(((value - prev) / prev) * 1000) / 10 : null,
+        gap: Math.round(gap * 10) / 10,
+        perDay: gap > 0 ? Math.ceil(gap / daysLeft) : null,
+        met: target !== null ? value >= target : value > 0,
+      })
+    } else {
+      const scale = scorer.mode === 'completion' ? 100 : 1
+      const value = Math.round((cur ?? 0) * scale)
+      const prev = prevFull !== null ? Math.round(prevFull * scale) : null
+      rows.push({
+        ...base, cur: value, prev, target: 100,
+        deltaPct: prev !== null && prev > 0 ? Math.round((value - prev) * 10) / 10 : null,
+        gap: Math.max(0, 100 - value),
+        perDay: null,
+        met: value >= 100,
+      })
+    }
+  }
+  return rows
 }

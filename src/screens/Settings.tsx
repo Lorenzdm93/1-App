@@ -8,7 +8,7 @@ import { toast } from '../core/toast'
 import { ConfirmSheet, Seg, Chevron } from '../app/ui'
 import { navigate } from '../core/router'
 
-const APP_VERSION = '0.11.4'
+const APP_VERSION = '0.12.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },

@@ -1,6 +1,9 @@
 /**
- * Hash router. Hash routing is a deliberate choice for GitHub Pages:
- * deep links and refreshes just work, with no 404.html rewrite hacks.
+ * Hash router with hierarchical back. Hash routing is a deliberate choice for
+ * GitHub Pages (deep links and refreshes just work); the back gesture is
+ * remapped to STRUCTURE instead of history: module tab → module root →
+ * Today, and every top-level screen → Today. No more unwinding five hops of
+ * tab-flipping to escape a module.
  */
 import { useSyncExternalStore } from 'react'
 
@@ -23,20 +26,57 @@ export function parseHash(hash: string): Route {
   return { name: 'today' }
 }
 
+/** The structural parent of a route — null only at the root (Today). */
+export function parentOf(r: Route): string | null {
+  if (r.name === 'module') return r.tab ? '/m/' + r.id : '/'
+  if (r.name === 'modules') return '/settings'
+  if (r.name === 'today') return null
+  return '/'
+}
+
+let internalNav = false
+
 export function navigate(path: string): void {
+  internalNav = true
   location.hash = path
 }
 
-function subscribe(listener: () => void): () => void {
-  window.addEventListener('hashchange', listener)
-  return () => window.removeEventListener('hashchange', listener)
+let current: Route = typeof location !== 'undefined' ? parseHash(location.hash) : { name: 'today' }
+const listeners = new Set<() => void>()
+const emit = (): void => { for (const l of listeners) l() }
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('hashchange', () => {
+    if (internalNav) {
+      internalNav = false
+      current = parseHash(location.hash)
+      emit()
+      return
+    }
+    /* Browser back/forward gesture: send the person to the structural parent
+       of where they WERE, not wherever history happens to point. */
+    const target = parentOf(current)
+    if (target === null) {
+      current = parseHash(location.hash)
+      emit()
+      return
+    }
+    current = parseHash('#' + target)
+    internalNav = true
+    location.hash = target
+    emit()
+  })
 }
 
-function getHash(): string {
-  return location.hash
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => { listeners.delete(listener) }
+}
+
+function getRoute(): Route {
+  return current
 }
 
 export function useRoute(): Route {
-  const hash = useSyncExternalStore(subscribe, getHash, getHash)
-  return parseHash(hash)
+  return useSyncExternalStore(subscribe, getRoute, getRoute)
 }
