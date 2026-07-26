@@ -51,7 +51,7 @@ function NoteIcon({ size = 18 }: { size?: number }) {
 const respiro: ModuleDefinition = {
   id: 'respiro',
   name: 'RESPIRO',
-  tagline: 'Breathwork — box, 4-7-8, coherence, sigh.',
+  tagline: 'Breathwork',
   intro: {
     body: [
       'Seven breathing protocols, from a 60-second downshift to sleep-ready 4·7·8 — pick by what you need right now.',

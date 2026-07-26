@@ -673,6 +673,17 @@ export function addSet(entryId: string, type: SetType = 'N'): void {
   })
 }
 
+/** Swipe-to-delete: remove one specific set. The last remaining set blanks
+    instead of vanishing, so a card never ends up rowless. */
+export function removeSet(entryId: string, setId: string): void {
+  patchEntry(entryId, (e) => {
+    if (e.sets.length <= 1) {
+      return { ...e, sets: e.sets.map((s) => (s.id === setId ? blankSet(s.type) : s)) }
+    }
+    return { ...e, sets: e.sets.filter((s) => s.id !== setId) }
+  })
+}
+
 export function removeLastSet(entryId: string): void {
   patchEntry(entryId, (e) => ({ ...e, sets: e.sets.length > 1 ? e.sets.slice(0, -1) : e.sets }))
 }

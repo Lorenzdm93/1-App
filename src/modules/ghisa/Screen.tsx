@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SampleDataBlock } from '../../app/ui'
 import Confetti from '../../app/Confetti'
+import { Bars, pickLabels } from '../../app/charts'
 import { toast } from '../../core/toast'
 import type { ReactNode, CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
@@ -21,6 +22,7 @@ ghisaStore,
   cycleType,
   addSet,
   removeLastSet,
+  removeSet,
   removeEntry,
   addEntryFor,
   supersetWithNext,
@@ -271,33 +273,13 @@ function ExMedia({ exerciseId, name, size = 44, animate = false, onClick }: {
 /* ------------------------- hand-rolled charts ------------------------- */
 
 function GBarChart({ data }: { data: { label: string; vol: number; ts?: number }[] }) {
-  const W = 320
-  const H = 150
-  const pad = { t: 6, b: 18, l: 4, r: 4 }
-  const max = Math.max(1, ...data.map((d) => d.vol))
-  const iw = (W - pad.l - pad.r) / Math.max(1, data.length)
-  const bw = Math.min(26, iw * 0.62)
-  /* Horizontal labels, thinned to at most ~6 so nothing ever spills. */
-  const step = Math.max(1, Math.ceil(data.length / 6))
-  const showLabel = (i: number): boolean =>
-    i === data.length - 1 || (i % step === 0 && data.length - 1 - i >= Math.ceil(step / 2))
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="none" className="gh2-chart" role="img" aria-label="Volume by period">
-      {data.map((d, i) => {
-        const h = Math.max(d.vol > 0 ? 3 : 0, ((H - pad.t - pad.b) * d.vol) / max)
-        const x = pad.l + i * iw + (iw - bw) / 2
-        const y = H - pad.b - h
-        return <rect key={i} x={x} y={y} width={bw} height={h} rx={5} className="bar"
-          style={{ animationDelay: `${Math.min(i * 22, 500)}ms` }} />
-      })}
-      {data.map((d, i) => {
-        if (!showLabel(i)) return null
-        const lx = pad.l + i * iw + iw / 2
-        return (
-          <text key={'t' + i} x={lx} y={H - 4} textAnchor="middle" className="lbl">{d.label}</text>
-        )
-      })}
-    </svg>
+    <Bars
+      data={data.map((d) => ({ label: d.label, value: d.vol }))}
+      accentVar="var(--m-ghisa)"
+      height={150}
+      ariaLabel="Volume by period"
+    />
   )
 }
 
@@ -314,7 +296,7 @@ function GAreaChart({ data, fmt }: { data: { label: string; value: number }[]; f
   const y = (v: number) => pad.t + (H - pad.t - pad.b) * (1 - (v - min) / span)
   const line = data.map((d, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(d.value).toFixed(1)}`).join(' ')
   const area = `${line} L${x(data.length - 1).toFixed(1)},${H - pad.b} L${x(0).toFixed(1)},${H - pad.b} Z`
-  const step = Math.max(1, Math.ceil(data.length / 5))
+  const lblIdx = pickLabels(data.length, 5)
   const angled = data.length > 6
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="none" className="gh2-chart" role="img" aria-label="Progression">
@@ -330,7 +312,7 @@ function GAreaChart({ data, fmt }: { data: { label: string; value: number }[]; f
         <circle cx={x(data.length - 1)} cy={y(data[data.length - 1].value)} r="3.4" className="dot" />
       </g>
       {data.map((d, i) =>
-        i % step === 0 ? (
+        lblIdx.has(i) ? (
           <text key={i} x={x(i)} y={H - 5} textAnchor={angled ? 'end' : 'middle'} className="lbl"
             transform={angled ? `rotate(-32 ${x(i)} ${H - 5})` : undefined}>{d.label}</text>
         ) : null,
@@ -504,17 +486,42 @@ function ExercisePicker({ open, onClose, onPick }: {
 
 /* --------------------------- live workout --------------------------- */
 
-function SetRow({ set, index, prev, onChange, onToggle, onCycleType }: {
+function SetRow({ set, index, prev, onChange, onToggle, onCycleType, onRemove }: {
   set: ActiveSet
   index: number
   prev: { weight: number; reps: number } | null
   onChange: (patch: Partial<ActiveSet>) => void
   onToggle: () => void
   onCycleType: () => void
+  onRemove: () => void
 }) {
   const meta = TYPE_META[set.type]
+  /* Swipe-left to delete — the prototype mechanism, ported: track the finger,
+     translate the row, delete past half-width, snap back otherwise. */
+  const [dx, setDx] = useState(0)
+  const touchX = useRef<number | null>(null)
+  const rowRef = useRef<HTMLDivElement | null>(null)
   return (
     <>
+      <div className={'gh2-swipe' + (dx < 0 ? ' swiping' : '')} ref={rowRef}
+        onTouchStart={(e) => {
+          if ((e.target as HTMLElement).tagName === 'INPUT') return
+          touchX.current = e.touches[0].clientX
+        }}
+        onTouchMove={(e) => {
+          if (touchX.current === null) return
+          const w = rowRef.current?.offsetWidth ?? 320
+          setDx(Math.min(0, Math.max(-w, e.touches[0].clientX - touchX.current)))
+        }}
+        onTouchEnd={() => {
+          const w = rowRef.current?.offsetWidth ?? 320
+          if (-dx > w / 2) onRemove()
+          setDx(0)
+          touchX.current = null
+        }}
+      >
+        {dx < 0 && <span className="gh2-delhint" aria-hidden="true">Delete</span>}
+        <div className="gh2-rowwrap" style={dx < 0 ? { transform: `translateX(${dx}px)` } : undefined}>
       <div className={'gh2-setrow' + (set.done ? ' done' : '')}>
         <button className={'type ' + meta.cls} onClick={onCycleType} aria-label="Set type">
           {set.type === 'N' ? index + 1 : meta.label}
@@ -529,6 +536,8 @@ function SetRow({ set, index, prev, onChange, onToggle, onCycleType }: {
         <button className={'check' + (set.done ? ' on gh2-ring' : '')} onClick={onToggle} aria-pressed={set.done} aria-label="Complete set">
           <ICheck size={20} sw={3} />
         </button>
+      </div>
+        </div>
       </div>
       {set.prs.length > 0 && (
         <div className="gh2-prline">
@@ -564,7 +573,8 @@ function LiveExerciseCard({ entry, exercise, prevSets, ssLabel, ssColor, onToggl
         <SetRow key={s.id} set={s} index={i} prev={prevSets ? prevSets[i] ?? null : null}
           onChange={(patch) => updateSet(entry.id, s.id, patch)}
           onToggle={() => onToggleSet(s.id)}
-          onCycleType={() => cycleType(entry.id, s.id)} />
+          onCycleType={() => cycleType(entry.id, s.id)}
+          onRemove={() => removeSet(entry.id, s.id)} />
       ))}
       <button className="gh2-addset" onClick={() => addSet(entry.id)}><IPlus size={16} /> Add set</button>
     </div>

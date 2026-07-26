@@ -65,7 +65,7 @@ function SanaIcon({ size = 22 }: { size?: number }) {
 const sana: ModuleDefinition = {
   id: 'sana',
   name: 'SANA',
-  tagline: 'Your stacks, on rails',
+  tagline: 'Supplement stacks',
   intro: {
     body: [
       'SANA keeps supplements and medicines in stacks — follow any mix per day, and anything they share is listed only once.',

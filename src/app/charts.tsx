@@ -1,97 +1,197 @@
-/** Minimal SVG charts — Bevel-school: thin, smooth, quiet. */
-import { useId } from 'react'
+/**
+ * The house chart. One bar component for the whole app — GHISA volume, the
+ * Profile ledger, the engine's week-by-week — so axes, spacing, and motion
+ * are identical everywhere.
+ *
+ * The premium grammar (the Whoop/Hevy school):
+ *  - a faint full-height rail behind every bar, so empty periods still read
+ *  - gradient bars with soft-rounded tops
+ *  - at most `maxLabels` axis labels, first and last always present, evenly
+ *    spaced — labels can never collide again
+ *  - a rolling-mean trend line drawn over the bars with an endpoint dot: the
+ *    direction of travel at a glance
+ */
+import { useRef } from 'react'
+
+/** Evenly spaced label indices including both ends. */
+export function pickLabels(n: number, k = 5): Set<number> {
+  if (n <= k) return new Set(Array.from({ length: n }, (_, i) => i))
+  const out = new Set<number>()
+  for (let i = 0; i < k; i++) out.add(Math.round((i * (n - 1)) / (k - 1)))
+  return out
+}
+
+function rollingMean(vals: number[], w = 3): number[] {
+  return vals.map((_, i) => {
+    const a = Math.max(0, i - Math.floor(w / 2))
+    const b = Math.min(vals.length, a + w)
+    const slice = vals.slice(Math.max(0, b - w), b)
+    return slice.reduce((x, y) => x + y, 0) / slice.length
+  })
+}
+
+/** Quadratic-midpoint smoothing — cheap, stable, no overshoot. */
+function smoothPath(pts: { x: number; y: number }[]): string {
+  if (pts.length < 2) return ''
+  let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`
+  for (let i = 1; i < pts.length - 1; i++) {
+    const mx = (pts[i].x + pts[i + 1].x) / 2
+    const my = (pts[i].y + pts[i + 1].y) / 2
+    d += ` Q${pts[i].x.toFixed(1)},${pts[i].y.toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)}`
+  }
+  const last = pts[pts.length - 1]
+  d += ` L${last.x.toFixed(1)},${last.y.toFixed(1)}`
+  return d
+}
 
 export function Bars({
   data,
   accentVar,
   height = 92,
+  trend = true,
+  maxLabels = 5,
+  goodAt,
+  ariaLabel = 'Bar chart',
 }: {
   data: { label: string; value: number }[]
   accentVar: string
   height?: number
+  /** Rolling-mean trend line over the bars (needs ≥4 points). */
+  trend?: boolean
+  maxLabels?: number
+  /** Values at or above this render in the "good" tint (won weeks). */
+  goodAt?: number
+  ariaLabel?: string
 }) {
+  const gid = useRef('cb' + Math.random().toString(36).slice(2, 8)).current
+  const W = 320
+  const H = height
+  const pad = { t: 8, b: 16, l: 3, r: 3 }
+  const plotH = H - pad.t - pad.b
+  const n = Math.max(1, data.length)
   const max = Math.max(1, ...data.map((d) => d.value))
-  const w = 100 / data.length
+  const iw = (W - pad.l - pad.r) / n
+  const bw = Math.min(24, iw * 0.6)
+  const labels = pickLabels(data.length, maxLabels)
+  const cx = (i: number) => pad.l + i * iw + iw / 2
+  const trendPts = trend && data.length >= 4
+    ? rollingMean(data.map((d) => d.value)).map((v, i) => ({ x: cx(i), y: pad.t + plotH * (1 - v / max) }))
+    : null
   return (
-    <div>
-      <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ width: '100%', height }}>
-        {data.map((d, i) => {
-          const h = (d.value / max) * (height - 6)
-          return (
-            <rect
-              key={i}
-              x={i * w + w * 0.22}
-              y={height - h}
-              width={w * 0.56}
-              height={Math.max(h, d.value > 0 ? 2.5 : 0)}
-              rx="2.5"
-              fill={accentVar}
-              opacity={d.value > 0 ? 0.55 + 0.4 * (d.value / max) : 0}
-            />
-          )
-        })}
-      </svg>
-      <div className="chart-labels">
-        {data.map((d, i) => (
-          <span key={i}>{d.label}</span>
-        ))}
-      </div>
-    </div>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      width="100%"
+      height={H}
+      preserveAspectRatio="none"
+      className="cbar"
+      role="img"
+      aria-label={ariaLabel}
+    >
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={accentVar} stopOpacity="0.95" />
+          <stop offset="100%" stopColor={accentVar} stopOpacity="0.5" />
+        </linearGradient>
+        <linearGradient id={gid + 'g'} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--good, #4E9E86)" stopOpacity="0.95" />
+          <stop offset="100%" stopColor="var(--good, #4E9E86)" stopOpacity="0.5" />
+        </linearGradient>
+      </defs>
+      {data.map((d, i) => {
+        const x = pad.l + i * iw + (iw - bw) / 2
+        const h = Math.max(d.value > 0 ? 3 : 0, plotH * (d.value / max))
+        const good = goodAt !== undefined && d.value >= goodAt
+        return (
+          <g key={i}>
+            <rect x={x} y={pad.t} width={bw} height={plotH} rx={4.5} fill={accentVar} opacity={0.07} />
+            {h > 0 && (
+              <rect
+                x={x}
+                y={pad.t + plotH - h}
+                width={bw}
+                height={h}
+                rx={4.5}
+                fill={`url(#${gid}${good ? 'g' : ''})`}
+                className="cbar-bar"
+                style={{ animationDelay: `${Math.min(i * 18, 420)}ms` }}
+              />
+            )}
+          </g>
+        )
+      })}
+      {trendPts && (
+        <>
+          <path
+            d={smoothPath(trendPts)}
+            fill="none"
+            stroke={accentVar}
+            strokeWidth={2}
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+            className="cbar-trend"
+          />
+          <circle
+            cx={trendPts[trendPts.length - 1].x}
+            cy={trendPts[trendPts.length - 1].y}
+            r={3}
+            fill={accentVar}
+            stroke="var(--bg, #0c0d10)"
+            strokeWidth={1.5}
+          />
+        </>
+      )}
+      {data.map((d, i) =>
+        labels.has(i) ? (
+          <text key={'t' + i} x={cx(i)} y={H - 3.5} textAnchor="middle" className="cbar-lbl">
+            {d.label}
+          </text>
+        ) : null,
+      )}
+    </svg>
   )
 }
 
-/** Catmull-Rom → cubic bézier for a calm, continuous line. */
-function smoothPath(pts: readonly (readonly [number, number])[]): string {
-  if (pts.length < 2) return ''
-  let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] ?? pts[i]
-    const p1 = pts[i]
-    const p2 = pts[i + 1]
-    const p3 = pts[i + 2] ?? p2
-    const c1x = p1[0] + (p2[0] - p0[0]) / 6
-    const c1y = p1[1] + (p2[1] - p0[1]) / 6
-    const c2x = p2[0] - (p3[0] - p1[0]) / 6
-    const c2y = p2[1] - (p3[1] - p1[1]) / 6
-    d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`
-  }
-  return d
-}
-
+/** The house sparkline — CALIBER progressions and any small trend. Same
+    grammar as Bars: smooth line, soft area, endpoint dot. No axes. */
 export function Line({
   values,
   accentVar,
-  height = 76,
+  height = 64,
+  ariaLabel = 'Trend',
 }: {
   values: number[]
   accentVar: string
   height?: number
+  ariaLabel?: string
 }) {
-  const gid = useId().replace(/:/g, '')
-  if (values.length === 0) return null
+  const gid = useRef('cl' + Math.random().toString(36).slice(2, 8)).current
+  const W = 320
+  const H = height
+  const pad = { t: 6, b: 6, l: 4, r: 6 }
+  if (values.length < 2) {
+    return <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} className="cbar" role="img" aria-label={ariaLabel} />
+  }
   const min = Math.min(...values)
   const max = Math.max(...values)
   const span = max - min || 1
-  const pts = values.map((v, i) => {
-    const x = values.length === 1 ? 50 : (i / (values.length - 1)) * 96 + 2
-    const y = height - 9 - ((v - min) / span) * (height - 18)
-    return [x, y] as const
-  })
-  const path = smoothPath(pts)
+  const pts = values.map((v, i) => ({
+    x: pad.l + (i * (W - pad.l - pad.r)) / (values.length - 1),
+    y: pad.t + (H - pad.t - pad.b) * (1 - (v - min) / span),
+  }))
+  const d = smoothPath(pts)
   const last = pts[pts.length - 1]
-  const area = `${path} L ${last[0].toFixed(1)} ${height} L ${pts[0][0].toFixed(1)} ${height} Z`
+  const area = `${d} L${last.x.toFixed(1)},${H - pad.b} L${pts[0].x.toFixed(1)},${H - pad.b} Z`
   return (
-    <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ width: '100%', height }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" className="cbar" role="img" aria-label={ariaLabel}>
       <defs>
-        <linearGradient id={`lg-${gid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={accentVar} stopOpacity="0.22" />
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={accentVar} stopOpacity="0.28" />
           <stop offset="100%" stopColor={accentVar} stopOpacity="0" />
         </linearGradient>
       </defs>
-      {pts.length >= 2 && <path d={area} fill={`url(#lg-${gid})`} />}
-      <path d={path} fill="none" stroke={accentVar} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-      <circle cx={last[0]} cy={last[1]} r="2.6" fill={accentVar} />
-      <circle cx={last[0]} cy={last[1]} r="4.6" fill="none" stroke={accentVar} strokeWidth="1" opacity="0.45" />
+      <path d={area} fill={`url(#${gid})`} />
+      <path d={d} fill="none" stroke={accentVar} strokeWidth={2} strokeLinecap="round" vectorEffect="non-scaling-stroke" className="cbar-trend" />
+      <circle cx={last.x} cy={last.y} r={3} fill={accentVar} stroke="var(--bg, #0c0d10)" strokeWidth={1.5} />
     </svg>
   )
 }

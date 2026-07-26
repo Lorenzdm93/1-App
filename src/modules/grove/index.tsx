@@ -54,7 +54,7 @@ function ForestIcon({ size = 18 }: { size?: number }) {
 const grove: ModuleDefinition = {
   id: 'grove',
   name: 'GROVE',
-  tagline: 'Deep focus grows a forest.',
+  tagline: 'Focus timer',
   intro: {
     body: [
       'A focus timer that grows a forest. Finished sessions plant trees by length; breaks plant flowers and ferns.',

@@ -56,7 +56,7 @@ function BookIcon({ size = 18 }: { size?: number }) {
 const caliber: ModuleDefinition = {
   id: 'caliber',
   name: 'CALIBER',
-  tagline: 'Strength gauge — e1RM and standards per lift.',
+  tagline: 'Strength standards',
   intro: {
     body: [
       'Test rarely, train mostly. Enter one heavy set and CALIBER estimates your 1RM, places it on the percentile scale, and shows the level name.',

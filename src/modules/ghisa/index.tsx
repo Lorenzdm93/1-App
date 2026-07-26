@@ -62,7 +62,7 @@ function LibIcon({ size = 18 }: { size?: number }) {
 const ghisa: ModuleDefinition = {
   id: 'ghisa',
   name: 'GHISA',
-  tagline: 'Workout log — sets, volume, iron discipline.',
+  tagline: 'Workout log',
   intro: {
     body: [
       'GHISA logs the work: sets, kilos, honest volume. Start empty or from a template — the rest timer and PR flags run themselves.',

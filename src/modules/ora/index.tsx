@@ -51,7 +51,7 @@ function ListIcon({ size = 18 }: { size?: number }) {
 const ora: ModuleDefinition = {
   id: 'ora',
   name: 'ORA',
-  tagline: 'Fasting, hour by hour',
+  tagline: 'Fasting tracker',
   intro: {
     body: [
       'Fasting, hour by hour: pick a daily rhythm, a custom length, or an eating window — the dial tracks you to the second.',

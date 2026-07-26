@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Bars } from '../app/charts'
 import Philosophy from '../app/Philosophy'
 import type { CSSProperties } from 'react'
 import { useStore } from '../core/hooks'
@@ -94,17 +95,13 @@ export default function One() {
             <span className="label">Week by week</span>
             <span className="one-best num">best {bestWeek}%</span>
           </div>
-          <div className="one-spark" aria-label="Weekly scores">
-            {pulse.spark.map((s, i) => (
-              <div className="one-spark-col" key={i}>
-                <i
-                  className={s.value >= 100 ? 'won' : ''}
-                  style={{ height: `${Math.max(8, Math.min(100, (s.value / 120) * 100))}%` }}
-                />
-                <span>{s.label}</span>
-              </div>
-            ))}
-          </div>
+          <Bars
+            data={pulse.spark.map((s) => ({ label: s.label, value: s.value }))}
+            accentVar="var(--dim)"
+            goodAt={100}
+            height={96}
+            ariaLabel="Weekly scores"
+          />
           <p className="rs-foot">
             Completed weeks freeze into the ledger — each one at or above 100% compounds your total.
           </p>

@@ -53,7 +53,7 @@ function GridIcon({ size = 18 }: { size?: number }) {
 const cadence: ModuleDefinition = {
   id: 'cadence',
   name: 'CADENCE',
-  tagline: 'Daily habits — streaks that compound.',
+  tagline: 'Habit tracker',
   intro: {
     body: [
       'Small daily promises, kept visibly. Build habits repeat every day or on the weekdays you choose; quit habits count days clean from your quit date.',
