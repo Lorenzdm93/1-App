@@ -12,12 +12,15 @@ export default function Ring({
   size = 132,
   stroke = 11,
   children,
+  label,
 }: {
   value: number | null
   accent: string
   size?: number
   stroke?: number
   children?: ReactNode
+  /** Screen-reader label; defaults to the percentage. */
+  label?: string
 }) {
   const gid = useId().replace(/:/g, '')
   const [mounted, setMounted] = useState(false)
@@ -30,8 +33,8 @@ export default function Ring({
   const frac = value === null ? 0 : Math.min(1, Math.max(0, value / 100))
   const shown = mounted ? frac : 0
   return (
-    <div className="ring" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <div className="ring" style={{ width: size, height: size }} role="img" aria-label={label ?? (value === null ? 'No score yet' : `${Math.round(value)} percent`)}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         <defs>
           <linearGradient id={`rg-${gid}`} x1="0" y1="1" x2="1" y2="0">
             <stop offset="0%" stopColor={accent} />

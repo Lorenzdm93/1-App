@@ -5,7 +5,10 @@ import { wireSanaIntegrations } from './integrations'
 wireSanaIntegrations()
 import { todayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import SanaScreen, { SanaSettingsExtra } from './Screen'
+import { lazy } from 'react'
+/* Code-split: the screen (and its settings block, same chunk) load on first visit. */
+const SanaScreen = lazy(() => import('./Screen'))
+const SanaSettingsExtra = lazy(() => import('./Screen').then((m) => ({ default: m.SanaSettingsExtra })))
 import SanaWidget from './Widget'
 import SanaQuickActions from './QuickActions'
 

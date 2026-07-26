@@ -5,7 +5,10 @@ import { wireRespiroIntegrations } from './integrations'
 wireRespiroIntegrations()
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import Screen, { RespiroSettingsExtra } from './Screen'
+import { lazy } from 'react'
+/* Code-split: the screen (and its settings block, same chunk) load on first visit. */
+const Screen = lazy(() => import('./Screen'))
+const RespiroSettingsExtra = lazy(() => import('./Screen').then((m) => ({ default: m.RespiroSettingsExtra })))
 import Widget from './Widget'
 import QuickActions from './QuickActions'
 

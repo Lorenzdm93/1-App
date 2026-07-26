@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useRoute, navigate } from '../core/router'
 import { moduleById } from '../core/registry'
@@ -6,17 +6,53 @@ import { useStore } from '../core/hooks'
 import { settingsStore } from '../core/settings'
 import { useTheme } from './theme'
 import Today from '../screens/Today'
-import Modules from '../screens/Modules'
-import Settings from '../screens/Settings'
-import One from '../screens/One'
-import Profile from '../screens/Profile'
-import Onboarding from '../screens/Onboarding'
+
+/* Today is the home screen and stays in the main chunk; everything else
+   arrives on first visit. */
+const Modules = lazy(() => import('../screens/Modules'))
+const Settings = lazy(() => import('../screens/Settings'))
+const One = lazy(() => import('../screens/One'))
+const Profile = lazy(() => import('../screens/Profile'))
+const Onboarding = lazy(() => import('../screens/Onboarding'))
 import TabBar from './TabBar'
 import ModuleTabBar from './ModuleTabBar'
 import ModuleSettingsScreen from './ModuleSettingsScreen'
 import ErrorBoundary from './ErrorBoundary'
 import { ToastHost, Sheet } from './ui'
 import { introStore, shouldShowIntro, markIntroSeen } from '../core/intro'
+
+function ScreenLoader() {
+  return (
+    <div className="screen-loader" role="status" aria-label="Loading">
+      <span className="ring" />
+    </div>
+  )
+}
+
+/** "Update ready" — the person picks the moment; the app never reloads under
+    their thumbs. */
+function UpdateToast() {
+  const [worker, setWorker] = useState<ServiceWorker | null>(null)
+  useEffect(() => {
+    const onReady = (e: Event) => setWorker((e as CustomEvent<ServiceWorker>).detail)
+    window.addEventListener('sw-update-ready', onReady)
+    return () => window.removeEventListener('sw-update-ready', onReady)
+  }, [])
+  if (!worker) return null
+  return (
+    <div className="update-pill" role="status">
+      <span>Update ready</span>
+      <button
+        onClick={() => {
+          worker.postMessage({ type: 'SKIP_WAITING' })
+          setWorker(null)
+        }}
+      >
+        Restart
+      </button>
+    </div>
+  )
+}
 
 function GearIcon({ size = 18 }: { size?: number }) {
   return (
@@ -82,7 +118,9 @@ function ModuleScreen({ id, tab }: { id: string; tab?: string }) {
         </div>
       </div>
       <ErrorBoundary name={mod.name} key={mod.id + ':' + active}>
-        {active === 'settings' ? <ModuleSettingsScreen mod={mod} /> : <mod.Screen tab={active} />}
+        <Suspense fallback={<ScreenLoader />}>
+          {active === 'settings' ? <ModuleSettingsScreen mod={mod} /> : <mod.Screen tab={active} />}
+        </Suspense>
       </ErrorBoundary>
       <ModuleTabBar moduleId={mod.id} tabs={tabs} active={active} />
       <ModuleIntro mod={mod} />
@@ -117,8 +155,10 @@ export default function App() {
 
   if (!settings.onboarded) {
     return (
-      <main className="frame">
-        <Onboarding />
+      <main className="frame" id="main">
+        <Suspense fallback={<ScreenLoader />}>
+          <Onboarding />
+        </Suspense>
         <ToastHost />
       </main>
     )
@@ -126,8 +166,10 @@ export default function App() {
 
   return (
     <>
-      <main className="frame">
+      <a className="skip-link" href="#main">Skip to content</a>
+      <main className="frame" id="main" tabIndex={-1}>
         <div className="view" key={route.name === 'module' ? 'm-' + route.id + '-' + (route.tab ?? '') : route.name}>
+        <Suspense fallback={<ScreenLoader />}>
         {route.name === 'today' && <Today />}
         {route.name === 'modules' && <Modules />}
         {route.name === 'settings' && <Settings />}
@@ -136,9 +178,11 @@ export default function App() {
         {route.name === 'module' && (
           <ModuleScreen id={route.id} tab={route.tab} key={route.id} />
         )}
+        </Suspense>
         </div>
       </main>
       {!(route.name === 'module' && moduleById(route.id)?.tabs) && <TabBar route={route} />}
+      <UpdateToast />
       <ToastHost />
     </>
   )

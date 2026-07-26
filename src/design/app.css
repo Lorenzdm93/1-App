@@ -5684,3 +5684,62 @@ img, svg { -webkit-user-drag: none; }
 /* v0.12.2 — ring glow may breathe past the SVG box; never clip it square */
 .ring, .ring-wrap, .ring-item { overflow: visible; }
 .ring-item svg { overflow: visible; }
+
+/* ============================================================
+   v0.13.0 — production polish: a11y, native feel, update UX
+   ============================================================ */
+
+/* skip link — invisible until keyboard-focused */
+.skip-link {
+  position: fixed; top: -48px; left: 12px; z-index: 200;
+  background: var(--accent); color: #fff; font-size: 13px; font-weight: 600;
+  padding: 10px 16px; border-radius: 0 0 12px 12px; transition: top 0.15s;
+}
+.skip-link:focus-visible { top: 0; }
+#main:focus { outline: none; }
+
+/* keyboard focus — visible, on-brand, never on pointer taps */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.sheet:focus, .sheet:focus-visible { outline: none; }
+
+/* press feedback — the whole app answers the thumb */
+button { transition: transform 0.12s ease, opacity 0.12s ease; }
+button:active { transform: scale(0.97); }
+.mod-grip:active, .mmod-grip:active { transform: none; }
+
+/* native scroll physics */
+html, body { overscroll-behavior-y: none; }
+input:focus, textarea:focus, select:focus { scroll-margin-block: 110px; }
+
+/* screen loader (lazy chunks) */
+.screen-loader { display: grid; place-items: center; min-height: 40vh; }
+.screen-loader .ring {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid var(--line); border-top-color: var(--accent);
+  animation: bootspin 0.8s linear infinite;
+}
+@keyframes bootspin { to { transform: rotate(360deg); } }
+
+/* update pill — quiet, above the tab bar, person decides */
+.update-pill {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--tabbar-h, 64px) + env(safe-area-inset-bottom, 0px) + 22px);
+  z-index: 60; display: flex; align-items: center; gap: 12px;
+  background: var(--raised); border: 1px solid var(--line);
+  border-radius: 99px; padding: 9px 10px 9px 18px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  font-size: 13.5px; color: var(--ink);
+}
+.update-pill button {
+  background: var(--accent); color: #fff; font-weight: 700; font-size: 13px;
+  border-radius: 99px; padding: 8px 16px; border: 0;
+}
+
+/* bigger touch targets for the tiny closers */
+.rp2-dock .close { width: 36px; height: 36px; }
+.or2-eating .x { width: 36px; height: 36px; }
+.sheet-x { min-width: 40px; min-height: 40px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+}

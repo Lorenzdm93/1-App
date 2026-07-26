@@ -4,16 +4,30 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
     />
-    <meta name="theme-color" content="#0c0d10" />
-    <meta name="description" content="1% — the operating system for getting one percent better every day. Workouts, habits, breathwork and strength in one offline instrument." />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c0d10" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f2ee" />
+    <meta name="description" content="1% — the operating system for getting one percent better every day. Workouts, habits, breathwork, fasting and strength in one offline instrument." />
+    <meta property="og:title" content="1% — Get one percent better" />
+    <meta property="og:description" content="Workouts, habits, breathwork, fasting and strength in one offline instrument. Win the week; bank it forever." />
+    <meta property="og:type" content="website" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="1%" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="splash-1290x2796.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="splash-1179x2556.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="splash-1284x2778.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="splash-1170x2532.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="splash-1125x2436.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" href="splash-828x1792.png" />
+    <link rel="apple-touch-startup-image" media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2)" href="splash-1640x2360.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -21,16 +35,32 @@
       rel="stylesheet"
     />
     <title>1% — Get one percent better</title>
+    <style>
+      /* First-paint boot screen: brand-colored, zero-dependency, replaced the
+         instant React mounts. Prevents any white flash on cold start. */
+      html { background: #0c0d10; }
+      @media (prefers-color-scheme: light) { html { background: #f4f2ee; } }
+      #boot {
+        position: fixed; inset: 0; display: grid; place-items: center;
+        background: inherit; z-index: 9999;
+      }
+      #boot .ring {
+        width: 56px; height: 56px; border-radius: 50%;
+        border: 4px solid rgba(127, 127, 127, 0.18);
+        border-top-color: #4E9E86;
+        animation: bootspin 0.9s linear infinite;
+      }
+      @keyframes bootspin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { #boot .ring { animation: none; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <noscript>
+      <div style="font-family: system-ui; padding: 40px 24px; text-align: center; color: #888">
+        1% needs JavaScript — it's a local-first app that runs entirely on your device.
+      </div>
+    </noscript>
+    <div id="root"><div id="boot" aria-hidden="true"><div class="ring"></div></div></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-          navigator.serviceWorker.register('sw.js').catch(function () {})
-        })
-      }
-    </script>
   </body>
 </html>

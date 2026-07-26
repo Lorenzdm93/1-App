@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { useStore } from '../core/hooks'
 import { toastStore } from '../core/toast'
@@ -73,22 +73,46 @@ export function Sheet({
   onClose: () => void
   children: ReactNode
 }) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  /* Focus discipline: remember the opener, move focus into the dialog, give
+     it back on close. Escape closes. */
+  useEffect(() => {
+    if (!open) return
+    const prev = document.activeElement as HTMLElement | null
+    const t = requestAnimationFrame(() => panelRef.current?.focus())
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      cancelAnimationFrame(t)
+      document.removeEventListener('keydown', onKey)
+      prev?.focus?.()
+    }
+  }, [open, onClose])
   if (!open) return null
   return createPortal(
-    <>
-      <div className="sheet-backdrop" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label={title}>
-        <div className="grab" />
-        <button className="sheet-x" onClick={onClose} aria-label="Close">✕</button>
-        <div className="sheet-title">{title}</div>
-        <div className="sheet-body">{children}</div>
+    <div className="sheet-scrim" onClick={onClose}>
+      <div
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        ref={panelRef}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sheet-head">
+          <div className="sheet-title">{title}</div>
+          <button className="sheet-x" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        {children}
       </div>
-    </>,
+    </div>,
     document.body,
   )
 }
 
-/** Two-step confirmation rendered as a sheet. */
 export function ConfirmSheet({
   open,
   title,
@@ -160,7 +184,7 @@ export function StatBox({
 
 export function ToastHost() {
   const t = useStore(toastStore)
-  return <div className="toast-host">{t && <div className="toast" key={t.id}>{t.message}</div>}</div>
+  return <div className="toast-host" role="status" aria-live="polite">{t && <div className="toast" key={t.id}>{t.message}</div>}</div>
 }
 
 /* ---------- the signature: 1% ring ---------- */

@@ -27,6 +27,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.13.0 — production hardening: full PWA, a11y, code splitting**
+
+Complete PWA pass: manifest with id/orientation/categories/maskable icons, regenerated brand iconography from one geometric SVG (favicon → 512 → seven iOS splash screens), dual theme-color, inline boot screen (no white flash), install-time shell precache, and person-controlled updates — the new service worker waits and an "Update ready — Restart" pill hands over the moment. Every module screen is now its own lazy chunk (+ its settings block, same chunk), shells split, React vendored: the eager path is ~61 KB gzip. Accessibility: pinch-zoom restored (WCAG), dialog Sheets with focus management and Escape, skip link, landmarks, live-region toasts, labelled rings, focus-visible outlines, ≥36px close targets, global reduced-motion. Native feel: press feedback on every button, overscroll containment, keyboard-safe focused inputs, offline/online toasts, global error nets. Full audit in LAUNCH_AUDIT.md; verified by complete esbuild bundling and a server-render smoke of every route and every module screen.
+
 **New in v0.12.3 — cumulative resync of v0.12.0–v0.12.2**
 
 Identical content to the last three deltas, re-cut as one package so a repo at any of those states converges: hierarchical back navigation, Today live-swap reorder, grove break escape, matched tab icons + fixed 88px tabs, unified sliders settings icon, general Philosophy (onboarding + engine), plateau shelf-life, Profile weekly recap **with per-module coaching lines**, ring glow unclipped, SANA gold. Settings should read **v0.12.3** after deploy — if it doesn't, the build didn't land.

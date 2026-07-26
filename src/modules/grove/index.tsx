@@ -5,7 +5,10 @@ import { wireGroveIntegrations } from './integrations'
 wireGroveIntegrations()
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import Screen, { GroveSettingsExtra } from './Screen'
+import { lazy } from 'react'
+/* Code-split: the screen (and its settings block, same chunk) load on first visit. */
+const Screen = lazy(() => import('./Screen'))
+const GroveSettingsExtra = lazy(() => import('./Screen').then((m) => ({ default: m.GroveSettingsExtra })))
 import Widget from './Widget'
 import QuickActions from './QuickActions'
 

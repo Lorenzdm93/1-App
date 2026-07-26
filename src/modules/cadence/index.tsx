@@ -1,7 +1,10 @@
 import { cadenceStore, weekCompletion, weekAdvice } from './model'
 import { weekStartKey, todayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import Screen, { CadenceSettingsExtra } from './Screen'
+import { lazy } from 'react'
+/* Code-split: the screen (and its settings block, same chunk) load on first visit. */
+const Screen = lazy(() => import('./Screen'))
+const CadenceSettingsExtra = lazy(() => import('./Screen').then((m) => ({ default: m.CadenceSettingsExtra })))
 import Widget from './Widget'
 
 /** The prototype's waveform mark — the Cadence logo, unboxed. */

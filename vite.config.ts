@@ -6,5 +6,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: './',
   plugins: [react()],
-  build: { target: 'es2020' },
+  build: {
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        /* React in its own long-lived chunk: app iterations never re-download it. */
+        manualChunks: { vendor: ['react', 'react-dom'] },
+      },
+    },
+  },
 })
