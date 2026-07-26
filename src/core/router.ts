@@ -41,12 +41,26 @@ export function navigate(path: string): void {
   location.hash = path
 }
 
+/* Normalize the entry hash so the app always has a real route under it —
+   a back-swipe from Home must never land on a blank pre-app history entry. */
+if (typeof location !== 'undefined' && (!location.hash || location.hash === '#')) {
+  try { history.replaceState(null, '', '#/') } catch { location.hash = '#/' }
+}
+
 let current: Route = typeof location !== 'undefined' ? parseHash(location.hash) : { name: 'today' }
 const listeners = new Set<() => void>()
 const emit = (): void => { for (const l of listeners) l() }
 
 if (typeof window !== 'undefined') {
   window.addEventListener('hashchange', () => {
+    if (!location.hash || location.hash === '#') {
+      /* swiped back past the app's first entry — pin to Home, replacing */
+      try { history.replaceState(null, '', '#/') } catch { location.hash = '#/' }
+      internalNav = false
+      current = { name: 'today' }
+      emit()
+      return
+    }
     if (internalNav) {
       internalNav = false
       current = parseHash(location.hash)

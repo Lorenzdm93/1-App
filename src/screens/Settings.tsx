@@ -5,7 +5,7 @@ import { settingsStore, setTheme, type Theme } from '../core/settings'
 import { exportAll, importAll, clearAll } from '../core/storage'
 import { todayKey } from '../core/dates'
 import { toast } from '../core/toast'
-import { ConfirmSheet, Seg, Chevron } from '../app/ui'
+import { ConfirmSheet, Seg, Chevron, Switch } from '../app/ui'
 import { syncStore, connect, disconnect, backupNow, restoreLatest, FIREBASE_CONFIG } from '../core/sync'
 import { seedAllSampleData, removeAllSampleData, anySampleData } from '../core/sampledata'
 import { notifyStore, notifyStatus, enableNotifications, disableNotifications, setModuleNotify } from '../core/notify'
@@ -13,7 +13,7 @@ import { setModuleLines } from '../core/settings'
 import { enabledModules } from '../core/registry'
 import { navigate } from '../core/router'
 
-const APP_VERSION = '0.18.0'
+const APP_VERSION = '0.19.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
@@ -195,11 +195,7 @@ export default function Settings() {
                     return (
                       <div className="nrow" key={m.id}>
                         <span>{m.name}</span>
-                        <Seg<'on' | 'off'>
-                          options={[{ id: 'on', label: 'On' }, { id: 'off', label: 'Off' }]}
-                          value={on ? 'on' : 'off'}
-                          onChange={(v) => setModuleNotify(m.id, v === 'on')}
-                        />
+                        <Switch checked={on} onChange={(v) => setModuleNotify(m.id, v)} label={`Notifications for ${m.name}`} />
                       </div>
                     )
                   })}
@@ -217,10 +213,10 @@ export default function Settings() {
             <span>Modules over time</span>
             <p className="cloudnote" style={{ margin: '3px 0 0' }}>Per-module progress lines under the Profile ledger.</p>
           </div>
-          <Seg<'on' | 'off'>
-            options={[{ id: 'on', label: 'On' }, { id: 'off', label: 'Off' }]}
-            value={settings.moduleLines !== false ? 'on' : 'off'}
-            onChange={(v) => setModuleLines(v === 'on')}
+          <Switch
+            checked={settings.moduleLines !== false}
+            onChange={(v) => setModuleLines(v)}
+            label="Modules over time on Profile"
           />
         </div>
       </div>

@@ -325,3 +325,26 @@ export function SampleDataBlock({ seeded, onSeed, onRemove }: {
     </div>
   )
 }
+
+/** A modern toggle. role="switch", animated thumb, accent when on. */
+export function Switch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean
+  onChange: (v: boolean) => void
+  label: string
+}) {
+  return (
+    <button
+      className={'switch' + (checked ? ' on' : '')}
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+    >
+      <span className="knob" />
+    </button>
+  )
+}

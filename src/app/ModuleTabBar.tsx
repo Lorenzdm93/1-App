@@ -17,7 +17,7 @@ export default function ModuleTabBar({
 }) {
   const { innerRef, glider } = useTabGlider(String((typeof location !== 'undefined' ? location.hash : '')))
   return (
-    <nav className="tabbar tabbar-mod" aria-label="Module">
+    <nav className="tabbar tabbar-mod" aria-label="Module" style={{ ['--tb-accent' as string]: `var(--m-${moduleId})` }}>
       <div className="tabbar-inner" ref={innerRef}>
         {glider && (
           <span
@@ -29,7 +29,7 @@ export default function ModuleTabBar({
         {tabs.map((t) => (
           <button
             key={t.id}
-            className={'mtab' + (t.id === active ? ' on' : '')}
+            className={'tab' + (t.id === active ? ' on' : '')}
             onClick={() => navigate(`/m/${moduleId}/${t.id}`)}
             aria-current={t.id === active ? 'page' : undefined}
           >

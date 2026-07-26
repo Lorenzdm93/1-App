@@ -23,7 +23,7 @@
   --faint: #5f656d;
 
   /* semantic state — muted, never neon */
-  --good: #86b89b;
+  --good: #35c78f;
   --mid: #d6b371;
   --low: #cd8b66;
   --danger: #c0564a;
@@ -34,11 +34,12 @@
   --btn-ink: #101010;
 
   /* contextual accent — the shell sets it per module */
-  --accent: var(--ember);
+  --jade: #35c78f;
+  --accent: var(--jade);
 
   /* module accents — same souls, lower volume */
   --m-ghisa: #f97316;
-  --m-respiro: #82a893;
+  --m-respiro: #a78be0;
   --m-sana: #e0bf5c;
   --m-caliber: #edb54a;
   --m-cadence: #2dd4bf;
@@ -96,17 +97,18 @@
   --dim: #676c72;
   --faint: #9a9fa5;
 
-  --good: #4a8264;
+  --good: #178a57;
   --mid: #a3823f;
   --low: #a9643c;
   --danger: #b23a31;
 
   --ember: #cf5a2c;
+  --jade: #178a57;
   --ember-soft: rgba(207, 90, 44, 0.11);
   --btn-ink: #fdfcf9;
 
   --m-ghisa: #e05a0e;
-  --m-respiro: #47795d;
+  --m-respiro: #6b4fbf;
   --m-sana: #a8821f;
   --m-caliber: #b07f1f;
   --m-cadence: #0ea5a0;

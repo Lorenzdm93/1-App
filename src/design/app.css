@@ -5836,3 +5836,26 @@ html, body { touch-action: manipulation; overflow-x: hidden; overscroll-behavior
 .nmods { margin-top: 12px; border-top: 1px solid var(--line-soft); padding-top: 6px; }
 .nrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; font-size: 13.5px; color: var(--ink); }
 .nrow + .nrow { border-top: 1px solid var(--line-soft); }
+
+/* v0.19.0 — one tab grammar, switches, module accents */
+.tabbar-mod .tab { flex: 1; min-width: 0; max-width: none; padding: 9px 6px 8px; font-size: 10.5px; }
+.tab.on svg { color: var(--tb-accent, var(--accent)); }
+.mtab, .mtab.on, .mtab.on::after { all: revert-layer; }
+
+.switch {
+  position: relative; width: 46px; height: 27px; flex: none;
+  border-radius: 99px; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  transition: background 0.22s ease, border-color 0.22s ease;
+  padding: 0;
+}
+.switch .knob {
+  position: absolute; top: 2px; left: 2px; width: 21px; height: 21px;
+  border-radius: 50%; background: var(--dim);
+  transition: transform 0.24s cubic-bezier(0.3, 0.72, 0.26, 1.12), background 0.22s ease;
+}
+.switch.on { background: var(--accent); border-color: var(--accent); }
+.switch.on .knob { transform: translateX(19px); background: #fff; }
+.switch:active .knob { transform: scaleX(1.12) translateX(0); }
+.switch.on:active .knob { transform: translateX(17px) scaleX(1.12); }
+@media (prefers-reduced-motion: reduce) { .switch .knob { transition: none; } }
