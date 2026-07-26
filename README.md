@@ -27,6 +27,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
 
+**New in v0.12.3 — cumulative resync of v0.12.0–v0.12.2**
+
+Identical content to the last three deltas, re-cut as one package so a repo at any of those states converges: hierarchical back navigation, Today live-swap reorder, grove break escape, matched tab icons + fixed 88px tabs, unified sliders settings icon, general Philosophy (onboarding + engine), plateau shelf-life, Profile weekly recap **with per-module coaching lines**, ring glow unclipped, SANA gold. Settings should read **v0.12.3** after deploy — if it doesn't, the build didn't land.
+
 **New in v0.12.2 — the glow breathes, SANA goes gold**
 
 The ring gauges' soft glow was being clipped square: the value arc's drop-shadow extends past the SVG viewport, and SVG hides overflow by default — so the fade died at the box edge. Rings (hero and per-module) now declare `overflow: visible` and the glow falls off naturally in every direction. SANA's accent moved from teal-green to **gold** (`#e0bf5c` dark / `#a8821f` light) — unmistakable next to GROVE's green, RESPIRO's jade and ORA's teal, and it suits the supplement-brass vibe.
