@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SampleDataBlock } from '../../app/ui'
 import Confetti from '../../app/Confetti'
-import { Bars, pickLabels } from '../../app/charts'
+import { Bars, AreaLine } from '../../app/charts'
 import { toast } from '../../core/toast'
 import type { ReactNode, CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
@@ -284,49 +284,8 @@ function GBarChart({ data }: { data: { label: string; vol: number; ts?: number }
 }
 
 function GAreaChart({ data, fmt }: { data: { label: string; value: number }[]; fmt?: (v: number) => string }) {
-  const W = 320
-  const H = 160
-  const pad = { t: 10, b: data.length > 6 ? 32 : 18, l: 8, r: 8 }
-  const gid = useRef('g' + Math.random().toString(36).slice(2, 8)).current
-  const vals = data.map((d) => d.value)
-  const min = Math.min(...vals)
-  const max = Math.max(...vals)
-  const span = max - min || 1
-  const x = (i: number) => pad.l + (i * (W - pad.l - pad.r)) / Math.max(1, data.length - 1)
-  const y = (v: number) => pad.t + (H - pad.t - pad.b) * (1 - (v - min) / span)
-  const line = data.map((d, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(d.value).toFixed(1)}`).join(' ')
-  const area = `${line} L${x(data.length - 1).toFixed(1)},${H - pad.b} L${x(0).toFixed(1)},${H - pad.b} Z`
-  const lblIdx = pickLabels(data.length, 5)
-  const angled = data.length > 6
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="none" className="gh2-chart" role="img" aria-label="Progression">
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#F97316" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#F97316" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <g className="gh2-chartreveal">
-        <path d={area} fill={`url(#${gid})`} />
-        <path d={line} className="line" fill="none" />
-        <circle cx={x(data.length - 1)} cy={y(data[data.length - 1].value)} r="3.4" className="dot" />
-      </g>
-      {data.map((d, i) =>
-        lblIdx.has(i) ? (
-          <text key={i} x={x(i)} y={H - 5} textAnchor={angled ? 'end' : 'middle'} className="lbl"
-            transform={angled ? `rotate(-32 ${x(i)} ${H - 5})` : undefined}>{d.label}</text>
-        ) : null,
-      )}
-      <text x={W - pad.r} y={pad.t + 6} textAnchor="end" className="lbl hi tnum">
-        {fmt ? fmt(max) : String(round1(max))}
-      </text>
-    </svg>
-  )
+  return <AreaLine data={data} accentVar="var(--m-ghisa)" height={160} fmt={fmt} ariaLabel="Progression" />
 }
-
-/* ----------------------------- rest bar ----------------------------- */
-
-export interface RestState { total: number; endsAt: number }
 
 function RestBar({ rest, onAdjust, onSkip }: {
   rest: RestState | null; onAdjust: (d: number) => void; onSkip: () => void

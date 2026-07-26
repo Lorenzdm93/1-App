@@ -10,7 +10,7 @@ import { syncStore, connect, disconnect, backupNow, restoreLatest, FIREBASE_CONF
 import { seedAllSampleData, removeAllSampleData, anySampleData } from '../core/sampledata'
 import { navigate } from '../core/router'
 
-const APP_VERSION = '0.16.0'
+const APP_VERSION = '0.17.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },

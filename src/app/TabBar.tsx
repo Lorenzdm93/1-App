@@ -1,4 +1,27 @@
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { navigate, type Route } from '../core/router'
+
+/** Hevy-style sliding pill: measure the active tab, glide the indicator to
+    it. Measurement-based, so it survives variable widths and the module
+    bar's horizontal scroll. */
+export function useTabGlider(activeKey: string): {
+  innerRef: RefObject<HTMLDivElement | null>
+  glider: { x: number; w: number } | null
+} {
+  const innerRef = useRef<HTMLDivElement | null>(null)
+  const [glider, setGlider] = useState<{ x: number; w: number } | null>(null)
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = innerRef.current?.querySelector<HTMLElement>('.tab.on')
+      if (!el) { setGlider(null); return }
+      setGlider({ x: el.offsetLeft, w: el.offsetWidth })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [activeKey])
+  return { innerRef, glider }
+}
 
 function RingIcon() {
   return (
@@ -37,9 +60,17 @@ const TABS = [
 ] as const
 
 export default function TabBar({ route }: { route: Route }) {
+  const { innerRef, glider } = useTabGlider(route.name)
   return (
     <nav className="tabbar" aria-label="Main">
-      <div className="tabbar-inner">
+      <div className="tabbar-inner" ref={innerRef}>
+        {glider && (
+          <span
+            className="tab-glider"
+            aria-hidden="true"
+            style={{ transform: `translateX(${glider.x}px)`, width: glider.w }}
+          />
+        )}
         {TABS.map((t) => {
           const on = route.name === t.name || (t.name === 'settings' && route.name === 'modules')
           return (

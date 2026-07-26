@@ -195,3 +195,62 @@ export function Line({
     </svg>
   )
 }
+
+/** The house area chart — smooth progression with soft fill, endpoint value,
+    and the same ≤5 horizontal labels as Bars. No rotated text, ever. */
+export function AreaLine({
+  data,
+  accentVar,
+  height = 160,
+  fmt,
+  ariaLabel = 'Progression',
+}: {
+  data: { label: string; value: number }[]
+  accentVar: string
+  height?: number
+  fmt?: (v: number) => string
+  ariaLabel?: string
+}) {
+  const gid = useRef('ca' + Math.random().toString(36).slice(2, 8)).current
+  const W = 320
+  const H = height
+  const pad = { t: 16, b: 18, l: 6, r: 10 }
+  if (data.length < 2) {
+    return <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} className="cbar" role="img" aria-label={ariaLabel} />
+  }
+  const vals = data.map((d) => d.value)
+  const min = Math.min(...vals)
+  const max = Math.max(...vals)
+  const span = max - min || 1
+  const pts = data.map((d, i) => ({
+    x: pad.l + (i * (W - pad.l - pad.r)) / (data.length - 1),
+    y: pad.t + (H - pad.t - pad.b) * (1 - (d.value - min) / span),
+  }))
+  const d = smoothPath(pts)
+  const last = pts[pts.length - 1]
+  const area = `${d} L${last.x.toFixed(1)},${H - pad.b} L${pts[0].x.toFixed(1)},${H - pad.b} Z`
+  const lastVal = data[data.length - 1].value
+  const valTxt = fmt ? fmt(lastVal) : String(Math.round(lastVal * 10) / 10)
+  const labels = pickLabels(data.length, 5)
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" className="cbar" role="img" aria-label={ariaLabel}>
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={accentVar} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={accentVar} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gid})`} />
+      <path d={d} fill="none" stroke={accentVar} strokeWidth={2.2} strokeLinecap="round" vectorEffect="non-scaling-stroke" className="cbar-trend" />
+      <circle cx={last.x} cy={last.y} r={3.2} fill={accentVar} stroke="var(--bg, #0c0d10)" strokeWidth={1.5} />
+      <text x={Math.min(last.x, W - pad.r - 2)} y={Math.max(10, last.y - 8)} textAnchor="end" className="cbar-val tnum">{valTxt}</text>
+      {data.map((dd, i) =>
+        labels.has(i) ? (
+          <text key={'t' + i} x={pts[i].x} y={H - 3.5} textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'} className="cbar-lbl">
+            {dd.label}
+          </text>
+        ) : null,
+      )}
+    </svg>
+  )
+}

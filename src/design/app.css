@@ -5795,3 +5795,30 @@ html, body { touch-action: manipulation; overflow-x: hidden; overscroll-behavior
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   border-radius: 10px;
 }
+
+/* v0.17.0 — edge fades, tab glider, chart value tag */
+.edge-fade { position: fixed; left: 0; right: 0; pointer-events: none; z-index: 30; }
+.edge-fade.top {
+  top: 0; height: calc(env(safe-area-inset-top, 0px) + 48px);
+  background: linear-gradient(to bottom, var(--bg) 20%, transparent);
+}
+.edge-fade.bottom {
+  bottom: 0; height: calc(env(safe-area-inset-bottom, 0px) + 96px);
+  background: linear-gradient(to top, var(--bg) 12%, transparent);
+}
+
+.tabbar-inner { position: relative; }
+.tab { position: relative; z-index: 1; }
+.tab.on { background: transparent; }
+.tab-glider {
+  position: absolute; top: 0; bottom: 0; left: 0; z-index: 0;
+  border-radius: var(--r-pill, 99px);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  transition: transform 0.32s cubic-bezier(0.3, 0.72, 0.26, 1.1), width 0.32s cubic-bezier(0.3, 0.72, 0.26, 1.1);
+  will-change: transform, width;
+}
+.tab svg { transition: transform 0.26s cubic-bezier(0.3, 0.7, 0.3, 1.45); }
+.tab.on svg { transform: translateY(-1.5px) scale(1.07); }
+@media (prefers-reduced-motion: reduce) { .tab-glider { transition: none; } .tab svg { transition: none; } }
+
+.cbar-val { fill: var(--ink); font-size: 11px; font-weight: 700; }

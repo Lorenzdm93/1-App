@@ -1,4 +1,5 @@
 import { navigate } from '../core/router'
+import { useTabGlider } from './TabBar'
 import type { ModuleTab } from '../core/types'
 
 /**
@@ -14,9 +15,17 @@ export default function ModuleTabBar({
   tabs: readonly ModuleTab[]
   active: string
 }) {
+  const { innerRef, glider } = useTabGlider(String((typeof location !== 'undefined' ? location.hash : '')))
   return (
     <nav className="tabbar tabbar-mod" aria-label="Module">
-      <div className="tabbar-inner">
+      <div className="tabbar-inner" ref={innerRef}>
+        {glider && (
+          <span
+            className="tab-glider"
+            aria-hidden="true"
+            style={{ transform: `translateX(${glider.x}px)`, width: glider.w }}
+          />
+        )}
         {tabs.map((t) => (
           <button
             key={t.id}

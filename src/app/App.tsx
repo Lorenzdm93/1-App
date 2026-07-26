@@ -168,6 +168,8 @@ export default function App() {
   return (
     <>
       <a className="skip-link" href="#main">Skip to content</a>
+      <div className="edge-fade top" aria-hidden="true" />
+      <div className="edge-fade bottom" aria-hidden="true" />
       <main className="frame" id="main" tabIndex={-1}>
         <div className="view" key={route.name === 'module' ? 'm-' + route.id + '-' + (route.tab ?? '') : route.name}>
         <Suspense fallback={<ScreenLoader />}>
