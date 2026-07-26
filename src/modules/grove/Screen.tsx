@@ -55,6 +55,7 @@ import {
   type CompletionEvent,
 } from './model'
 import { ArtDefs, PlantInner, PlantSprite, AnimalInner, AnimalSprite, type AnimalId } from './Art'
+import { send as sendNotify } from '../../core/notify'
 
 const MODE_LABEL: Record<Mode, string> = { focus: 'Focus', short: 'Short break', long: 'Long break' }
 
@@ -105,7 +106,7 @@ function chime(kind: 'focus' | 'break'): void {
 function browserNotify(title: string, body: string): void {
   if (!groveStore.get().settings.notify) return
   if (!('Notification' in window) || Notification.permission !== 'granted') return
-  try { new Notification(title, { body, silent: true }) } catch { /* blocked */ }
+  sendNotify('grove', title, body)
 }
 
 /** One place reacts to a finished phase — chime, notification, toast. */

@@ -21,6 +21,7 @@ import ModuleSettingsScreen from './ModuleSettingsScreen'
 import ErrorBoundary from './ErrorBoundary'
 import { ToastHost, Sheet } from './ui'
 import { introStore, shouldShowIntro, markIntroSeen } from '../core/intro'
+import { send as sendNotify } from '../core/notify'
 
 function ScreenLoader() {
   return (
@@ -35,7 +36,15 @@ function ScreenLoader() {
 function UpdateToast() {
   const [worker, setWorker] = useState<ServiceWorker | null>(null)
   useEffect(() => {
-    const onReady = (e: Event) => setWorker((e as CustomEvent<ServiceWorker>).detail)
+    const onReady = (e: Event) => {
+      const w = (e as CustomEvent<ServiceWorker>).detail
+      /* Prefer the notification channel; the in-app pill only appears when
+         notifications are off, denied, or unsupported. */
+      const fired = sendNotify('system', '1% update ready', 'Tap to restart into the new version', () => {
+        w.postMessage({ type: 'SKIP_WAITING' })
+      })
+      if (!fired) setWorker(w)
+    }
     window.addEventListener('sw-update-ready', onReady)
     return () => window.removeEventListener('sw-update-ready', onReady)
   }, [])

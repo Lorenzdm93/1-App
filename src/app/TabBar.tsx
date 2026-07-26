@@ -12,7 +12,7 @@ export function useTabGlider(activeKey: string): {
   const [glider, setGlider] = useState<{ x: number; w: number } | null>(null)
   useLayoutEffect(() => {
     const measure = () => {
-      const el = innerRef.current?.querySelector<HTMLElement>('.tab.on')
+      const el = innerRef.current?.querySelector<HTMLElement>('.tab.on, .mtab.on')
       if (!el) { setGlider(null); return }
       setGlider({ x: el.offsetLeft, w: el.offsetWidth })
     }

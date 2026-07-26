@@ -7,6 +7,8 @@ export interface CoreSettings {
   enabled: string[]
   theme: Theme
   onboarded: boolean
+  /** Profile: per-module progress lines under the ledger. Undefined = on. */
+  moduleLines?: boolean
 }
 
 const DEFAULTS: CoreSettings = {
@@ -33,6 +35,10 @@ export const settingsStore = createPersistedStore<CoreSettings>(
   2,
   migrateSettings,
 )
+
+export function setModuleLines(on: boolean): void {
+  settingsStore.set((s) => ({ ...s, moduleLines: on }))
+}
 
 export function toggleModule(id: string): void {
   settingsStore.set((s) => ({

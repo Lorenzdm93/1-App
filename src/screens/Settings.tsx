@@ -8,9 +8,12 @@ import { toast } from '../core/toast'
 import { ConfirmSheet, Seg, Chevron } from '../app/ui'
 import { syncStore, connect, disconnect, backupNow, restoreLatest, FIREBASE_CONFIG } from '../core/sync'
 import { seedAllSampleData, removeAllSampleData, anySampleData } from '../core/sampledata'
+import { notifyStore, notifyStatus, enableNotifications, disableNotifications, setModuleNotify } from '../core/notify'
+import { setModuleLines } from '../core/settings'
+import { enabledModules } from '../core/registry'
 import { navigate } from '../core/router'
 
-const APP_VERSION = '0.17.0'
+const APP_VERSION = '0.18.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
@@ -25,6 +28,7 @@ export default function Settings() {
   const [confirmErase, setConfirmErase] = useState(false)
   const [pendingImport, setPendingImport] = useState<string | null>(null)
   const sync = useStore(syncStore)
+  const notify = useStore(notifyStore)
 
   function download() {
     try {
@@ -155,6 +159,69 @@ export default function Settings() {
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      <div className="section-label">Notifications</div>
+      <div className="card">
+        {(() => {
+          const status = notifyStatus()
+          if (status === 'unsupported') {
+            return <p className="cloudnote">This browser doesn't support notifications.</p>
+          }
+          return (
+            <>
+              <div className="cloudhead">
+                <b>Notifications</b>
+                <span>{status === 'denied' ? 'blocked in browser settings' : notify.enabled && status === 'granted' ? 'on' : 'off'}</span>
+              </div>
+              <p className="cloudnote" style={{ marginBottom: 10 }}>
+                Timers, fasting phases, and app updates arrive as system notifications.
+                On iPhone this needs the app installed to the Home Screen.
+              </p>
+              {status !== 'denied' && (
+                <div className="btn-row">
+                  {!(notify.enabled && status === 'granted') ? (
+                    <button className="btn btn-ghost" onClick={() => void enableNotifications()}>Enable</button>
+                  ) : (
+                    <button className="btn btn-ghost" onClick={() => disableNotifications()}>Turn off</button>
+                  )}
+                </div>
+              )}
+              {notify.enabled && status === 'granted' && (
+                <div className="nmods">
+                  {enabledModules(settings.enabled).map((m) => {
+                    const on = notify.mods[m.id] !== false
+                    return (
+                      <div className="nrow" key={m.id}>
+                        <span>{m.name}</span>
+                        <Seg<'on' | 'off'>
+                          options={[{ id: 'on', label: 'On' }, { id: 'off', label: 'Off' }]}
+                          value={on ? 'on' : 'off'}
+                          onChange={(v) => setModuleNotify(m.id, v === 'on')}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )
+        })()}
+      </div>
+
+      <div className="section-label">Display</div>
+      <div className="card">
+        <div className="nrow">
+          <div>
+            <span>Modules over time</span>
+            <p className="cloudnote" style={{ margin: '3px 0 0' }}>Per-module progress lines under the Profile ledger.</p>
+          </div>
+          <Seg<'on' | 'off'>
+            options={[{ id: 'on', label: 'On' }, { id: 'off', label: 'Off' }]}
+            value={settings.moduleLines !== false ? 'on' : 'off'}
+            onChange={(v) => setModuleLines(v === 'on')}
+          />
         </div>
       </div>
 

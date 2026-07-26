@@ -4,7 +4,7 @@ import { settingsStore } from '../core/settings'
 import { enabledModules } from '../core/registry'
 import { oneStore } from '../core/one'
 import { eventsStore } from '../core/events'
-import { Bars } from '../app/charts'
+import { Bars, MultiLine } from '../app/charts'
 import { StatBox } from '../app/ui'
 import { weekRecap } from '../core/score'
 import { ghisaStore } from '../modules/ghisa/model'
@@ -69,9 +69,33 @@ export default function Profile() {
         {weeks.length >= 2 && (
           <>
             <div className="section-label">The ledger</div>
-            <Bars data={weeks.slice(-16).map(([k, w]) => ({ label: k.slice(5), value: w.score }))} accentVar="var(--accent)" />
+            <Bars data={weeks.slice(-16).map(([k, w]) => ({ label: k.slice(5), value: w.score }))} accentVar="var(--good)" goodAt={100} />
           </>
         )}
+        {weeks.length >= 2 && mods.length >= 2 && settings.moduleLines !== false && (() => {
+          const win = weeks.slice(-16)
+          const labels = win.map(([k]) => k.slice(5))
+          const series = mods
+            .map((m) => ({
+              id: m.id,
+              label: m.name,
+              color: `var(--m-${m.id})`,
+              values: win.map(([, w]) => w.per?.[m.id] ?? null),
+            }))
+            .filter((s) => s.values.filter((v) => v !== null).length >= 2)
+          if (series.length < 2) return null
+          return (
+            <>
+              <div className="section-label">Modules over time</div>
+              <MultiLine series={series} labels={labels} height={140} ariaLabel="Module scores by week" />
+              <div className="mlegend">
+                {series.map((s) => (
+                  <span key={s.id}><i style={{ background: s.color }} />{s.label}</span>
+                ))}
+              </div>
+            </>
+          )
+        })()}
         <button className="btn btn-ghost" style={{ width: '100%', marginTop: 12 }} onClick={() => navigate('/one')}>
           The 1% engine — rate, goals, philosophy
         </button>

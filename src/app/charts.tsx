@@ -112,6 +112,7 @@ export function Bars({
                 height={h}
                 rx={4.5}
                 fill={`url(#${gid}${good ? 'g' : ''})`}
+                opacity={goodAt !== undefined && !good ? 0.45 : 1}
                 className="cbar-bar"
                 style={{ animationDelay: `${Math.min(i * 18, 420)}ms` }}
               />
@@ -249,6 +250,72 @@ export function AreaLine({
           <text key={'t' + i} x={pts[i].x} y={H - 3.5} textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'} className="cbar-lbl">
             {dd.label}
           </text>
+        ) : null,
+      )}
+    </svg>
+  )
+}
+
+/** Several modules, one frame: thin smooth lines in each module's accent,
+    a dashed guide at 100 (the bar every week tries to clear), gaps honored.
+    Same label rules as everything else. */
+export function MultiLine({
+  series,
+  labels,
+  height = 140,
+  ariaLabel = 'Module progress',
+}: {
+  series: { id: string; label: string; color: string; values: (number | null)[] }[]
+  labels: string[]
+  height?: number
+  ariaLabel?: string
+}) {
+  const W = 320
+  const H = height
+  const pad = { t: 10, b: 18, l: 6, r: 8 }
+  const n = labels.length
+  if (n < 2 || series.length === 0) {
+    return <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} className="cbar" role="img" aria-label={ariaLabel} />
+  }
+  const all = series.flatMap((s) => s.values.filter((v): v is number => v !== null))
+  const lo = Math.min(100, ...all)
+  const hi = Math.max(100, ...all)
+  const span = hi - lo || 1
+  const x = (i: number) => pad.l + (i * (W - pad.l - pad.r)) / (n - 1)
+  const y = (v: number) => pad.t + (H - pad.t - pad.b) * (1 - (v - lo) / span)
+  const guideY = y(100)
+  const lblIdx = pickLabels(n, 5)
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" className="cbar" role="img" aria-label={ariaLabel}>
+      <line x1={pad.l} y1={guideY} x2={W - pad.r} y2={guideY} stroke="var(--faint)" strokeWidth={1} strokeDasharray="3 5" opacity={0.55} vectorEffect="non-scaling-stroke" />
+      <text x={W - pad.r} y={Math.max(9, guideY - 4)} textAnchor="end" className="cbar-lbl">100</text>
+      {series.map((s) => {
+        /* split around nulls so gaps stay gaps */
+        const runs: { x: number; y: number }[][] = []
+        let cur: { x: number; y: number }[] = []
+        s.values.forEach((v, i) => {
+          if (v === null) {
+            if (cur.length > 1) runs.push(cur)
+            cur = []
+          } else {
+            cur.push({ x: x(i), y: y(v) })
+          }
+        })
+        if (cur.length > 1) runs.push(cur)
+        const lastRun = runs[runs.length - 1]
+        const end = lastRun ? lastRun[lastRun.length - 1] : null
+        return (
+          <g key={s.id}>
+            {runs.map((r, k) => (
+              <path key={k} d={smoothPath(r)} fill="none" stroke={s.color} strokeWidth={1.8} strokeLinecap="round" vectorEffect="non-scaling-stroke" opacity={0.92} />
+            ))}
+            {end && <circle cx={end.x} cy={end.y} r={2.4} fill={s.color} stroke="var(--bg, #0c0d10)" strokeWidth={1.2} />}
+          </g>
+        )
+      })}
+      {labels.map((l, i) =>
+        lblIdx.has(i) ? (
+          <text key={'t' + i} x={x(i)} y={H - 3.5} textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'} className="cbar-lbl">{l}</text>
         ) : null,
       )}
     </svg>
