@@ -1608,12 +1608,6 @@ export default function GhisaScreen({ tab = 'home' }: { tab?: string }) {
 }
 
 export function GhisaSettingsExtra() {
-  const st = useStore(ghisaStore)
-  return (
-    <SampleDataBlock
-      seeded={hasDemo(st)}
-      onSeed={() => { seedDemo(); toast('Sample training history loaded') }}
-      onRemove={() => { removeDemo(); toast('Sample data removed') }}
-    />
-  )
+  /* The sample-data switch moved to 1% Settings — nothing module-specific remains here. */
+  return null
 }

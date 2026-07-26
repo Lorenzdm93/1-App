@@ -8,6 +8,7 @@
 import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
 import { resetLedger } from '../../core/one'
+import { mulberry32 } from '../../core/rng'
 import { logEvent, eventsStore, removeEvent } from '../../core/events'
 import { dayKey, todayKey, shiftDay, weekStartKey } from '../../core/dates'
 
@@ -436,19 +437,43 @@ export function seedDemo(now = Date.now()): void {
      engine's won weeks); the third closed week holds the honest early ends. */
   const curWeekStart = new Date(weekStartKey(dayKey(now)) + 'T12:00:00').getTime()
   const wk = (weeksBack: number, dayInWeek: number): number => curWeekStart - weeksBack * 7 * DAY + dayInWeek * DAY
-  const plan: { endTs: number; targetH: number; actualH: number; protocolId: string }[] = [
-    { endTs: wk(4, 2), targetH: 16, actualH: 16.4, protocolId: 'p168' },
-    { endTs: wk(4, 5), targetH: 24, actualH: 24.8, protocolId: 'e24' },
+  const rng = mulberry32(0x0FA5)
+  const plan: { endTs: number; targetH: number; actualH: number; protocolId: string }[] = []
+  /* The year behind: a learning curve (2–3 fasts/week) hardening into routine
+     (5–6/week), the odd extended fast, misses getting rarer. */
+  for (let wb = 47; wb >= 4; wb--) {
+    if (wb === 21 || wb === 22) continue /* vacation */
+    const perWeek = wb > 36 ? 2 + Math.floor(rng() * 2) : wb > 20 ? 3 + Math.floor(rng() * 2) : 5 + Math.floor(rng() * 2)
+    const days = [0, 1, 2, 3, 4, 5, 6].sort(() => rng() - 0.5).slice(0, perWeek).sort((a, b) => a - b)
+    for (const dw of days) {
+      let targetH = 16
+      let protocolId = 'p168'
+      if (wb <= 20 && dw === 2 && wb % 4 === 0) { targetH = 18; protocolId = 'p186' }
+      if (wb % 9 === 4 && dw === days[0]) { targetH = 24; protocolId = 'e24' }
+      const hitP = wb > 36 ? 0.72 : wb > 20 ? 0.82 : 0.88
+      const hit = rng() < hitP
+      const actualH = hit ? targetH + 0.2 + rng() * 1.4 : targetH - (0.8 + rng() * 3)
+      plan.push({ endTs: wk(wb, dw), targetH, actualH: Math.round(actualH * 10) / 10, protocolId })
+    }
+  }
+  /* The honest third week back, then a crown fortnight of daily 16:8 hits. */
+  plan.push(
     { endTs: wk(3, 0), targetH: 16, actualH: 12.5, protocolId: 'p168' },
     { endTs: wk(3, 2), targetH: 16, actualH: 16.1, protocolId: 'p168' },
     { endTs: wk(3, 4), targetH: 16, actualH: 13.4, protocolId: 'p168' },
-    { endTs: wk(2, 0), targetH: 16, actualH: 16.5, protocolId: 'p168' },
-    { endTs: wk(2, 2), targetH: 18, actualH: 18.3, protocolId: 'p186' },
-    { endTs: wk(2, 4), targetH: 16, actualH: 16.6, protocolId: 'p168' },
-    { endTs: wk(1, 1), targetH: 16, actualH: 16.2, protocolId: 'p168' },
-    { endTs: wk(1, 3), targetH: 16, actualH: 16.9, protocolId: 'p168' },
-    { endTs: wk(1, 5), targetH: 16, actualH: 16.3, protocolId: 'p168' },
-  ]
+    { endTs: wk(3, 5), targetH: 16, actualH: 13.9, protocolId: 'p168' },
+  )
+  for (const wb of [2, 1]) {
+    for (let dw = 0; dw <= 6; dw++) {
+      const eighteen = wb === 2 && dw === 2
+      plan.push({
+        endTs: wk(wb, dw),
+        targetH: eighteen ? 18 : 16,
+        actualH: eighteen ? 18.3 : Math.round((16.1 + rng() * 1.2) * 10) / 10,
+        protocolId: eighteen ? 'p186' : 'p168',
+      })
+    }
+  }
   const fasts: Fast[] = plan.map((p) => {
     const endTs = p.endTs - 4 * HOUR
     return {
@@ -461,17 +486,22 @@ export function seedDemo(now = Date.now()): void {
     }
   })
   const weightTs: number[] = []
-  const weights: WeightEntry[] = [26, 20, 14, 8, 2].map((d, i) => {
-    const ts = now - d * DAY - 2 * HOUR
+  /* Weekly weigh-ins across the year: 84.3 → ~78.4 kg with a mid-cut plateau
+     and honest noise. */
+  const weights: WeightEntry[] = Array.from({ length: 48 }, (_, k) => {
+    const ts = now - (335 - k * 7) * DAY - 2 * HOUR
+    const f = k / 47
+    const shape = f < 0.35 ? (f / 0.35) * 0.45 : f < 0.55 ? 0.45 : 0.45 + ((f - 0.55) / 0.45) * 0.55
+    const kg = Math.round((84.3 - 5.9 * shape + (rng() - 0.5) * 0.6) * 10) / 10
     weightTs.push(ts)
-    return { ts, kg: Math.round((79.6 - i * 0.4) * 10) / 10 }
+    return { ts, kg }
   })
   const hydrationDays: string[] = []
   const hydration = { ...oraStore.get().hydration }
-  for (const d of [3, 2, 1]) {
+  for (const d of [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]) {
     const key = dayKey(now - d * DAY)
     if (hydration[key] === undefined) {
-      hydration[key] = 5 + d
+      hydration[key] = 4 + ((d * 3) % 5)
       hydrationDays.push(key)
     }
   }

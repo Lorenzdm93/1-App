@@ -13,8 +13,10 @@ function Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m6.5 6.5 11 11" /><path d="m21 21-1-1" /><path d="m3 3 1 1" />
-      <path d="m18 22 4-4" /><path d="m2 6 4-4" /><path d="m3 10 7-7" /><path d="m14 21 7-7" />
+      <path d="M7.6 12h8.8" strokeWidth="2.1" />
+      <rect x="4.1" y="6.9" width="3.1" height="10.2" rx="1.5" strokeWidth="1.9" />
+      <rect x="16.8" y="6.9" width="3.1" height="10.2" rx="1.5" strokeWidth="1.9" />
+      <path d="M2 12h1.6M20.4 12H22" strokeWidth="2.1" />
     </svg>
   )
 }
@@ -31,8 +33,10 @@ function DumbIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m6.5 6.5 11 11" /><path d="m21 21-1-1" /><path d="m3 3 1 1" />
-      <path d="m18 22 4-4" /><path d="m2 6 4-4" /><path d="m3 10 7-7" /><path d="m14 21 7-7" />
+      <path d="M7.6 12h8.8" strokeWidth="2.1" />
+      <rect x="4.1" y="6.9" width="3.1" height="10.2" rx="1.5" strokeWidth="1.9" />
+      <rect x="16.8" y="6.9" width="3.1" height="10.2" rx="1.5" strokeWidth="1.9" />
+      <path d="M2 12h1.6M20.4 12H22" strokeWidth="2.1" />
     </svg>
   )
 }

@@ -6,6 +6,7 @@ import { useStore } from '../core/hooks'
 import { settingsStore } from '../core/settings'
 import { useTheme } from './theme'
 import Today from '../screens/Today'
+import RespiroDock from '../modules/respiro/Dock'
 
 /* Today is the home screen and stays in the main chunk; everything else
    arrives on first visit. */
@@ -182,6 +183,7 @@ export default function App() {
         </div>
       </main>
       {!(route.name === 'module' && moduleById(route.id)?.tabs) && <TabBar route={route} />}
+      <RespiroDock />
       <UpdateToast />
       <ToastHost />
     </>

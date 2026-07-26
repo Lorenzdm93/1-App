@@ -1,5 +1,6 @@
 import { createPersistedStore } from '../../core/store'
 import { resetLedger } from '../../core/one'
+import { mulberry32 } from '../../core/rng'
 import { logEvent } from '../../core/events'
 import { liftById, type Sex } from './formulas'
 
@@ -132,25 +133,47 @@ export function hasDemo(st: CaliberState): boolean {
 export function seedDemo(now = Date.now()): void {
   removeDemo()
   const WEEK = 7 * 86_400_000
+  const DAY = 86_400_000
+  const rng = mulberry32(0xCA71)
+  /* [lift, starting e1RM, yearly gain fraction] — tested every ~3.5 weeks
+     across the year with a mid-year dip, then weekly in the last three closed
+     weeks, each one up (the engine's contract). */
   const plan: [string, number, number][] = [
-    ['squat', 92.5, 2.5],
-    ['bench', 72.5, 1.5],
-    ['deadlift', 120, 3],
+    ['squat', 74, 0.17],
+    ['bench', 57.5, 0.16],
+    ['deadlift', 97.5, 0.18],
+    ['ohp', 36, 0.14],
+    ['row', 52.5, 0.15],
   ]
   const demoTs: number[] = []
   caliberStore.set((x) => {
     const tests = { ...x.tests }
     const prs = { ...x.prs }
-    for (const [lift, base, inc] of plan) {
+    for (const [lift, base, gain] of plan) {
       if (!liftById(lift)) continue
       const rows = [...(tests[lift] ?? [])]
-      for (let w = 8; w >= 1; w--) {
-        const ts = now - w * WEEK - 5 * 3_600_000 + (w % 3) * 3_600_000
-        const e1rm = Math.round((base + (8 - w) * inc) * 2) / 2
+      let best = 0
+      let daysAgo = 330 - Math.floor(rng() * 6)
+      while (daysAgo > 24) {
+        const f = (330 - daysAgo) / 330
+        const dip = f > 0.42 && f < 0.52 ? 0.985 : 1
+        const e1rm = Math.round(base * (1 + gain * f) * dip * 2) / 2
+        const ts = now - daysAgo * DAY - 5 * 3_600_000
         rows.push({ ts, e1rm })
         demoTs.push(ts)
-        if (!prs[lift] || e1rm > prs[lift].e1rm) prs[lift] = { e1rm, ts }
+        best = Math.max(best, e1rm)
+        daysAgo -= 21 + Math.floor(rng() * 9)
       }
+      const contract = lift === 'squat' || lift === 'bench'
+      if (contract) {
+        for (const wb of [3, 2, 1]) {
+          best = Math.round(best * 1.014 * 2) / 2
+          const ts = now - wb * WEEK - 5 * 3_600_000 + wb * 3_600_000
+          rows.push({ ts, e1rm: best })
+          demoTs.push(ts)
+        }
+      }
+      for (const r of rows) if (!prs[lift] || r.e1rm > prs[lift].e1rm) prs[lift] = { e1rm: r.e1rm, ts: r.ts }
       tests[lift] = rows.sort((a, b) => a.ts - b.ts)
     }
     return { ...x, tests, prs, demoTs }

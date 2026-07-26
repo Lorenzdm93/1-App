@@ -6,6 +6,7 @@
  */
 import { uid } from '../../core/id'
 import { resetLedger } from '../../core/one'
+import { mulberry32 } from '../../core/rng'
 import { createPersistedStore } from '../../core/store'
 import { logEvent, eventsStore } from '../../core/events'
 import { dayKey, todayKey, shiftDay, weekStartKey } from '../../core/dates'
@@ -422,7 +423,7 @@ export function seedDemo(now = Date.now()): void {
   const ensure = (re: RegExp, spec: Omit<Compound, 'id' | 'createdTs'>): string => {
     const hit = st.compounds.find((c) => re.test(c.name))
     if (hit) return hit.id
-    const c: Compound = { id: uid() + '-demo', createdTs: now - 15 * 86_400_000, ...spec }
+    const c: Compound = { id: uid() + '-demo', createdTs: now - 335 * 86_400_000, ...spec }
     created.push(c)
     return c.id
   }
@@ -436,18 +437,24 @@ export function seedDemo(now = Date.now()): void {
     ensure(/^zinc/i, { name: 'Zinc', chem: 'picolinate', amount: '15', unit: 'mg', form: 'capsule', slot: 'evening', note: 'Away from coffee' }),
   ]
   const stacks: Stack[] = [
-    { id: uid() + '-demo', name: 'Morning · sample', emoji: '☀️', color: STACK_COLORS[0], compoundIds: morning, createdTs: now - 15 * 86_400_000 },
-    { id: uid() + '-demo', name: 'Evening · sample', emoji: '😴', color: STACK_COLORS[3], compoundIds: evening, createdTs: now - 15 * 86_400_000 },
+    { id: uid() + '-demo', name: 'Morning stack', emoji: '☀️', color: STACK_COLORS[0], compoundIds: morning, createdTs: now - 335 * 86_400_000 },
+    { id: uid() + '-demo', name: 'Evening stack', emoji: '😴', color: STACK_COLORS[3], compoundIds: evening, createdTs: now - 335 * 86_400_000 },
   ]
   const added: Record<string, string[]> = {}
   const taken = { ...st.taken }
+  const rng = mulberry32(0x5A9A)
   const curWeek = weekStartKey(dayKey(now))
   const perfectFrom = shiftDay(curWeek, -14)
-  for (let i = 27; i >= 1; i--) {
+  for (let i = 330; i >= 1; i--) {
     const d = shiftDay(dayKey(now), -i)
     const perfect = d >= perfectFrom
-    if (!perfect && i % 6 === 2) continue
-    const ids = [...morning, ...(!perfect && i % 4 === 1 ? [] : evening)]
+    const vacation = (i >= 148 && i <= 156) || (i >= 272 && i <= 278)
+    const humanWeek = !perfect && i <= 21
+    if (!perfect && vacation && rng() < 0.8) continue
+    if (humanWeek && i % 4 === 2) continue
+    if (!perfect && rng() < 0.09) continue
+    const dropEvening = (!perfect && rng() < 0.17) || (humanWeek && i % 3 === 1)
+    const ids = [...morning, ...(dropEvening ? [] : evening)]
     const existing = new Set(taken[d] ?? [])
     const fresh = ids.filter((id) => !existing.has(id))
     if (fresh.length === 0) continue

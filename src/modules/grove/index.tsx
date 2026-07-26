@@ -15,9 +15,9 @@ import QuickActions from './QuickActions'
 function Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <polygon points="12,3 17,11 7,11" fill="var(--m-grove)" opacity="0.9" />
-      <polygon points="12,8 18.5,17 5.5,17" fill="var(--m-grove)" opacity="0.65" />
-      <rect x="10.9" y="17" width="2.2" height="4" rx="1" fill="var(--m-grove)" opacity="0.8" />
+      <polygon points="12,2 18.4,10.6 5.6,10.6" fill="var(--m-grove)" opacity="0.92" />
+      <polygon points="12,7.4 20,17.4 4,17.4" fill="var(--m-grove)" opacity="0.62" />
+      <rect x="10.7" y="17.4" width="2.6" height="4.4" rx="1.2" fill="var(--m-grove)" opacity="0.85" />
     </svg>
   )
 }

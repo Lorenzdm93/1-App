@@ -13,13 +13,14 @@ function Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
-        d="M4 15.5a8 8 0 0 1 16 0"
+        d="M2.8 16.6a9.2 9.2 0 0 1 18.4 0"
         stroke="var(--m-caliber)"
-        strokeWidth="1.6"
+        strokeWidth="2"
         strokeLinecap="round"
       />
-      <path d="M12 15.5 15.5 9" stroke="var(--m-caliber)" strokeWidth="1.6" strokeLinecap="round" />
-      <circle cx="12" cy="15.5" r="1.7" fill="var(--m-caliber)" />
+      <path d="M12 16.6 16.8 9.2" stroke="var(--m-caliber)" strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx="12" cy="16.6" r="2" fill="var(--m-caliber)" />
+      <path d="M2.8 16.6h1.6M19.6 16.6h1.6" stroke="var(--m-caliber)" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
     </svg>
   )
 }

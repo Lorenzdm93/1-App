@@ -14,10 +14,9 @@ import OraQuickActions from './QuickActions'
 function DialIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="13.2" r="7.8" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M10 2.6h4M12 2.6v2.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M12 13.2 15 10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <path d="M18.6 5.6l1.4 1.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="8.8" stroke="currentColor" strokeWidth="2" opacity="0.32" />
+      <path d="M13.53 3.33 A8.8 8.8 0 0 1 18.74 17.66" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="1.9" fill="currentColor" />
     </svg>
   )
 }

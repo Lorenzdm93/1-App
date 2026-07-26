@@ -678,11 +678,6 @@ export function OraSettingsExtra() {
         <b>Not medical advice.</b> Don't fast if you're pregnant, under 18, or have a history of disordered
         eating — talk to a doctor first. Break any fast that makes you feel faint, dizzy or unwell.
       </div>
-      <SampleDataBlock
-        seeded={hasDemo(st)}
-        onSeed={() => { seedDemo(); toast('Sample fasting history loaded') }}
-        onRemove={() => { removeDemo(); toast('Sample data removed') }}
-      />
     </div>
   )
 }

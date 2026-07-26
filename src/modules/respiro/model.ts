@@ -2,6 +2,8 @@ import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
 import { eventsStore } from '../../core/events'
 import { resetLedger } from '../../core/one'
+import { mulberry32 } from '../../core/rng'
+import { dayKey, shiftDay, weekStartKey } from '../../core/dates'
 import { logEvent } from '../../core/events'
 import type { CustomPattern } from './protocols'
 
@@ -11,6 +13,7 @@ export interface RespiroState {
   autostart: boolean
   custom: CustomPattern
   spotifyUrl: string
+  dock: SoundItem | null
   bestHold: number
   lastHold: number
   /** Sound settings — a soft tick at each phase change. */
@@ -30,11 +33,18 @@ export interface SoundItem {
   name: string
 }
 
+/** The docked player — store-backed so it survives tab switches (screens
+    remount per tab by design) and greets you again on module re-entry. */
+export function setDock(item: SoundItem | null): void {
+  respiroStore.set((s) => ({ ...s, dock: item }))
+}
+
 const DEFAULTS: RespiroState = {
   protocolId: 'box',
   autostart: false,
   custom: { inS: 4, hold1: 4, outS: 4, hold2: 4 },
   spotifyUrl: '',
+  dock: null,
   bestHold: 0,
   lastHold: 0,
   cues: true,
@@ -52,6 +62,7 @@ export function migrateRespiro(data: unknown, fromVersion: number): RespiroState
       protocolId: typeof d.protocolId === 'string' ? d.protocolId : 'box',
       custom: d.custom && typeof d.custom === 'object' ? d.custom : DEFAULTS.custom,
       spotifyUrl: typeof d.spotifyUrl === 'string' ? d.spotifyUrl : '',
+      dock: (d as { dock?: SoundItem | null }).dock ?? null,
       bestHold: typeof d.bestHold === 'number' ? d.bestHold : 0,
       lastHold: typeof d.lastHold === 'number' ? d.lastHold : 0,
       /* v4: a previously-pinned single Spotify link seeds the new library. */
@@ -202,16 +213,43 @@ export function hasDemo(): boolean {
 export function seedDemo(now = Date.now()): void {
   removeDemo()
   const DAY = 86_400_000
-  /* Week-over-week growth: days 14–8 sum 42 min, days 7–3 sum 54 min. */
-  const mins = [5, 6, 5, 8, 6, 5, 7, 10, 12, 9, 8, 15]
-  const fresh = mins.map((m, i) => ({
-    id: uid() + '-demo',
-    module: 'respiro',
-    kind: 'session',
-    ts: now - (14 - i) * DAY - (i % 3) * 3_600_000,
-    value: m,
-    unit: 'min',
-  }))
+  const rng = mulberry32(0x7357)
+  const cw = weekStartKey(dayKey(now))
+  const fortnightFrom = shiftDay(cw, -14)
+  const fresh: { id: string; module: string; kind: string; ts: number; value: number; unit: string }[] = []
+  /* Twelve months of practice: ~4 sessions/week early, near-daily lately,
+     vacation gaps — and every day of the two most recent closed weeks carries
+     ≥10 minutes, so the linked CADENCE habit ticks on truth. */
+  for (let day = 1; day <= 335; day++) {
+    const d = shiftDay(dayKey(now), -day)
+    const vacation = (day >= 148 && day <= 156) || (day >= 272 && day <= 278)
+    const inFortnight = d >= fortnightFrom && d < cw
+    let sessions = 0
+    if (inFortnight) sessions = 1
+    else if (!vacation) {
+      const recency = day < 60 ? 0.62 : day < 180 ? 0.55 : 0.45
+      if (rng() < recency) sessions = 1
+      if (rng() < 0.08) sessions += 1
+    }
+    for (let k = 0; k < sessions; k++) {
+      const minutes = inFortnight ? 10 + Math.floor(rng() * 7) : 5 + Math.floor(rng() * 14)
+      const hour = k === 0 ? 7 + Math.floor(rng() * 3) : 21
+      const ts = new Date(d + 'T00:00:00').getTime() + hour * 3_600_000 + Math.floor(rng() * 50) * 60_000
+      if (ts > now) continue
+      fresh.push({ id: uid() + '-demo', module: 'respiro', kind: 'session', ts, value: minutes, unit: 'min' })
+    }
+  }
+  /* Growth guarantee for the crown weeks: week −1 clears week −2 by ≥2%. */
+  const sum = (from: string, to: string) =>
+    fresh.reduce((a, e) => { const dd = dayKey(e.ts); return dd >= from && dd < to ? a + e.value : a }, 0)
+  const wk1 = sum(shiftDay(cw, -7), cw)
+  const wk2 = sum(fortnightFrom, shiftDay(cw, -7))
+  const need = Math.ceil(wk2 * 1.02) + 1
+  if (wk1 < need) {
+    const boost = fresh.filter((e) => { const dd = dayKey(e.ts); return dd >= shiftDay(cw, -7) && dd < cw })
+      .sort((a, b) => b.value - a.value)[0]
+    if (boost) boost.value += need - wk1
+  }
   eventsStore.set((evs) => [...fresh, ...evs].sort((a, b) => b.ts - a.ts))
   resetLedger()
 }

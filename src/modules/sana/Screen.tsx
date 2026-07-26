@@ -851,12 +851,6 @@ export default function SanaScreen({ tab = 'today' }: { tab?: string }) {
 }
 
 export function SanaSettingsExtra() {
-  const st = useStore(sanaStore)
-  return (
-    <SampleDataBlock
-      seeded={hasDemo(st)}
-      onSeed={() => { seedDemo(); toast('Sample stacks loaded') }}
-      onRemove={() => { removeDemo(); toast('Sample data removed') }}
-    />
-  )
+  /* The sample-data switch moved to 1% Settings — nothing module-specific remains here. */
+  return null
 }

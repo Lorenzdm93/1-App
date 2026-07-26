@@ -12,7 +12,7 @@ function Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
-        d="M2 13c2.2 0 2.2-8 4.4-8s2.2 14 4.4 14 2.2-11 4.4-11 1.6 5 4.4 5"
+        d="M2 12.4h3.1l2.3-6.8 3.5 12.8 2.7-9.6 1.9 3.6H22"
         stroke="currentColor"
         strokeWidth="2.2"
         strokeLinecap="round"

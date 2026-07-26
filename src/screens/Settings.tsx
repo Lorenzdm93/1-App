@@ -7,9 +7,10 @@ import { todayKey } from '../core/dates'
 import { toast } from '../core/toast'
 import { ConfirmSheet, Seg, Chevron } from '../app/ui'
 import { syncStore, connect, disconnect, backupNow, restoreLatest, FIREBASE_CONFIG } from '../core/sync'
+import { seedAllSampleData, removeAllSampleData, anySampleData } from '../core/sampledata'
 import { navigate } from '../core/router'
 
-const APP_VERSION = '0.14.0'
+const APP_VERSION = '0.15.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
@@ -154,6 +155,38 @@ export default function Settings() {
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      <div className="section-label">Sample data</div>
+      <div className="card">
+        <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--faint)', lineHeight: 1.6 }}>
+          Twelve months of realistic, seam-linked history across every module — deterministic, so
+          screenshots are reproducible. Tagged throughout: removal never touches your real data.
+        </p>
+        <div className="btn-row">
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              const n = seedAllSampleData()
+              toast(`Sample data loaded — ${n} modules`)
+            }}
+          >
+            Load sample data
+          </button>
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              if (!anySampleData()) {
+                toast('No sample data present')
+                return
+              }
+              removeAllSampleData()
+              toast('Sample data removed')
+            }}
+          >
+            Remove
+          </button>
         </div>
       </div>
 

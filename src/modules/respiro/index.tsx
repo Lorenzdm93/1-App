@@ -15,8 +15,8 @@ import QuickActions from './QuickActions'
 function Icon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 14.5c2.5 0 2.5-5 5-5s2.5 5 5 5 2.5-5 5-5 2.5 5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" transform="translate(-1.5 -1)" />
-      <path d="M4.5 18c2 0 2-3.4 4-3.4s2 3.4 4 3.4 2-3.4 4-3.4 2 3.4 4 3.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.5" />
+      <path d="M2 10.6c2.5 0 2.5-5.4 5-5.4s2.5 5.4 5 5.4 2.5-5.4 5-5.4 2.5 5.4 5 5.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M2 17.6c2.5 0 2.5-4.4 5-4.4s2.5 4.4 5 4.4 2.5-4.4 5-4.4 2.5 4.4 5 4.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.5" />
     </svg>
   )
 }

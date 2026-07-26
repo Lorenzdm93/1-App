@@ -958,12 +958,6 @@ export default function CadenceScreen({ tab = 'today' }: { tab?: string }) {
 }
 
 export function CadenceSettingsExtra() {
-  const st = useStore(cadenceStore)
-  return (
-    <SampleDataBlock
-      seeded={hasDemo(st)}
-      onSeed={() => { seedDemo(); toast('Sample habits loaded') }}
-      onRemove={() => { removeDemo(); toast('Sample data removed') }}
-    />
-  )
+  /* The sample-data switch moved to 1% Settings — nothing module-specific remains here. */
+  return null
 }

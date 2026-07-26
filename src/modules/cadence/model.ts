@@ -1,6 +1,7 @@
 import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
 import { resetLedger } from '../../core/one'
+import { mulberry32 } from '../../core/rng'
 import { logEvent, eventsStore } from '../../core/events'
 import { toast } from '../../core/toast'
 import { dayKey, todayKey, shiftDay, dayDiff, weekStartKey } from '../../core/dates'
@@ -725,43 +726,63 @@ export function hasDemo(st: CadenceState): boolean {
 /** Four habits with ~3 weeks of honest history: streaks, gaps, one slip, partial focus days. */
 export function seedDemo(now = Date.now()): void {
   removeDemo()
-  const start = shiftDay(dayKey(now), -28)
-  const mk = (name: string, emoji: string, color: string, type: HabitType, targetMin?: number): Habit => ({
+  const rng = mulberry32(0x2CAD)
+  const today = dayKey(now)
+  const mk = (name: string, emoji: string, color: string, type: HabitType, daysAgo: number, targetMin?: number): Habit => ({
     id: uid() + '-demo', name, emoji, color, type,
-    schedule: { mode: 'daily' }, startDate: start,
+    schedule: { mode: 'daily' }, startDate: shiftDay(today, -daysAgo),
     ...(targetMin ? { targetMin } : {}),
-    createdTs: now - 22 * 86_400_000,
+    createdTs: now - daysAgo * 86_400_000,
   })
+  /* Real names, staggered start dates, three of them linked to sibling
+     modules (🎯 grove, 🌬 respiro, ⏳ ora) so the seams light up in
+     screenshots. Truth from those modules overwrites the pre-ticks. */
   const habits = [
-    mk('Focus time · sample', '🎯', PALETTE[0], 'build', 15),
-    mk('Read · sample', '📚', PALETTE[2], 'build'),
-    mk('Stretch · sample', '🌱', PALETTE[8], 'build'),
-    mk('No sugar · sample', '🍬', PALETTE[4], 'quit'),
+    mk('Deep work', '🎯', PALETTE[0], 'build', 364, 15),
+    mk('Read 20 pages', '📚', PALETTE[2], 'build', 364),
+    mk('Morning stretch', '🤸', PALETTE[8], 'build', 300),
+    mk('Breathwork', '🌬', PALETTE[6], 'build', 240, 10),
+    mk('Fast 16:8', '⏳', PALETTE[5], 'build', 180, 960),
+    mk('No sugar', '🍬', PALETTE[4], 'quit', 364),
   ]
+  const [deep, read, stretch, breath, fast, sugar] = habits
   const checks: Record<string, string[]> = {}
   const progress: Record<string, Record<string, number>> = {}
   const slips: Record<string, string[]> = {}
-  /* The two most recent CLOSED weeks (Monday-aligned) are perfect — those are
-     the weeks the 1% engine will crown; the third closed week is honestly
-     human, and days inside the current week ride the live score. */
-  const curWeek = weekStartKey(dayKey(now))
+  const curWeek = weekStartKey(today)
   const perfectFrom = shiftDay(curWeek, -14)
   const humanFrom = shiftDay(curWeek, -21)
-  for (let i = 27; i >= 1; i--) {
-    const d = shiftDay(dayKey(now), -i)
-    if (d < humanFrom) continue
+  const baseP: [Habit, number][] = [[deep, 0.72], [read, 0.82], [stretch, 0.7], [breath, 0.78], [fast, 0.8]]
+  for (let i = 364; i >= 1; i--) {
+    const d = shiftDay(today, -i)
+    const vacation = (i >= 148 && i <= 156) || (i >= 272 && i <= 278)
     const done: string[] = []
     if (d >= perfectFrom && d < curWeek) {
-      done.push(habits[0].id, habits[1].id, habits[2].id)
+      /* the crown fortnight: every build lands (linked ones re-sync to truth) */
+      for (const h of habits) if (h.type === 'build' && d >= h.startDate) done.push(h.id)
+    } else if (d >= humanFrom) {
+      /* the honest third week back */
+      if (i % 7 !== 3) done.push(read.id)
+      if (i % 3 !== 1) done.push(stretch.id)
+      if (i % 2 === 0) done.push(deep.id)
+      else if (i % 5 === 1) (progress[d] = progress[d] ?? {})[deep.id] = 0.5
+      if (i % 2 === 1) done.push(breath.id)
+      if (i % 3 !== 0) done.push(fast.id)
     } else {
-      if (i % 7 !== 3) done.push(habits[1].id)
-      if (i % 3 !== 1) done.push(habits[2].id)
-      if (i % 2 === 0) done.push(habits[0].id)
-      else if (i % 5 === 1) (progress[d] = progress[d] ?? {})[habits[0].id] = 0.5
+      /* the year behind: fluctuating adherence, drift toward better lately */
+      const drift = 0.86 + 0.14 * (1 - i / 364)
+      const wave = 1 + 0.07 * Math.sin((i / 364) * Math.PI * 4)
+      for (const [h, p] of baseP) {
+        if (d < h.startDate) continue
+        const pv = vacation ? p * 0.12 : Math.min(0.97, p * drift * wave)
+        if (rng() < pv) done.push(h.id)
+        else if (h.targetMin && rng() < 0.18) (progress[d] = progress[d] ?? {})[h.id] = Math.round(rng() * 6) / 10 + 0.2
+      }
     }
     if (done.length) checks[d] = done
   }
-  slips[habits[3].id] = [shiftDay(humanFrom, 2)]
+  /* Quit habit: a handful of honest slips across the year, one in the human week. */
+  slips[sugar.id] = [300, 226, 158, 96, 61].map((n) => shiftDay(today, -n)).concat([shiftDay(humanFrom, 2)])
   const mergeDays = (a: Record<string, string[]>, b: Record<string, string[]>): Record<string, string[]> => {
     const out = { ...a }
     for (const d of Object.keys(b)) out[d] = [...(out[d] ?? []), ...b[d]]

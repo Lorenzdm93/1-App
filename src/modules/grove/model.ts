@@ -9,6 +9,7 @@ import { createPersistedStore } from '../../core/store'
 import { uid } from '../../core/id'
 import { logEvent, eventsStore } from '../../core/events'
 import { resetLedger } from '../../core/one'
+import { mulberry32 } from '../../core/rng'
 import { dayKey, todayKey, shiftDay, weekStartKey } from '../../core/dates'
 
 export type Mode = 'focus' | 'short' | 'long'
@@ -478,25 +479,31 @@ const DEMO_TASKS: readonly { name: string; planned: number; done: number }[] = [
     mirrored 1:1 into tagged focus events. Fully idempotent. */
 export function seedDemo(now = Date.now()): void {
   removeDemo()
+  const rng = mulberry32(0x6706)
   const plants: Plant[] = []
   const MIN_CHOICES = [15, 25, 25, 25, 45, 60]
-  for (let day = 0; day < 42; day++) {
+  /* Twelve months: a mild upward drift toward the present, two vacation
+     windows, weekday rhythm — seeded, so re-rolls are identical. */
+  for (let day = 0; day < 365; day++) {
     const d = new Date(now - day * 86400000)
     const dow = d.getDay()
     const weekend = dow === 0 || dow === 6
-    const roll = Math.random()
+    const vacation = (day >= 148 && day <= 156) || (day >= 272 && day <= 278)
+    const roll = rng()
     let count = weekend
       ? (roll < 0.5 ? 0 : roll < 0.85 ? 1 : 2)
       : (roll < 0.12 ? 0 : roll < 0.4 ? 1 : roll < 0.75 ? 2 : roll < 0.93 ? 3 : 4)
+    if (vacation) count = 0
     /* The linked CADENCE habit needs every day of the two most recent CLOSED
        weeks to carry focus — guarantee at least one session there. */
     const dk = dayKey(d.getTime())
     const cw = weekStartKey(dayKey(now))
     if (dk < cw && dk >= shiftDay(cw, -14)) count = Math.max(1, count)
+    const trend = 0.72 + 0.28 * (1 - day / 365)
     for (let i = 0; i < count; i++) {
-      const minutes = MIN_CHOICES[Math.floor(Math.random() * MIN_CHOICES.length)]
-      const hour = 9 + Math.floor(Math.random() * 10)
-      const ts = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, Math.floor(Math.random() * 50)).getTime()
+      const minutes = Math.max(10, Math.round((MIN_CHOICES[Math.floor(rng() * MIN_CHOICES.length)] * trend) / 5) * 5)
+      const hour = 9 + Math.floor(rng() * 10)
+      const ts = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, Math.floor(rng() * 50)).getTime()
       if (ts > now) continue
       plants.push({ id: uid() + '-d' + plants.length, ts, minutes, kind: kindForFocus(minutes), demo: true })
     }
@@ -519,10 +526,20 @@ export function seedDemo(now = Date.now()): void {
     const cw = weekStartKey(dayKey(now))
     for (let d = 1; d <= 14; d++) floorDays.add(shiftDay(cw, -d))
   }
-  const weeks = [...byWeek.keys()].sort()
+  /* The exact growth curve + guarantee apply to the LAST EIGHT closed weeks
+     only — the rest of the year stays honestly noisy. The curve's base picks
+     up where the raw year leaves off, so the chart never dips at the seam and
+     the engine's trailing baseline stays beatable. */
+  const allWeeks = [...byWeek.keys()].sort()
+  const weeks = allWeeks.slice(-8)
+  const prior = allWeeks.slice(-12, -8)
+  const priorMean = prior.length
+    ? prior.reduce((a, ws) => a + (byWeek.get(ws) as Plant[]).reduce((x, p) => x + p.minutes, 0), 0) / prior.length
+    : 160
+  const curveBase = Math.max(160, Math.round(priorMean * 0.98))
   weeks.forEach((ws, idx) => {
     const arr = byWeek.get(ws) as Plant[]
-    const target = Math.round(160 * Math.pow(1.02, idx))
+    const target = Math.round(curveBase * Math.pow(1.02, idx))
     const sum = arr.reduce((a, p) => a + p.minutes, 0)
     if (sum <= 0) return
     for (const p of arr) {

@@ -445,12 +445,6 @@ export default function CaliberScreen({ tab = 'test' }: { tab?: string }) {
 }
 
 export function CaliberSettingsExtra() {
-  const st = useStore(caliberStore)
-  return (
-    <SampleDataBlock
-      seeded={hasDemo(st)}
-      onSeed={() => { seedDemo(); toast('Sample strength tests loaded') }}
-      onRemove={() => { removeDemo(); toast('Sample data removed') }}
-    />
-  )
+  /* The sample-data switch moved to 1% Settings — nothing module-specific remains here. */
+  return null
 }

@@ -37,6 +37,7 @@ respiroStore,
   parseYouTube,
   youtubeEmbedUrl,
   type SoundItem, seedDemo, removeDemo, hasDemo,
+  setDock,
 
 } from './model'
 
@@ -1028,19 +1029,12 @@ export default function RespiroScreen({ tab = 'practice' }: { tab?: string }) {
   const [config, setConfig] = useState<string | null>(null)
   const [session, setSession] = useState<{ tech: Technique; cfg: SessionCfg } | null>(null)
   const [summary, setSummary] = useState<SessionRec | null>(null)
-  const [dock, setDock] = useState<SoundItem | null>(null)
 
   /* A quick action on Today can request an immediate session. */
   useEffect(() => {
     if (consumeAutostart()) setConfig(respiroStore.get().protocolId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  const dockRef = dock
-    ? dock.kind === 'youtube'
-      ? { kind: 'youtube' as const, ref: parseYouTube(dock.url) }
-      : { kind: 'spotify' as const, ref: parseSpotify(dock.url) }
-    : null
 
   return (
     <>
@@ -1054,6 +1048,7 @@ export default function RespiroScreen({ tab = 'practice' }: { tab?: string }) {
       )}
       {tab === 'progress' && <ProgressTab />}
       {tab === 'sound' && <ToolsTab onDock={setDock} />}
+      {/* The docked player itself renders app-side (src/modules/respiro/Dock.tsx) so it survives tab remounts. */}
 
       <ConfigSheet
         techId={config}
@@ -1075,38 +1070,11 @@ export default function RespiroScreen({ tab = 'practice' }: { tab?: string }) {
       )}
       <SummarySheet rec={summary} onClose={() => setSummary(null)} />
 
-      {dockRef && dockRef.ref && (
-        <div className="rp2 rp2-dock">
-          {dockRef.kind === 'youtube' ? (
-            <iframe
-              className="yt"
-              src={youtubeEmbedUrl(dockRef.ref)}
-              allow="autoplay; encrypted-media; picture-in-picture"
-              title="YouTube player"
-            />
-          ) : (
-            <iframe
-              className="sp"
-              src={spotifyEmbedUrl(dockRef.ref)}
-              height={80}
-              allow="encrypted-media"
-              title="Spotify player"
-            />
-          )}
-          <button className="close" onClick={() => setDock(null)} aria-label="Close player">✕</button>
-        </div>
-      )}
     </>
   )
 }
 
 export function RespiroSettingsExtra() {
-  useStore(respiroStore)
-  return (
-    <SampleDataBlock
-      seeded={hasDemo()}
-      onSeed={() => { seedDemo(); toast('Sample sessions loaded') }}
-      onRemove={() => { removeDemo(); toast('Sample data removed') }}
-    />
-  )
+  /* The sample-data switch moved to 1% Settings — nothing module-specific remains here. */
+  return null
 }
