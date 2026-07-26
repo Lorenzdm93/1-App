@@ -39,7 +39,9 @@ export interface WeekPulse {
   modules: ModulePulse[]
   wonWeeks: number
   compoundPct: number
-  spark: { label: string; value: number }[]
+  spark: { label: string; value: number   /** No closed weeks yet — this week is writing the starting lines. */
+  firstWeek: boolean
+}[]
 }
 
 export function computeGrowthTarget(baseline: number, rate: number, goal?: number): number {
@@ -194,7 +196,8 @@ export function computePulse(today = todayKey()): WeekPulse {
   const cur = overall(mods)
   if (cur !== null) spark.push({ label: 'now', value: cur })
 
-  return { weekStart, score: cur, modules: mods, wonWeeks, compoundPct, spark }
+  const firstWeek = Object.keys(log).length === 0
+  return { weekStart, score: cur, modules: mods, wonWeeks, compoundPct, spark, firstWeek }
 }
 
 /** Top actionable gaps for "what next" — worst first, capped at three. */

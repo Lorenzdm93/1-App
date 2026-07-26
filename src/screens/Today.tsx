@@ -1,11 +1,14 @@
 import { useMemo, useRef, useState } from 'react'
+import { oneStore, markWeekClosed } from '../core/one'
+import { Sheet } from '../app/ui'
+import Confetti from '../app/Confetti'
 import type { CSSProperties, PointerEvent as RPointerEvent } from 'react'
 import { useStore } from '../core/hooks'
 import { eventsStore, currentStreak } from '../core/events'
 import { settingsStore, setModuleOrder } from '../core/settings'
 import { enabledModules, moduleById } from '../core/registry'
 import { navigate } from '../core/router'
-import { todayKey, lastNDayKeys, dayKey } from '../core/dates'
+import { todayKey, lastNDayKeys, dayKey, shiftDay, weekStartKey } from '../core/dates'
 import { oneStore } from '../core/one'
 import { computePulse, nextMoves } from '../core/score'
 import { Chevron, Empty } from '../app/ui'
@@ -57,7 +60,9 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
           <b>Coaching</b>
           {won
             ? ` You're ${rate * 100}% past your own pace — the week is banked. Anything more is compound interest.`
-            : ` ${100 - pulse.score}% left to beat your 4-week pace by ${rate * 100}%. The next moves below close it.`}
+            : pulse.firstWeek
+              ? ' Week one — this week sets your pace. No bar to beat yet: everything you log writes its own starting line.'
+              : ` ${100 - pulse.score}% left to beat your 4-week pace by ${rate * 100}%. The next moves below close it.`}
         </p>
         <div className="wp-strip num">
           <span>{streak}d streak</span>
@@ -220,6 +225,7 @@ export default function Today() {
         <h1 className="screen-title">Today</h1>
       </div>
 
+      <WeekCloseSheet />
       <WeekPulseCard pulse={pulse} />
 
       {modules.length === 0 && (
@@ -291,5 +297,42 @@ export default function Today() {
         </div>
       ))}
     </>
+  )
+}
+
+/* ---------------- the Sunday ritual: last week, banked ---------------- */
+
+function WeekCloseSheet() {
+  const one = useStore(oneStore)
+  const prevWs = shiftDay(weekStartKey(todayKey()), -7)
+  const rec = one.weekLog[prevWs]
+  const open = Boolean(rec) && one.lastClosedSeen !== prevWs
+  if (!open || !rec) return null
+  const won = rec.score >= 100
+  const per = Object.entries(rec.per).filter(([, v]) => v !== null && v !== undefined) as [string, number][]
+  return (
+    <Sheet open title="Week closed" onClose={() => markWeekClosed(prevWs)}>
+      {won && <Confetti kind="week" />}
+      <div className="wkclose">
+        <div className="score num">{rec.score}<small>%</small></div>
+        <p className="line">
+          {won
+            ? 'Won. It\u2019s in the ledger now — nothing can take it back, and it compounds.'
+            : 'An honest miss. Nothing is taken from you — the ledger only ever adds, and this week\u2019s bar still follows your own pace.'}
+        </p>
+        {per.length > 0 && (
+          <div className="mods">
+            {per.map(([id, v]) => (
+              <span key={id} className={'chip' + (v >= 100 ? ' good' : '')}>
+                {id} {Math.round(v)}%
+              </span>
+            ))}
+          </div>
+        )}
+        <button className="btn btn-primary" style={{ width: '100%', marginTop: 16 }} onClick={() => markWeekClosed(prevWs)}>
+          {won ? 'Bank it' : 'On to this week'}
+        </button>
+      </div>
+    </Sheet>
   )
 }

@@ -6,9 +6,10 @@ import { exportAll, importAll, clearAll } from '../core/storage'
 import { todayKey } from '../core/dates'
 import { toast } from '../core/toast'
 import { ConfirmSheet, Seg, Chevron } from '../app/ui'
+import { syncStore, connect, disconnect, backupNow, restoreLatest, FIREBASE_CONFIG } from '../core/sync'
 import { navigate } from '../core/router'
 
-const APP_VERSION = '0.13.0'
+const APP_VERSION = '0.14.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
@@ -22,6 +23,7 @@ export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [confirmErase, setConfirmErase] = useState(false)
   const [pendingImport, setPendingImport] = useState<string | null>(null)
+  const sync = useStore(syncStore)
 
   function download() {
     try {
@@ -116,6 +118,43 @@ export default function Settings() {
         <p style={{ marginTop: 12, fontSize: 12.5, color: 'var(--faint)' }}>
           One JSON file carries every module. Export before switching devices.
         </p>
+        <div className="cloudrow">
+          {sync.status === 'unconfigured' && (
+            <p className="cloudnote">
+              <b>Cloud backup</b> is scaffolded and dormant — paste a Firebase config into
+              <span className="num"> src/core/sync.ts</span> and this card comes alive. Five-minute setup, documented in the file.
+            </p>
+          )}
+          {sync.status !== 'unconfigured' && (
+            <>
+              <div className="cloudhead">
+                <b>Cloud backup</b>
+                <span>{sync.email ?? 'not connected'}</span>
+              </div>
+              {sync.error && <p className="clouderr">{sync.error}</p>}
+              <div className="btn-row">
+                {sync.status !== 'signedin' && sync.status !== 'working' && (
+                  <button className="btn btn-ghost" onClick={() => void connect()} disabled={sync.status === 'loading'}>
+                    {sync.status === 'loading' ? 'Connecting…' : 'Connect Google'}
+                  </button>
+                )}
+                {(sync.status === 'signedin' || sync.status === 'working') && (
+                  <>
+                    <button className="btn btn-ghost" disabled={sync.status === 'working'}
+                      onClick={() => { backupNow().then(() => toast('Backed up to cloud')).catch(() => toast('Backup failed')) }}>
+                      {sync.status === 'working' ? 'Backing up…' : 'Back up now'}
+                    </button>
+                    <button className="btn btn-ghost"
+                      onClick={() => { restoreLatest().then((ok) => { if (!ok) toast('No cloud backup yet') }).catch(() => toast('Restore failed')) }}>
+                      Restore
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => void disconnect()}>Sign out</button>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="section-label">Danger zone</div>

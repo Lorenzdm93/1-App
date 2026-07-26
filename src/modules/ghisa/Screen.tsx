@@ -5,6 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SampleDataBlock } from '../../app/ui'
+import Confetti from '../../app/Confetti'
 import { toast } from '../../core/toast'
 import type { ReactNode, CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
@@ -713,8 +714,10 @@ function SummarySheet({ summary, onClose }: { summary: (FinishResult & { integ?:
   const w = summary.workout
   return (
     <GSheet open onClose={onClose} title="Workout saved">
+      <Confetti kind="workout" count={w.prCount > 0 || summary.volumePR ? 34 : 16} />
       <div className="gh2-pad gh2-center">
         <div className="gh2-trophy gh2-pop"><ITrophy size={34} /></div>
+        <div className="gh2-cheer">{w.prCount > 0 || summary.volumePR ? 'PR day. Savor it.' : 'Nice work — banked.'}</div>
         <div className="gh2-display gh2-sumname">{w.name}</div>
         <div className="gh2-sumsub">{fmtDate(w.startedAt)} · {fmtDur(w.duration)}</div>
         <div className="gh2-grid3" style={{ marginTop: 20, textAlign: 'left' }}>

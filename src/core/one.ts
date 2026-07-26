@@ -17,6 +17,8 @@ export interface OneState {
   goals: { ghisa?: number; grove?: number; respiro?: number }
   /** Frozen results per Monday weekKey. The current week is always computed live. */
   weekLog: Record<string, WeekRecord>
+  /** Last closed week the person has SEEN (the Sunday ritual). */
+  lastClosedSeen?: string
 }
 
 const DEFAULTS: OneState = { rate: 0.01, goals: {}, weekLog: {} }
@@ -43,4 +45,9 @@ export function setGoal(key: keyof OneState['goals'], value: number | undefined)
  */
 export function resetLedger(): void {
   oneStore.set((s) => ({ ...s, weekLog: {} }))
+}
+
+/** The week-close ritual: mark a frozen week as seen so it greets exactly once. */
+export function markWeekClosed(weekStart: string): void {
+  oneStore.set((s) => ({ ...s, lastClosedSeen: weekStart }))
 }

@@ -28,7 +28,7 @@ window.addEventListener('offline', () => toast('Offline — everything still wor
 window.addEventListener('online', () => toast('Back online'))
 
 /* ---------- service worker with person-controlled updates ---------- */
-if ('serviceWorker' in navigator && !location.hostname.startsWith('localhost-dev')) {
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('sw.js')
