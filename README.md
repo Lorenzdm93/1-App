@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.22.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.22.1-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.22.1 — self-healing chunk loads; the "only GHISA works" incident**
+
+Every deploy renames every hashed chunk, so a shell one generation stale — a waiting service worker, a cached index served during one flaky navigation — requests chunk names the server no longer hosts. That is exactly what broke six modules while GHISA survived on a cache-warm chunk. Two fixes. First, all twelve lazy imports (seven module screens, five shell screens) now go through `lazyRetry`: on the first failed chunk import it drops every cache, tells any waiting worker to take over, and reloads once; a session latch makes a second failure fall through to the module's error card instead of looping, and a healthy boot releases the latch. Verified by a suite that fails imports against shimmed caches/service-worker/location and asserts the exact sequence. Second, the v0.22.0 update flow made the in-app pill a mere fallback behind the notification channel — a missed notification could leave someone stranded on an old shell indefinitely. The pill now always shows; the notification is a bonus. Deploy, hard-refresh once, and this class of breakage heals itself from now on.
 
 **New in v0.22.0 — native notifications, and alerts that survive a closed app**
 

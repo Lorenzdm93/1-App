@@ -1,10 +1,10 @@
 import { eventsStore } from '../../core/events'
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import { lazy } from 'react'
+import { lazyRetry } from '../../core/lazyload'
 /* Code-split: the screen (and its settings block, same chunk) load on first visit. */
-const Screen = lazy(() => import('./Screen'))
-const GhisaSettingsExtra = lazy(() => import('./Screen').then((m) => ({ default: m.GhisaSettingsExtra })))
+const Screen = lazyRetry(() => import('./Screen'))
+const GhisaSettingsExtra = lazyRetry(() => import('./Screen').then((m) => ({ default: m.GhisaSettingsExtra })))
 import Widget from './Widget'
 import QuickActions from './QuickActions'
 

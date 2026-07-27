@@ -4,10 +4,10 @@ import { wireOraIntegrations } from './integrations'
 /* Registration-time side effect: fast minutes stream into CADENCE. */
 wireOraIntegrations()
 import type { ModuleDefinition } from '../../core/types'
-import { lazy } from 'react'
+import { lazyRetry } from '../../core/lazyload'
 /* Code-split: the screen (and its settings block, same chunk) load on first visit. */
-const OraScreen = lazy(() => import('./Screen'))
-const OraSettingsExtra = lazy(() => import('./Screen').then((m) => ({ default: m.OraSettingsExtra })))
+const OraScreen = lazyRetry(() => import('./Screen'))
+const OraSettingsExtra = lazyRetry(() => import('./Screen').then((m) => ({ default: m.OraSettingsExtra })))
 import OraWidget from './Widget'
 import OraQuickActions from './QuickActions'
 

@@ -6,6 +6,7 @@ import './design/system.css'
 import App from './app/App'
 import { toast } from './core/toast'
 import { wireScheduledNotifications } from './core/schedules'
+import { clearChunkReloadLatch } from './core/lazyload'
 
 /* ---------- global safety nets: never a silent white screen ---------- */
 let errToastAt = 0
@@ -63,6 +64,9 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 
 /* Keep native scheduled alerts in step with the timers that own them. */
 wireScheduledNotifications()
+
+/* The shell parsed and ran — future chunk failures may heal-reload again. */
+clearChunkReloadLatch()
 
 const rootEl = document.getElementById('root')
 if (rootEl) {

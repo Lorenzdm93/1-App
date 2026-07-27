@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
+import { lazyRetry } from '../core/lazyload'
 import type { CSSProperties } from 'react'
 import { useRoute, navigate } from '../core/router'
 import { moduleById } from '../core/registry'
@@ -10,11 +11,11 @@ import RespiroDock from '../modules/respiro/Dock'
 
 /* Today is the home screen and stays in the main chunk; everything else
    arrives on first visit. */
-const Modules = lazy(() => import('../screens/Modules'))
-const Settings = lazy(() => import('../screens/Settings'))
-const One = lazy(() => import('../screens/One'))
-const Profile = lazy(() => import('../screens/Profile'))
-const Onboarding = lazy(() => import('../screens/Onboarding'))
+const Modules = lazyRetry(() => import('../screens/Modules'))
+const Settings = lazyRetry(() => import('../screens/Settings'))
+const One = lazyRetry(() => import('../screens/One'))
+const Profile = lazyRetry(() => import('../screens/Profile'))
+const Onboarding = lazyRetry(() => import('../screens/Onboarding'))
 import TabBar from './TabBar'
 import ModuleTabBar from './ModuleTabBar'
 import ModuleSettingsScreen from './ModuleSettingsScreen'
@@ -38,12 +39,14 @@ function UpdateToast() {
   useEffect(() => {
     const onReady = (e: Event) => {
       const w = (e as CustomEvent<ServiceWorker>).detail
-      /* Prefer the notification channel; the in-app pill only appears when
-         notifications are off, denied, or unsupported. */
-      const fired = sendNotify('system', '1% update ready', 'Tap to restart into the new version', () => {
+      /* The notification is a bonus channel; the pill ALWAYS shows. Making
+         the pill a mere fallback (v0.22.0) meant a missed notification left
+         people stranded on an old shell whose chunk names the server no
+         longer hosts — the "only GHISA works" incident. */
+      sendNotify('system', '1% update ready', 'Tap to restart into the new version', () => {
         w.postMessage({ type: 'SKIP_WAITING' })
       })
-      if (!fired) setWorker(w)
+      setWorker(w)
     }
     window.addEventListener('sw-update-ready', onReady)
     return () => window.removeEventListener('sw-update-ready', onReady)

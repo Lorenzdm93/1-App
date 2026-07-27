@@ -5,10 +5,10 @@ import { wireSanaIntegrations } from './integrations'
 wireSanaIntegrations()
 import { todayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
-import { lazy } from 'react'
+import { lazyRetry } from '../../core/lazyload'
 /* Code-split: the screen (and its settings block, same chunk) load on first visit. */
-const SanaScreen = lazy(() => import('./Screen'))
-const SanaSettingsExtra = lazy(() => import('./Screen').then((m) => ({ default: m.SanaSettingsExtra })))
+const SanaScreen = lazyRetry(() => import('./Screen'))
+const SanaSettingsExtra = lazyRetry(() => import('./Screen').then((m) => ({ default: m.SanaSettingsExtra })))
 import SanaWidget from './Widget'
 import SanaQuickActions from './QuickActions'
 
