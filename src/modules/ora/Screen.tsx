@@ -1,4 +1,4 @@
-import { send as sendNotify } from '../../core/notify'
+import { send as sendNotify, canScheduleAhead } from '../../core/notify'
 /**
  * ORA — fasting, hour by hour. Prototype-faithful or2 rebuild:
  * the whole surface tints to your current metabolic stage, the ring wears
@@ -300,7 +300,7 @@ function TimerTab() {
     if (lastStage.current !== null && lastStage.current !== stage.name && st.phaseAlerts) {
       try {
         if ('Notification' in window && Notification.permission === 'granted') {
-          sendNotify('ora', `ORA · ${stage.name}`, stage.note)
+          if (!canScheduleAhead()) sendNotify('ora', `ORA · ${stage.name}`, stage.note)
         }
       } catch { /* no notifications */ }
     }

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.21.3-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.22.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,12 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.22.0 — native notifications, and alerts that survive a closed app**
+
+WKWebView has no Web Notification API, so GROVE's timer and ORA's phase alerts would have gone silent the moment the app was wrapped for the App Store. Both now route through a second backend in `core/notify.ts`: Capacitor's LocalNotifications, reached through the runtime `Capacitor.Plugins` global rather than an import — deliberately, because adding the package to `package.json` would break the GitHub Pages build, which runs `npm ci` against the committed lockfile. Zero build dependencies; the native project installs it separately (documented in CAPACITOR.md).
+
+This is more than parity. Native alerts can be **scheduled ahead**, so a focus session or a fasting stage now speaks even with the app fully closed — something the web API cannot do at all. A new `core/schedules.ts` keeps those pending alerts in step by subscribing to the GROVE and ORA stores and re-deriving what should be queued whenever state changes, rather than hooking start/pause/resume/reset/skip/give-up individually: no module logic was touched, so no timer behaviour can break, and no code path can leave a stale alert to fire at the wrong moment. ORA queues each fasting stage plus the target, suppressing a stage that lands on the target and dropping anything more than a day past it; GROVE queues the session end and reschedules cleanly across pauses. When a native alert is already queued the in-app notification is suppressed so nothing speaks twice, and turning a module off cancels everything it owns. Verified by a suite that runs the scheduler against a simulated Capacitor environment: correct queue times, id reuse on reschedule, no hash collisions, total cancellation.
 
 **New in v0.21.3 — sheets are centred windows again**
 

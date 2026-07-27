@@ -5,6 +5,7 @@ import './design/app.css'
 import './design/system.css'
 import App from './app/App'
 import { toast } from './core/toast'
+import { wireScheduledNotifications } from './core/schedules'
 
 /* ---------- global safety nets: never a silent white screen ---------- */
 let errToastAt = 0
@@ -59,6 +60,9 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
     })
   })
 }
+
+/* Keep native scheduled alerts in step with the timers that own them. */
+wireScheduledNotifications()
 
 const rootEl = document.getElementById('root')
 if (rootEl) {

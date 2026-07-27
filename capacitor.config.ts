@@ -14,6 +14,13 @@ const config: CapacitorConfig = {
     contentInset: 'automatic',
     backgroundColor: '#0c0d10',
   },
+  plugins: {
+    /* Show timer and fasting alerts even while the app is in the foreground —
+       iOS suppresses them by default. */
+    LocalNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+  },
 }
 
 export default config

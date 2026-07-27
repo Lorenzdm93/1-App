@@ -14,7 +14,7 @@ import { enabledModules } from '../core/registry'
 import { navigate } from '../core/router'
 import Mark from '../app/Mark'
 
-const APP_VERSION = '0.21.3'
+const APP_VERSION = '0.22.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
@@ -176,7 +176,8 @@ export default function Settings() {
               </div>
               <p className="cloudnote" style={{ marginBottom: 10 }}>
                 Timers, fasting phases, and app updates arrive as system notifications.
-                On iPhone this needs the app installed to the Home Screen.
+                On iPhone the web app needs to be installed to the Home Screen; the App Store
+                build can also alert you while it is closed.
               </p>
               {status !== 'denied' && (
                 <div className="btn-row">

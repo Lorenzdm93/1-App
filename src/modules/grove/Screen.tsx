@@ -55,7 +55,7 @@ import {
   type CompletionEvent,
 } from './model'
 import { ArtDefs, PlantInner, PlantSprite, AnimalInner, AnimalSprite, type AnimalId } from './Art'
-import { send as sendNotify } from '../../core/notify'
+import { send as sendNotify, canScheduleAhead } from '../../core/notify'
 
 const MODE_LABEL: Record<Mode, string> = { focus: 'Focus', short: 'Short break', long: 'Long break' }
 
@@ -106,7 +106,8 @@ function chime(kind: 'focus' | 'break'): void {
 function browserNotify(title: string, body: string): void {
   if (!groveStore.get().settings.notify) return
   if (!('Notification' in window) || Notification.permission !== 'granted') return
-  sendNotify('grove', title, body)
+  /* native builds get a scheduled alert at the same instant — don't double up */
+  if (!canScheduleAhead()) sendNotify('grove', title, body)
 }
 
 /** One place reacts to a finished phase — chime, notification, toast. */

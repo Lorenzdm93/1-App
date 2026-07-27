@@ -23,6 +23,7 @@ xcode-select --install          # command-line tools
 cd 1-App-main
 npm install
 npm i -D @capacitor/core @capacitor/cli @capacitor/ios
+npm i @capacitor/local-notifications   # timer + fasting alerts while closed
 npm run build                   # produces dist/
 npx cap add ios                 # creates ios/ native project (commit it)
 npx cap sync ios                # copies dist/ into the shell
