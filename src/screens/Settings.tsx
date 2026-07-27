@@ -14,7 +14,7 @@ import { enabledModules } from '../core/registry'
 import { navigate } from '../core/router'
 import Mark from '../app/Mark'
 
-const APP_VERSION = '0.20.0'
+const APP_VERSION = '0.21.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },

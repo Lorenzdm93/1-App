@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.20.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.21.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.21.0 — the design system: "quiet instrument"**
+
+One visual language for the whole app, written as a single reviewable layer (`src/design/system.css`, loaded last) rather than another generational patch — no component logic touched anywhere. An **8pt spacing scale**, larger calm radii (24px cards, 28px sheets), and a three-step **elevation model** where depth comes from light: an inner top highlight, a tight key shadow, and a wide ambient one. Surfaces are now subtly translucent with true hairline borders over a **lit background** — deep neutral carrying three faint radial washes instead of flat color — and nested cards step down a level instead of stacking shadows. Glass is spent only where things genuinely float: the tab pill (blur + saturation + hairline + deep shadow), sheets, toasts, and the update pill. Primary buttons gained a soft vertical sheen and an accent glow that collapses on press; inputs answer focus with an accent ring; the ring gauge sits in an ambient halo so the arc reads as lit rather than drawn. Motion speaks one vocabulary — `--spring` for anything that moves under a thumb, `--ease` for everything else, opacity-only for screen transitions (the v0.9.10 no-transform-on-wrappers rule is respected exactly). Also fixed on the way through: shared sheets had lost their backdrop entirely when `Sheet` was rewritten in v0.13 — `.sheet-scrim` never had CSS — so modals now dim and blur behind properly, and every sheet wears a grabber.
 
 **New in v0.20.0 — the Chrome scroll bug, and the mark inside the app**
 
