@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.21.2-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.21.3-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.21.3 — sheets are centred windows again**
+
+Popups were opening from the top of the screen, under the status bar, because three of my own changes had stacked: v0.13 renamed the Sheet backdrop to a class with no CSS; v0.14 appended `.sheet { position: relative }` so workout confetti would stay inside its sheet, which silently overrode the `position: fixed` that anchored sheets to the bottom **and** disabled the wide-screen rule that centres them; v0.21.1 then gave the scrim a real full-screen surface, at which point a non-fixed child flowed from its top edge and the break became visible. The scrim now centres its child and `.sheet` is a true modal window — all four corners rounded, width capped, its own scroll, and safe-area padding held by the scrim so nothing can sit under the notch. It scales up to 560px on wide screens and springs in with a soft rise. GHISA's own sheet system (`.gh2-sheet`) is separate, was never affected, and still slides from the bottom.
 
 **New in v0.21.2 — the bottom fade is gone**
 

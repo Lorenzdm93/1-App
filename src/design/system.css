@@ -1,23 +1,44 @@
 /* ============================================================
    1% — retained fixes (the v0.21 design pass was reverted)
    ------------------------------------------------------------
-   The design-language layer that lived here is gone; the app is
-   back to its v0.20 appearance. Only two genuine bug fixes that
-   the pass uncovered are kept, both small and self-contained.
+   The app's appearance is v0.20's. This file holds only genuine
+   bug fixes, each documented with the regression it repairs.
    ============================================================ */
 
-/* ---- 1. Shared sheets had no backdrop ----------------------
-   When Sheet was rewritten in v0.13 the scrim element was renamed
-   to .sheet-scrim and no CSS ever existed for that class. The
-   result: modal sheets opened over undimmed content, and because
-   the scrim was a static element wrapping a position:fixed panel,
-   it occupied no area — so tap-outside-to-close had nothing to
-   catch the tap. Both are fixed by giving it a real surface.
-   (GHISA's own .gh2-scrim was always styled and is untouched.) */
+/* ---- 1. Shared sheets: a centred window ---------------------
+   Three of my own changes stacked into one visible break:
+
+   v0.13  Sheet was rewritten and its backdrop element renamed
+          from `.sheet-backdrop` (fully styled in app.css) to
+          `.sheet-scrim`, a class with no CSS at all — so sheets
+          opened over undimmed content.
+   v0.14  `.sheet { position: relative }` was appended so the
+          workout Confetti layer would be contained by its sheet.
+          That single line overrode `.sheet`'s `position: fixed`,
+          which is what anchored it to the bottom of the viewport
+          — and it also disabled the wide-screen rule that centres
+          the dialog with top/left 50% + translate.
+   v0.21.1 giving `.sheet-scrim` a real full-screen surface then
+          made the damage visible: a non-fixed child of a
+          full-screen fixed box flows from its TOP edge, so every
+          sheet appeared under the status bar.
+
+   Rather than restore the bottom sheet, the scrim now centres its
+   child and `.sheet` is a proper modal window: all four corners
+   rounded, capped width, its own scroll, safe-area padding held by
+   the scrim so nothing can ever sit under the notch. `position:
+   relative` stays — a centred flex child wants exactly that, and
+   Confetti stays contained. */
 .sheet-scrim {
   position: fixed;
   inset: 0;
   z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 20px) 16px
+    calc(env(safe-area-inset-bottom, 0px) + 20px);
   background: rgba(0, 0, 0, 0.55);
   animation: scrim-fade 0.2s ease both;
 }
@@ -26,23 +47,53 @@
   background: rgba(20, 26, 38, 0.32);
 }
 
+.sheet {
+  position: relative;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+  max-width: min(var(--col), 100%);
+  margin: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 16px 18px 20px;
+  box-shadow: var(--sh-float);
+  animation: sheet-center-in 0.24s cubic-bezier(0.34, 1.35, 0.5, 1) both;
+}
+
+@media (min-width: 640px) {
+  .sheet {
+    max-width: min(560px, calc(100vw - 48px));
+  }
+}
+
 @keyframes scrim-fade {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
+@keyframes sheet-center-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .sheet-scrim { animation: none; }
+  .sheet-scrim,
+  .sheet { animation: none; }
 }
 
 /* ---- 2. The top fade veiled real content -------------------
    It was sized `safe-area-inset-top + 48px`, so on any surface
    WITHOUT a notch inset — desktop, a browser tab, a non-notched
-   phone — it laid 48px of background over the screen title. Now
-   it scales from the inset alone: zero where there is no status
-   bar to cover, and still a soft veil under the iPhone clock in
-   standalone. The bottom fade is unchanged; it earns its keep by
-   letting content slide under the floating tab pill. */
+   phone — it laid 48px of background over the screen title. It now
+   scales from the inset alone: zero where there is no status bar
+   to cover, still a soft veil under the iPhone clock in standalone. */
 .edge-fade.top {
   height: calc(env(safe-area-inset-top, 0px) * 1.5);
 }
@@ -51,12 +102,11 @@
    `.edge-fade.bottom` laid a 96px band of background colour along
    the bottom of the screen. It sits BEHIND the tab bar by z-index,
    but the bar's own `backdrop-filter: blur(14px)` samples whatever
-   is behind it — so the bar was blurring that band into its glass
-   and reading milky, module bars worst of all, while the band also
-   veiled the last card above it. The floating pill already carries
-   its own translucent background and blur, which is what makes
-   content read as passing underneath; the extra gradient only ever
-   added haze. Restore it by deleting this rule. */
+   is behind it — so the bar blurred that band into its glass and
+   read milky, module bars worst of all, while the band also veiled
+   the last card above it. The floating pill already carries its own
+   translucent background and blur, which is what makes content read
+   as passing underneath. Restore it by deleting this rule. */
 .edge-fade.bottom {
   display: none;
 }
