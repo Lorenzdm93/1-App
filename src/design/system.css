@@ -46,3 +46,17 @@
 .edge-fade.top {
   height: calc(env(safe-area-inset-top, 0px) * 1.5);
 }
+
+/* ---- 3. The bottom fade was hazing the tab bars -------------
+   `.edge-fade.bottom` laid a 96px band of background colour along
+   the bottom of the screen. It sits BEHIND the tab bar by z-index,
+   but the bar's own `backdrop-filter: blur(14px)` samples whatever
+   is behind it — so the bar was blurring that band into its glass
+   and reading milky, module bars worst of all, while the band also
+   veiled the last card above it. The floating pill already carries
+   its own translucent background and blur, which is what makes
+   content read as passing underneath; the extra gradient only ever
+   added haze. Restore it by deleting this rule. */
+.edge-fade.bottom {
+  display: none;
+}

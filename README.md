@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.21.1-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.21.2-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.21.2 — the bottom fade is gone**
+
+The tab bars looked milky because of a compositing interaction rather than any opacity setting: `.edge-fade.bottom` painted a 96px band of background colour along the bottom of the screen, and although it sits behind the bar by z-index, the bar's own `backdrop-filter: blur(14px)` samples whatever is behind it — so the bar blurred that band into its own glass, module bars worst of all, while the band separately veiled the last card above it. The gradient is removed. The floating pill already has a translucent background and blur of its own, which is what makes content read as sliding underneath, so nothing is lost.
 
 **New in v0.21.1 — v0.21.0 reverted**
 
