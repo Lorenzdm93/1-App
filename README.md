@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.0-e8622c?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.20.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.20.0 — the Chrome scroll bug, and the mark inside the app**
+
+Fixed the intermittent dead page in Chrome, which was self-inflicted: v0.16's `overflow-x: hidden` on both `html` and `body` made **two** scroll containers (per spec, `hidden` on one axis forces the other to `auto`), and with `overscroll-behavior` blocking chaining between them, any touch landing in the container that wasn't overflowing simply refused to scroll. Horizontal drift is now held by `overflow-x: clip`, which clips without creating a scrollport, so the document keeps one normal scroller — with a `@supports` fallback for older Safari. GHISA's swipe-to-delete gained an **axis lock** as well: a gesture must prove itself horizontal (8px, and 1.2× more sideways than vertical) before the row moves, so dragging a set row scrolls the list like everywhere else and accidental deletes are gone. The brand mark is now the real vector everywhere it appears **inside** the app too — one `src/app/Mark.tsx` shared by the onboarding hero and the Settings about card, replacing the old text "1%", with the numeral on `currentColor` so it's correct in both themes — and the boot screen shows the mark breathing gently instead of a generic spinner. `banner.svg` was redrawn to match: new mark, jade rule, honest subtitle.
 
 **New in v0.19.0 — one tab grammar, the jade identity, RESPIRO in violet**
 

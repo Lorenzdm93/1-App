@@ -3,6 +3,7 @@ import { MODULES } from '../core/registry'
 import { completeOnboarding } from '../core/settings'
 import { OnePercentRing, Toggle } from '../app/ui'
 import Philosophy from '../app/Philosophy'
+import Mark from '../app/Mark'
 
 interface Goal {
   id: string
@@ -49,9 +50,7 @@ export default function Onboarding() {
     <div className="ob">
       <div className="ob-hero">
         <OnePercentRing size={150} modules={[...MODULES]} activeIds={selected} />
-        <div className="ob-mark">
-          1<span className="pct">%</span>
-        </div>
+        <Mark size={58} title="" />
         <div className="ob-line">{step === 'why' ? 'Small daily gains, compounded. Here\u2019s the whole idea.' : 'Pick your instruments.'}</div>
       </div>
 

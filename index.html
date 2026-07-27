@@ -44,14 +44,10 @@
         position: fixed; inset: 0; display: grid; place-items: center;
         background: inherit; z-index: 9999;
       }
-      #boot .ring {
-        width: 56px; height: 56px; border-radius: 50%;
-        border: 4px solid rgba(127, 127, 127, 0.18);
-        border-top-color: #35c78f;
-        animation: bootspin 0.9s linear infinite;
-      }
-      @keyframes bootspin { to { transform: rotate(360deg); } }
-      @media (prefers-reduced-motion: reduce) { #boot .ring { animation: none; } }
+      #boot svg { width: 78px; height: 78px; color: #F2EFE9; animation: bootpulse 1.6s ease-in-out infinite; }
+      @media (prefers-color-scheme: light) { #boot svg { color: #14161a; } }
+      @keyframes bootpulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { #boot svg { animation: none; } }
     </style>
   </head>
   <body>
@@ -60,7 +56,7 @@
         1% needs JavaScript — it's a local-first app that runs entirely on your device.
       </div>
     </noscript>
-    <div id="root"><div id="boot" aria-hidden="true"><div class="ring"></div></div></div>
+    <div id="root"><div id="boot" aria-hidden="true"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bsw" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#6FA8DC"/><stop offset="100%" stop-color="#35c78f"/></linearGradient></defs><path d="M 10 78 C 38 76, 58 66, 80 36" fill="none" stroke="url(#bsw)" stroke-width="6" stroke-linecap="round"/><circle cx="82.5" cy="32" r="4.6" fill="#35c78f"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M 22 30 L 33 20 L 33 62" stroke-width="9"/><circle cx="50" cy="30" r="6.4" stroke-width="5"/><circle cx="68" cy="52" r="6.4" stroke-width="5"/><line x1="69" y1="26" x2="49" y2="56" stroke-width="5"/></g></svg></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

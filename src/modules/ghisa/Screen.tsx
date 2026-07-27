@@ -459,6 +459,11 @@ function SetRow({ set, index, prev, onChange, onToggle, onCycleType, onRemove }:
      translate the row, delete past half-width, snap back otherwise. */
   const [dx, setDx] = useState(0)
   const touchX = useRef<number | null>(null)
+  const touchY = useRef<number | null>(null)
+  /* Axis lock: until the gesture proves horizontal, the row stays put and the
+     page scrolls normally. Without this, a vertical drag starting on a row
+     dragged the row instead of the list. */
+  const axis = useRef<'?' | 'x' | 'y'>('?')
   const rowRef = useRef<HTMLDivElement | null>(null)
   return (
     <>
@@ -466,17 +471,28 @@ function SetRow({ set, index, prev, onChange, onToggle, onCycleType, onRemove }:
         onTouchStart={(e) => {
           if ((e.target as HTMLElement).tagName === 'INPUT') return
           touchX.current = e.touches[0].clientX
+          touchY.current = e.touches[0].clientY
+          axis.current = '?'
         }}
         onTouchMove={(e) => {
-          if (touchX.current === null) return
+          if (touchX.current === null || touchY.current === null) return
+          const mx = e.touches[0].clientX - touchX.current
+          const my = e.touches[0].clientY - touchY.current
+          if (axis.current === '?') {
+            if (Math.abs(mx) < 8 && Math.abs(my) < 8) return
+            axis.current = Math.abs(mx) > Math.abs(my) * 1.2 ? 'x' : 'y'
+          }
+          if (axis.current !== 'x') return
           const w = rowRef.current?.offsetWidth ?? 320
-          setDx(Math.min(0, Math.max(-w, e.touches[0].clientX - touchX.current)))
+          setDx(Math.min(0, Math.max(-w, mx)))
         }}
         onTouchEnd={() => {
           const w = rowRef.current?.offsetWidth ?? 320
-          if (-dx > w / 2) onRemove()
+          if (axis.current === 'x' && -dx > w / 2) onRemove()
           setDx(0)
           touchX.current = null
+          touchY.current = null
+          axis.current = '?'
         }}
       >
         {dx < 0 && <span className="gh2-delhint" aria-hidden="true">Delete</span>}

@@ -12,8 +12,9 @@ import { notifyStore, notifyStatus, enableNotifications, disableNotifications, s
 import { setModuleLines } from '../core/settings'
 import { enabledModules } from '../core/registry'
 import { navigate } from '../core/router'
+import Mark from '../app/Mark'
 
-const APP_VERSION = '0.19.0'
+const APP_VERSION = '0.20.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
@@ -75,9 +76,7 @@ export default function Settings() {
 
 
       <div className="card">
-        <div className="about-mark">
-          1<span className="pct">%</span>
-        </div>
+        <Mark size={40} title="" />
         <div className="kv">
           <span className="k">Version</span>
           <span className="num">{APP_VERSION}</span>
