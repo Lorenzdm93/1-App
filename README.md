@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.21.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.21.1-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.21.1 — v0.21.0 reverted**
+
+The design-language pass is rolled back; the app looks exactly as it did in v0.20.0. It was wrong on taste — washed-out surfaces, an over-lit background — and it also carried a real layout bug: the layer set `.ring-center { position: relative }`, which overrode that element's `position: absolute; inset: 0` and dropped the hero number out of its ring, colliding with the label beneath. `src/design/system.css` now contains only two fixes worth keeping. First, shared sheets had lost their backdrop entirely back in v0.13, when `Sheet` was rewritten and the scrim element renamed to a class with no CSS: modals opened over undimmed content, and since the scrim wrapped a `position: fixed` panel it occupied no area at all, so tap-outside-to-close had nothing to catch the tap. Second, the top edge fade was sized `safe-area-inset-top + 48px`, so anywhere without a notch inset — desktop, a browser tab — it laid 48px of background over the screen title; it now scales from the inset alone, disappearing where there is no status bar to cover while still veiling the iPhone clock in standalone.
 
 **New in v0.21.0 — the design system: "quiet instrument"**
 
