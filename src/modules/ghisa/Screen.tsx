@@ -12,6 +12,8 @@ import type { ReactNode, CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
 import { mediaUrls } from './media'
+import { FREQUENCIES, GOALS, getProgram, programTemplates, weeklySets } from './programs'
+import type { Days, Goal } from './programs'
 import { runFinishIntegrations, type IntegrationResult } from './integrations'
 import {
 ghisaStore,
@@ -32,6 +34,8 @@ ghisaStore,
   deleteWorkout,
   saveTemplate,
   deleteTemplate,
+  applyProgram,
+  activeProgramId,
   addCustomExercise,
   setRestSec,
   seedDemo,
@@ -862,15 +866,115 @@ function HomeScreen({ st, hasActive, onOpenSettings, onOpenCalc, onResume }: {
 
 /* --------------------------- train (templates) --------------------------- */
 
+/** Sets × reps · RIR · rest, in one line. */
+function Rx({ item }: { item: TemplateItem }) {
+  const bits = [`${item.sets} × ${item.reps ?? '—'}`]
+  if (item.rir !== undefined) bits.push(`RIR ${item.rir}`)
+  if (item.rest !== undefined) bits.push(`${item.rest}s`)
+  return <span className="gh2-rx tnum">{bits.join(' · ')}</span>
+}
+
+/**
+ * The program builder. Goal × weekly frequency, with the reasoning shown
+ * rather than asserted — the volume table is there so the claim about weekly
+ * sets is checkable, not decorative.
+ */
+function ProgramSheet({ open, onClose, st }: { open: boolean; onClose: () => void; st: GhisaState }) {
+  const installed = activeProgramId(st)
+  const [goal, setGoal] = useState<Goal>((installed?.split('-')[0] as Goal) || 'hypertrophy')
+  const [days, setDays] = useState<Days>((Number(installed?.split('-')[1]) as Days) || 3)
+
+  const prog = getProgram(goal, days)
+  const tpls = programTemplates(goal, days)
+  const goalInfo = GOALS.find((g) => g.id === goal)!
+  const freqInfo = FREQUENCIES.find((f) => f.days === days)!
+  const volume = weeklySets(goal, days, (id) => exerciseById(st, id)?.muscle ?? '')
+  const isCurrent = installed === `${goal}-${days}`
+
+  return (
+    <GSheet open={open} onClose={onClose} full title="Build a program">
+      <div className="gh2-prog">
+        <div className="gh2-k">Goal</div>
+        <Segmented value={goal} onChange={setGoal}
+          options={GOALS.map((g) => ({ value: g.id, label: g.label }))} />
+        <p className="gh2-progtext">{goalInfo.detail}</p>
+
+        <div className="gh2-k">Days per week</div>
+        <Segmented value={String(days) as '2' | '3' | '4'} onChange={(v) => setDays(Number(v) as Days)}
+          options={FREQUENCIES.map((f) => ({ value: String(f.days) as '2' | '3' | '4', label: f.label }))} />
+        <p className="gh2-progtext">{freqInfo.detail}</p>
+
+        <div className="gh2-progwhy">
+          <div className="gh2-display gh2-progsplit">{prog.split}</div>
+          <p>{prog.why}</p>
+        </div>
+
+        <div className="gh2-k">Weekly hard sets</div>
+        <div className="gh2-progvol">
+          {volume.map(([muscle, sets]) => (
+            <span key={muscle} className="gh2-volchip"><b className="tnum">{sets}</b> {muscle}</span>
+          ))}
+        </div>
+        <p className="gh2-progtext gh2-progfoot">
+          Direct sets only, so the true figure per muscle is higher — a row also
+          trains biceps. For size the target is roughly 10–20 per muscle per week.
+        </p>
+
+        <div className="gh2-k">The week</div>
+        <div className="gh2-stack">
+          {tpls.map((t) => (
+            <div key={t.id} className="gh2-card">
+              <div className="gh2-display gh2-cardtitle">{t.name}</div>
+              {t.note && <p className="gh2-progtext gh2-prognote">{t.note}</p>}
+              <div className="gh2-progrows">
+                {t.items.map((it, i) => (
+                  <div key={i} className="gh2-progrow">
+                    <span className="n">{exerciseById(st, it.exerciseId)?.name ?? it.exerciseId}</span>
+                    <Rx item={it} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <BigButton onClick={() => { applyProgram(tpls); onClose() }}>
+          {isCurrent ? 'Reinstall this program' : 'Use this program'}
+        </BigButton>
+        <p className="gh2-progtext gh2-progfoot">
+          Adds {tpls.length} templates and replaces any previous program.
+          Templates you built yourself are never touched, and you can edit these
+          like any other once they land.
+        </p>
+      </div>
+    </GSheet>
+  )
+}
+
+
 function TrainScreen({ st, onStart }: { st: GhisaState; onStart: (tpl: Template | null) => void }) {
   const [editing, setEditing] = useState<Template | 'new' | null>(null)
   const [menuFor, setMenuFor] = useState<string | null>(null)
+  const [programs, setPrograms] = useState(false)
   const menuTpl = st.templates.find((t) => t.id === menuFor)
+  const installed = activeProgramId(st)
 
   return (
     <div className="gh2 gh2-page">
       <div className="gh2-display gh2-h1">Train</div>
       <BigButton onClick={() => onStart(null)}><IPlay size={18} fill /> Start empty workout</BigButton>
+
+      <button className="gh2-progcta" onClick={() => setPrograms(true)}>
+        <span className="t">
+          <b className="gh2-display">{installed ? 'Change your program' : 'Build me a program'}</b>
+          <span className="s">
+            {installed
+              ? `${GOALS.find((g) => g.id === installed.split('-')[0])?.label ?? ''} · ${installed.split('-')[1]} days a week`
+              : 'Strength, size or both — 2, 3 or 4 days a week'}
+          </span>
+        </span>
+        <IChevronR size={18} />
+      </button>
 
       <div className="gh2-secrow" style={{ marginTop: 24 }}>
         <div className="gh2-k" style={{ margin: 0 }}>Templates</div>
@@ -886,6 +990,7 @@ function TrainScreen({ st, onStart }: { st: GhisaState; onStart: (tpl: Template 
             <div className="gh2-tpllist">
               {t.items.map((it) => exerciseById(st, it.exerciseId)?.name ?? '?').join(' · ')}
             </div>
+            {t.note && <div className="gh2-tplnote">{t.note}</div>}
             <div className="gh2-tplbtns">
               <button className="start" onClick={() => onStart(t)}><IPlay size={15} fill /> Start</button>
               <button className="edit" onClick={() => setEditing(t)} aria-label={`Edit ${t.name}`}><IPencil size={18} /></button>
@@ -897,6 +1002,8 @@ function TrainScreen({ st, onStart }: { st: GhisaState; onStart: (tpl: Template 
           <div className="gh2-empty"><div className="s">No templates yet. Create one to start workouts in a single tap.</div></div>
         )}
       </div>
+
+      <ProgramSheet open={programs} onClose={() => setPrograms(false)} st={st} />
 
       <ActionSheet open={menuFor !== null} onClose={() => setMenuFor(null)}
         title={menuTpl ? `Delete "${menuTpl.name}"?` : ''}

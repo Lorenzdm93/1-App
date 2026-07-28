@@ -27,12 +27,22 @@ export interface Exercise {
 export interface TemplateItem {
   exerciseId: string
   sets: number
+  /* All optional: templates written before programs existed load unchanged,
+     and a hand-built template is never forced to carry a prescription. */
+  /** Target rep range, e.g. '5' or '8-12' or '40-60s'. A hint, not a rule. */
+  reps?: string
+  /** Rest between sets, seconds. */
+  rest?: number
+  /** Reps in reserve — stop with this many good reps left. */
+  rir?: number
 }
 
 export interface Template {
   id: string
   name: string
   items: TemplateItem[]
+  /** One line on why this session is shaped the way it is. */
+  note?: string
 }
 
 /** Sets inside the live workout keep raw input strings, exactly like the prototype. */
@@ -789,6 +799,27 @@ export function saveTemplate(tpl: Template): void {
 
 export function deleteTemplate(id: string): void {
   ghisaStore.set((st) => ({ ...st, templates: st.templates.filter((t) => t.id !== id) }))
+}
+
+/**
+ * Swap in a generated program. Only templates carrying the program prefix are
+ * replaced — anything the person built by hand, and the three starter
+ * templates, survive untouched. Re-running with a different goal or frequency
+ * therefore swaps cleanly instead of accumulating.
+ */
+export function applyProgram(next: Template[]): void {
+  ghisaStore.set((st) => ({
+    ...st,
+    templates: [...st.templates.filter((t) => !t.id.startsWith('tpl-prog-')), ...next],
+  }))
+}
+
+/** Whether a generated program is currently installed, and which one. */
+export function activeProgramId(st: GhisaState): string | null {
+  const t = st.templates.find((x) => x.id.startsWith('tpl-prog-'))
+  if (!t) return null
+  const parts = t.id.slice('tpl-prog-'.length).split('-')
+  return parts.length >= 2 ? `${parts[0]}-${parts[1]}` : null
 }
 
 export function addCustomExercise(ex: Exercise): void {

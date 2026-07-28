@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.25.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.26.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,33 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.26.0 — programs, and the exercise photos come home**
+
+GHISA's Train tab can now build you a program: three goals (strength,
+hypertrophy, mixed) against three weekly frequencies (2, 3, 4 days), each one
+explaining its own reasoning rather than asserting it. Twenty-seven sessions
+across nine programs, every exercise drawn from the existing library, every set
+carrying a rep range, a rest interval and an RIR target — intensity is
+prescribed as reps in reserve rather than %1RM, which needs no max test and
+self-corrects on a bad day.
+
+The structure is not arbitrary. Weekly set volume drives hypertrophy while
+frequency has little independent effect, so the two-day plans pack volume in
+rather than apologising for the schedule; frequency *does* carry its own effect
+on strength, so the strength plans put the main lifts in front of you as often
+as the week allows. Two days and three days are full body — a push/pull/legs at
+three days would train each muscle once a week, the worse trade — and four days
+is upper/lower twice. Applying a program replaces any previous one and never
+touches templates you wrote yourself.
+
+Exercise photos are no longer hotlinked from `raw.githubusercontent.com`. All
+120 frames are bundled in `public/ex/` as 480px WebP (8.0 MB of JPEG down to
+2.31 MB), which closes an undisclosed third-party request, makes the images work
+in a gym with no signal, and stops relying on raw GitHub for production traffic.
+Two mappings that had been silently 404ing — Walking Lunge and Cable Lateral
+Raise — are fixed. The service worker now caches `webp`, without which none of
+this would persist.
 
 **New in v0.25.0 — the progression chart, rebuilt**
 

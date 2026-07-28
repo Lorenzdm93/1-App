@@ -1,9 +1,9 @@
-/* 1% service worker — v55.
+/* 1% service worker — v56.
    Navigation: network-first with cached fallback (offline works after the
    first visit). Assets: cache-first (Vite hashes make staleness impossible).
    Updates: the new worker WAITS; the app shows "Update ready" and the person
    chooses the moment. No mid-session rug-pulls. */
-var CACHE = 'onepercent-v55'
+var CACHE = 'onepercent-v56'
 /* The two latin faces are precached: typography must survive a cold start with
    no network. latin-ext and the italics stay runtime-cached, fetched on demand. */
 var CORE = [
@@ -65,7 +65,7 @@ self.addEventListener('fetch', function (event) {
     caches.match(req).then(function (hit) {
       if (hit) return hit
       return fetch(req).then(function (res) {
-        if (res.ok && (url.pathname.indexOf('/assets/') !== -1 || url.pathname.match(/\.(png|svg|css|js|woff2?)$/))) {
+        if (res.ok && (url.pathname.indexOf('/assets/') !== -1 || url.pathname.match(/\.(png|svg|webp|jpg|css|js|woff2?)$/))) {
           var copy = res.clone()
           caches.open(CACHE).then(function (c) { c.put(req, copy) })
         }
