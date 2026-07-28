@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.23.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.24.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,19 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.24.0 — the fonts are ours now**
+
+Inter and Fraunces no longer come from Google's CDN. Both ship inside the app as
+variable `woff2` files under `public/fonts/`, declared inline in `index.html` so
+the browser starts fetching them without a stylesheet round trip first. Two
+consequences that matter: no visitor IP is disclosed to Google on page load —
+the thing German courts have actually fined sites for — and the typography now
+renders correctly on a cold start with no network, which is the case that counts
+inside a native WKWebView. The latin faces are preloaded and precached by the
+service worker; latin-ext and the italics are fetched on demand via
+`unicode-range`, so the common path costs 115 KB rather than 560 KB. The privacy
+policy's third-party section is down from three entries to two.
 
 **New in v0.23.0 — public-readiness: sample data gated, native launch chrome, legal pages**
 

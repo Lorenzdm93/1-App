@@ -44,12 +44,12 @@
   <p>Deleting the app, or using <em>Erase all data</em> in Settings, removes that data permanently. We cannot recover it for you, because we never had it.</p>
 
   <h2>Third parties that can see something</h2>
-  <p>We want to be precise rather than reassuring here. Three things reach outside your device:</p>
+  <p>We want to be precise rather than reassuring here. Two things reach outside your device:</p>
   <ul>
-    <li><strong>Web fonts.</strong> The web version currently loads typefaces from Google Fonts. Your browser's request necessarily discloses your IP address to Google. Self-hosting these files is planned, after which this stops entirely.</li>
     <li><strong>Embedded players.</strong> If you paste a Spotify or YouTube link into RESPIRO, that player is embedded from the relevant service, which will receive requests from your device and may set its own cookies under its own privacy policy. This only happens if you add a link yourself.</li>
     <li><strong>Hosting.</strong> The web version is served by GitHub Pages, which processes standard server request data such as IP addresses in order to deliver the page.</li>
   </ul>
+  <p>Typefaces are <strong>bundled with the app</strong> and served from the same place the app itself is served from. No font request reaches Google or any other party, and the typography is intact with no network at all.</p>
   <p>Optional cloud backup exists in the codebase but is <strong>switched off and unconfigured</strong> in this release. If a future version offers it, it will be strictly opt-in, will be described here before it ships, and will never be enabled without you choosing it.</p>
 
   <h2>Notifications</h2>
