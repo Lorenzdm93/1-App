@@ -11,7 +11,7 @@
  *  - a rolling-mean trend line drawn over the bars with an endpoint dot: the
  *    direction of travel at a glance
  */
-import { useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 /** Evenly spaced label indices including both ends. */
 export function pickLabels(n: number, k = 5): Set<number> {
@@ -319,5 +319,177 @@ export function MultiLine({
         ) : null,
       )}
     </svg>
+  )
+}
+
+/* ---------------------------------------------------------------------- */
+
+/** `preserveAspectRatio="none"` stretches a 320-unit viewBox across a ~390px
+    phone, which scales glyphs and circles non-uniformly — that is why the old
+    axis labels read as squashed. Measuring the container instead makes one SVG
+    unit exactly one CSS pixel, so text is crisp and dots are round. */
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
+
+function useMeasuredWidth(): [React.RefObject<HTMLDivElement>, number] {
+  const ref = useRef<HTMLDivElement>(null)
+  const [w, setW] = useState(0)
+  useIsoLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const read = () => setW(el.clientWidth || 0)
+    read()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(read)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return [ref, w]
+}
+
+/** Round numbers for gridlines: 1, 2, 2.5, 5 × 10^n. A axis that reads
+    40 / 60 / 80 instead of 41.3 / 58.9 / 76.5. */
+function niceStep(rough: number): number {
+  if (!(rough > 0)) return 1
+  const mag = Math.pow(10, Math.floor(Math.log10(rough)))
+  const n = rough / mag
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag
+}
+
+/**
+ * Progression, Hevy grammar: straight segments between dots, faint horizontal
+ * rails at round values, y labels on the left, x labels flat along the bottom.
+ * The line draws left to right on mount and each dot lands as the line reaches
+ * it — motion that says "this is where you have been going", then stops.
+ *
+ * Dots thin out as density rises: below ~7px of spacing they would be a smear,
+ * so only the endpoint survives.
+ */
+export function DotLine({
+  data,
+  accentVar,
+  height = 160,
+  fmt,
+  ariaLabel = 'Progression',
+}: {
+  data: { label: string; value: number }[]
+  accentVar: string
+  height?: number
+  fmt?: (v: number) => string
+  ariaLabel?: string
+}) {
+  const [ref, W] = useMeasuredWidth()
+  const H = height
+  const fmtV = (v: number) => (fmt ? fmt(v) : String(Math.round(v * 10) / 10))
+
+  // Hold the drawing until the real width is known: the line animates via
+  // stroke-dashoffset, and a mid-flight geometry change would jump.
+  const ready = W > 0 && data.length >= 2
+
+  let body: React.ReactNode = null
+  if (ready) {
+    const vals = data.map((d) => d.value)
+    const lo0 = Math.min(...vals)
+    const hi0 = Math.max(...vals)
+    const step = niceStep((hi0 - lo0 || Math.abs(hi0) || 1) / 2)
+    const lo = Math.floor(lo0 / step) * step
+    const hi = Math.max(Math.ceil(hi0 / step) * step, lo + step)
+    const span = hi - lo
+
+    const ticks: number[] = []
+    for (let v = lo; v <= hi + step / 1000; v += step) ticks.push(v)
+
+    const padL = 10 + Math.max(...ticks.map((t) => fmtV(t).length)) * 5.6
+    const pad = { t: 14, b: 18, l: padL, r: 10 }
+    const plotW = W - pad.l - pad.r
+    const plotH = H - pad.t - pad.b
+
+    const x = (i: number) => pad.l + (i * plotW) / (data.length - 1)
+    const y = (v: number) => pad.t + plotH * (1 - (v - lo) / span)
+    const pts = data.map((d, i) => ({ x: x(i), y: y(d.value) }))
+
+    const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+    let len = 0
+    for (let i = 1; i < pts.length; i++) {
+      len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y)
+    }
+
+    const spacing = plotW / (data.length - 1)
+    const r = spacing >= 12 ? 3.2 : spacing >= 6 ? 2.4 : spacing >= 4 ? 1.8 : 0
+    const last = pts[pts.length - 1]
+    const xLabels = pickLabels(data.length, 5)
+    const DRAW = 900
+
+    body = (
+      <>
+        {ticks.map((t, i) => (
+          <g key={'g' + i}>
+            <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} stroke="var(--line)" strokeWidth={1} shapeRendering="crispEdges" />
+            <text x={pad.l - 7} y={y(t) + 3.2} textAnchor="end" className="cbar-lbl">{fmtV(t)}</text>
+          </g>
+        ))}
+        <path
+          d={d}
+          fill="none"
+          stroke={accentVar}
+          strokeWidth={2.4}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="cl-line"
+          style={{ strokeDasharray: len, strokeDashoffset: len, animationDuration: `${DRAW}ms` }}
+        />
+        {r > 0 &&
+          pts.map((p, i) => (
+            <circle
+              key={'d' + i}
+              cx={p.x}
+              cy={p.y}
+              r={r}
+              fill={accentVar}
+              className="cl-dot"
+              style={{ animationDelay: `${Math.round((i / (pts.length - 1)) * DRAW)}ms` }}
+            />
+          ))}
+        <circle
+          cx={last.x}
+          cy={last.y}
+          r={4.2}
+          fill={accentVar}
+          stroke="var(--bg, #0c0e11)"
+          strokeWidth={2}
+          className="cl-dot"
+          style={{ animationDelay: `${DRAW}ms` }}
+        />
+        <text
+          x={Math.min(last.x, W - pad.r)}
+          y={Math.max(10, last.y - 11)}
+          textAnchor="end"
+          className="cbar-val tnum cl-endval"
+          style={{ animationDelay: `${DRAW}ms` }}
+        >
+          {fmtV(data[data.length - 1].value)}
+        </text>
+        {data.map((dd, i) =>
+          xLabels.has(i) ? (
+            <text
+              key={'x' + i}
+              x={pts[i].x}
+              y={H - 3.5}
+              textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}
+              className="cbar-lbl"
+            >
+              {dd.label}
+            </text>
+          ) : null,
+        )}
+      </>
+    )
+  }
+
+  return (
+    <div ref={ref} style={{ width: '100%', height: H }}>
+      <svg viewBox={`0 0 ${W || 320} ${H}`} width="100%" height={H} className="cbar" role="img" aria-label={ariaLabel}>
+        {body}
+      </svg>
+    </div>
   )
 }

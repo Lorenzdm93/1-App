@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.24.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.25.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,21 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.25.0 — the progression chart, rebuilt**
+
+GHISA's exercise progression is now `DotLine`: straight segments between dots
+rather than a smoothed gradient area, faint rails at round values, weights down
+the left edge, dates flat along the bottom. It draws left to right on open and
+each dot lands as the line reaches it, then stops.
+
+The old chart stretched a fixed 320-unit viewBox across the phone with
+`preserveAspectRatio="none"`, which scaled glyphs and circles non-uniformly —
+that is why the axis labels read as squashed and slightly slanted. `DotLine`
+measures its container, so one SVG unit is one CSS pixel and text is crisp.
+Gridlines snap to round numbers (120 / 130 / 140, never 121.4 / 129.8 / 138.2).
+Dots thin with density and disappear past roughly 130 points, where they would
+be a smear. `AreaLine` is untouched, so this is a one-line revert.
 
 **New in v0.24.0 — the fonts are ours now**
 

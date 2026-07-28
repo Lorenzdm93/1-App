@@ -5835,6 +5835,19 @@ html { overscroll-behavior: none; }
 
 .cbar-val { fill: var(--ink); font-size: 11px; font-weight: 700; }
 
+/* DotLine: the line draws left to right, each dot lands as the line reaches it. */
+.cl-line { animation: cl-draw var(--dur, 900ms) cubic-bezier(0.22, 0.61, 0.36, 1) forwards; }
+@keyframes cl-draw { to { stroke-dashoffset: 0; } }
+.cl-dot { animation: cl-pop 240ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards; transform-origin: center; transform-box: fill-box; }
+@keyframes cl-pop { from { opacity: 0; transform: scale(0.25); } }
+.cl-endval { animation: cl-fade 260ms ease-out backwards; }
+@keyframes cl-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .cl-line { animation: none; stroke-dashoffset: 0 !important; }
+  .cl-dot, .cl-endval { animation: none; }
+}
+
+
 /* v0.18.0 — brighter gliders everywhere, module lines, notification rows */
 .tab-glider { background: color-mix(in srgb, var(--ink) 11%, transparent); }
 .mtab { position: relative; z-index: 1; }

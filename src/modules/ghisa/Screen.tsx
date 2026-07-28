@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SampleDataBlock } from '../../app/ui'
 import Confetti from '../../app/Confetti'
-import { Bars, AreaLine } from '../../app/charts'
+import { Bars, DotLine } from '../../app/charts'
 import { toast } from '../../core/toast'
 import type { ReactNode, CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
@@ -284,7 +284,7 @@ function GBarChart({ data }: { data: { label: string; vol: number; ts?: number }
 }
 
 function GAreaChart({ data, fmt }: { data: { label: string; value: number }[]; fmt?: (v: number) => string }) {
-  return <AreaLine data={data} accentVar="var(--m-ghisa)" height={160} fmt={fmt} ariaLabel="Progression" />
+  return <DotLine data={data} accentVar="var(--m-ghisa)" height={160} fmt={fmt} ariaLabel="Progression" />
 }
 
 function RestBar({ rest, onAdjust, onSkip }: {

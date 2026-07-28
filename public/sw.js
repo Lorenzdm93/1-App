@@ -1,9 +1,9 @@
-/* 1% service worker — v54.
+/* 1% service worker — v55.
    Navigation: network-first with cached fallback (offline works after the
    first visit). Assets: cache-first (Vite hashes make staleness impossible).
    Updates: the new worker WAITS; the app shows "Update ready" and the person
    chooses the moment. No mid-session rug-pulls. */
-var CACHE = 'onepercent-v54'
+var CACHE = 'onepercent-v55'
 /* The two latin faces are precached: typography must survive a cold start with
    no network. latin-ext and the italics stay runtime-cached, fetched on demand. */
 var CORE = [
