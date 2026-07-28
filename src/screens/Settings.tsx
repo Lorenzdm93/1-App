@@ -9,12 +9,12 @@ import { ConfirmSheet, Seg, Chevron, Switch } from '../app/ui'
 import { syncStore, connect, disconnect, backupNow, restoreLatest, FIREBASE_CONFIG } from '../core/sync'
 import { seedAllSampleData, removeAllSampleData, anySampleData } from '../core/sampledata'
 import { notifyStore, notifyStatus, enableNotifications, disableNotifications, setModuleNotify } from '../core/notify'
-import { setModuleLines } from '../core/settings'
+import { setModuleLines, setDevTools } from '../core/settings'
 import { enabledModules } from '../core/registry'
 import { navigate } from '../core/router'
 import Mark from '../app/Mark'
 
-const APP_VERSION = '0.22.1'
+const APP_VERSION = '0.23.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
@@ -30,6 +30,20 @@ export default function Settings() {
   const [pendingImport, setPendingImport] = useState<string | null>(null)
   const sync = useStore(syncStore)
   const notify = useStore(notifyStore)
+
+  /* Hidden unlock: five taps on the version reveals the sample-data loader.
+     Public builds ship with it invisible, but it is one gesture away whenever
+     screenshots are needed — no build flag to get wrong. */
+  const taps = useRef({ n: 0, at: 0 })
+  const tapVersion = () => {
+    const now = Date.now()
+    taps.current = { n: now - taps.current.at > 1500 ? 1 : taps.current.n + 1, at: now }
+    if (taps.current.n >= 5) {
+      taps.current = { n: 0, at: 0 }
+      setDevTools(true)
+      toast('Developer tools unlocked')
+    }
+  }
 
   function download() {
     try {
@@ -77,7 +91,7 @@ export default function Settings() {
 
       <div className="card">
         <Mark size={40} title="" />
-        <div className="kv">
+        <div className="kv" onClick={tapVersion} style={{ cursor: 'default' }}>
           <span className="k">Version</span>
           <span className="num">{APP_VERSION}</span>
         </div>
@@ -88,6 +102,10 @@ export default function Settings() {
         <div className="kv">
           <span className="k">Data</span>
           <span>On this device only</span>
+        </div>
+        <div className="btn-row" style={{ marginTop: 12 }}>
+          <a className="btn btn-ghost" href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
+          <a className="btn btn-ghost" href="impressum.html" target="_blank" rel="noopener noreferrer">Impressum</a>
         </div>
       </div>
 
@@ -221,6 +239,8 @@ export default function Settings() {
         </div>
       </div>
 
+      {settings.devTools && (
+      <>
       <div className="section-label">Sample data</div>
       <div className="card">
         <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--faint)', lineHeight: 1.6 }}>
@@ -251,7 +271,16 @@ export default function Settings() {
             Remove
           </button>
         </div>
+        <button
+          className="btn btn-ghost"
+          style={{ width: '100%', marginTop: 10 }}
+          onClick={() => { setDevTools(false); toast('Developer tools hidden') }}
+        >
+          Hide developer tools
+        </button>
       </div>
+      </>
+      )}
 
       <div className="section-label">Danger zone</div>
       <div className="card">

@@ -4,6 +4,7 @@
  */
 import { useEffect } from 'react'
 import type { Theme } from '../core/settings'
+import { syncNativeStatusBar } from '../core/native'
 
 const BG = { dark: '#0b0c0f', light: '#f3f1ea' } as const
 
@@ -16,6 +17,7 @@ function apply(mode: 'dark' | 'light'): void {
   document.documentElement.dataset.theme = mode
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.setAttribute('content', BG[mode])
+  syncNativeStatusBar(mode)
 }
 
 export function useTheme(theme: Theme): void {

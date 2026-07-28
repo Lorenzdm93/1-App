@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.22.1-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.23.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,10 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.23.0 — public-readiness: sample data gated, native launch chrome, legal pages**
+
+Three things that block a first external tester, done. **The sample-data loader is now hidden** behind a deliberate unlock — five taps on the version number in Settings reveals it, and a button inside the card hides it again. A public user can never stumble into mixing twelve months of fiction with their real ledger, yet screenshots stay one gesture away on any build, with no build flag to get wrong. **Native launch chrome**: `capacitor.config.ts` configures the splash never to auto-hide, and `src/core/native.ts` dismisses it with a short fade once the shell has actually painted — no white blink between the two, and a failed boot stays visibly on the splash instead of a blank page. The native status bar now follows the theme from `theme.ts`, the one place that already owns light/dark, so it can never drift. Launch artwork ships as source: `assets/icon.png` plus light and dark `assets/splash*.png` at 2732², consumed by `npx @capacitor/assets generate --ios` — no manual dragging in Xcode. Both plugins are reached through the runtime global, so `package.json` stays clean and the Pages build is untouched. **Legal pages**: `public/privacy.html` and a `public/impressum.html` template, linked from Settings and reachable at the site root. The privacy policy is precise rather than reassuring — it names the three things that actually leave the device (Google-hosted fonts, embedded Spotify/YouTube players if you add a link, and GitHub Pages request logs) instead of claiming a purity the app does not yet have.
 
 **New in v0.22.1 — self-healing chunk loads; the "only GHISA works" incident**
 

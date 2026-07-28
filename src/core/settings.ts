@@ -9,6 +9,8 @@ export interface CoreSettings {
   onboarded: boolean
   /** Profile: per-module progress lines under the ledger. Undefined = on. */
   moduleLines?: boolean
+  /** Developer tools (sample-data loader). Hidden until deliberately unlocked. */
+  devTools?: boolean
 }
 
 const DEFAULTS: CoreSettings = {
@@ -35,6 +37,10 @@ export const settingsStore = createPersistedStore<CoreSettings>(
   2,
   migrateSettings,
 )
+
+export function setDevTools(on: boolean): void {
+  settingsStore.set((s) => ({ ...s, devTools: on }))
+}
 
 export function setModuleLines(on: boolean): void {
   settingsStore.set((s) => ({ ...s, moduleLines: on }))

@@ -20,6 +20,22 @@ const config: CapacitorConfig = {
     LocalNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
+    /* The splash never auto-hides: src/core/native.ts dismisses it once the
+       shell has actually painted, so there is no white blink between the two
+       and a failed boot stays visibly on the splash instead of a blank page. */
+    SplashScreen: {
+      launchAutoHide: false,
+      backgroundColor: '#0b0c0f',
+      showSpinner: false,
+      iosSpinnerStyle: 'small',
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
+    StatusBar: {
+      style: 'DARK',
+      backgroundColor: '#0b0c0f',
+      overlaysWebView: false,
+    },
   },
 }
 

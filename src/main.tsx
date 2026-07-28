@@ -7,6 +7,7 @@ import App from './app/App'
 import { toast } from './core/toast'
 import { wireScheduledNotifications } from './core/schedules'
 import { clearChunkReloadLatch } from './core/lazyload'
+import { initNative } from './core/native'
 
 /* ---------- global safety nets: never a silent white screen ---------- */
 let errToastAt = 0
@@ -70,6 +71,7 @@ clearChunkReloadLatch()
 
 const rootEl = document.getElementById('root')
 if (rootEl) {
+  initNative()
   createRoot(rootEl).render(
     <StrictMode>
       <App />

@@ -24,6 +24,8 @@ cd 1-App-main
 npm install
 npm i -D @capacitor/core @capacitor/cli @capacitor/ios
 npm i @capacitor/local-notifications   # timer + fasting alerts while closed
+npm i @capacitor/splash-screen @capacitor/status-bar
+npm i -D @capacitor/assets
 npm run build                   # produces dist/
 npx cap add ios                 # creates ios/ native project (commit it)
 npx cap sync ios                # copies dist/ into the shell
@@ -35,8 +37,13 @@ change it if you register a different bundle id).
 ## 4. In Xcode (one-time)
 - Signing & Capabilities → Team: select your developer account; Xcode manages
   certificates automatically.
-- App Icons: drag `public/appstore-1024.png` into Assets → AppIcon (Xcode 15+
-  generates all sizes from the single 1024).
+- App Icons and launch screen: run `npx @capacitor/assets generate --ios` from
+  the repo root. It reads `assets/icon.png` (1024²) and `assets/splash.png` +
+  `assets/splash-dark.png` (2732², light and dark) — all four are committed —
+  and writes every iOS size into the native project. No manual dragging.
+- The splash is configured NOT to auto-hide: `src/core/native.ts` dismisses it
+  with a short fade once the shell has actually painted, so there is no white
+  blink, and a failed boot stays visibly on the splash instead of a blank page.
 - Display name: 1%. Deployment target: iOS 16+ is a sane floor.
 - Run on your own iPhone via cable first (free, no review).
 
