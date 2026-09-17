@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.31.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.32.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -30,6 +30,19 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 **v0.30.2 — quick-log typing fix:** the sheet stole focus from the text field on every keystroke (a fresh onClose closure re-ran the focus effect); the Sheet now reads onClose via a ref, so you can type normally.
 
 **v0.30.1 — quick-log input fix:** the Quick log text field was collapsed behind the "Read" button; it now fills the row so you can type into it.
+
+**New in v0.32.0 — quick log understands more, two ways**
+
+Two upgrades to natural-language capture. **On-device (free):** bulk phrases now
+work — "took all my supplements", "my morning supplements" (only the morning
+ones), "completed all my daily tasks" fan out to every matching supplement or
+habit. **With your key:** turn on Settings → Insights → My key (Anthropic/OpenAI)
+and free-form phrasing goes through the model — it reads the sentence, maps it to
+your real supplements/habits/lifts, and drops anything it can't ground, then you
+still confirm every chip. The model can't invent missing numbers, so genuinely
+vague logs ("great push day", "same numbers as last time") and untracked feats
+("1000 pushups" — no bodyweight-rep metric yet) still come back empty by design
+rather than guessing.
 
 **New in v0.31.0 — quick log understands lifts**
 

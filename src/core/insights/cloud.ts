@@ -174,3 +174,60 @@ export const ownKeyProvider: InsightProvider = {
 export async function tryProvider(p: InsightProvider, digest: Digest, signals: Signal[]): Promise<Insight[]> {
   return p.generate(digest, signals)
 }
+
+/**
+ * Generic one-shot LLM call reused outside insights (e.g. natural-language
+ * capture). Own-key only for now — the cloud Worker is insight-specific.
+ * Returns the model's raw text, or null when unavailable/failed.
+ */
+export async function runLLM(system: string, user: string): Promise<string | null> {
+  const cfg = insightsConfigStore.get()
+  if (!cfg.enabled || cfg.providerId !== 'ownkey') return null
+  const key = getOwnKey()
+  if (!key) return null
+  try {
+    if (cfg.ownKeyVendor === 'anthropic') {
+      const res = await withTimeout((signal) =>
+        fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: JSON.stringify({
+            model: ANTHROPIC_MODEL,
+            max_tokens: 1024,
+            system,
+            messages: [{ role: 'user', content: user }],
+          }),
+          signal,
+        }),
+      )
+      if (!res.ok) return null
+      const data = await res.json()
+      return Array.isArray(data.content) ? data.content.map((b: { text?: string }) => b.text ?? '').join('') : null
+    }
+    const res = await withTimeout((signal) =>
+      fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          max_tokens: 1024,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user },
+          ],
+        }),
+        signal,
+      }),
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.choices?.[0]?.message?.content ?? null
+  } catch {
+    return null
+  }
+}
