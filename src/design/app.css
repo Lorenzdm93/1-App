@@ -6019,8 +6019,8 @@ html { overscroll-behavior: none; }
 .qlog-ph { font-size: 13.5px; color: var(--faint); }
 
 .qlog-inrow { display: flex; gap: 8px; align-items: stretch; }
-.qlog-inrow .ai-in { flex: 1; }
-.qlog-go { flex: none; padding-left: 18px; padding-right: 18px; }
+.qlog-inrow .ai-in { flex: 1 1 auto; min-width: 0; width: auto; }
+.qlog-go { flex: 0 0 auto; width: auto; padding-left: 18px; padding-right: 18px; }
 .qlog-empty { font-size: 12.5px; color: var(--faint); line-height: 1.55; margin: 14px 2px 0; }
 
 .qlog-drafts { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }

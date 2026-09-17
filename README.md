@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.30.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.30.1-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,8 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**v0.30.1 — quick-log input fix:** the Quick log text field was collapsed behind the "Read" button; it now fills the row so you can type into it.
 
 **New in v0.30.0 — log by just saying it**
 
