@@ -5993,3 +5993,10 @@ html { overscroll-behavior: none; }
   padding: 10px 12px; font-size: 13.5px; font-family: var(--font-mono, monospace);
 }
 .ai-in:focus-visible { outline: none; border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+
+/* v0.29.0 — Profile "week in review" narrative */
+.wk-review { }
+.wk-review-body {
+  margin: 0; font-size: 14px; line-height: 1.62; color: var(--dim);
+  font-family: var(--font-display);
+}

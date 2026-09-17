@@ -6,6 +6,7 @@ import { oneStore } from '../core/one'
 import { eventsStore } from '../core/events'
 import { Bars, MultiLine } from '../app/charts'
 import { StatBox } from '../app/ui'
+import WeekReview from '../app/WeekReview'
 import { weekRecap } from '../core/score'
 import { ghisaStore } from '../modules/ghisa/model'
 import { oraStore, oraStats } from '../modules/ora/model'
@@ -59,6 +60,8 @@ export default function Profile() {
         <div className="eyebrow">The long game</div>
         <h1 className="screen-title">Profile</h1>
       </div>
+
+      <WeekReview />
 
       <div className="card">
         <div className="ins-grid three">

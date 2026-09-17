@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.28.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.29.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,19 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.29.0 — your week, in words**
+
+Profile now opens with a short prose read of your week — the same numbers the
+engine already tracks, written back as a few honest sentences: where you stand
+against your pace, the bright spot, the one gap worth the effort, and what's
+compounding. *"Partway through the week, you're at 53% of your pace. RESPIRO is
+the bright spot — breathwork has been climbing for weeks. If one thing deserves
+the effort, it's GHISA. Two weeks won in a row now — compounding is +4.1%."*
+Composed on-device from your data, so it's free and private and can't contradict
+the ring; it stays quiet on a first or empty week, and follows the AI-insights
+toggle. (The first half of a bigger idea — making 1% *speak* your data, not just
+chart it. Natural-language capture is the other half, coming next.)
 
 **New in v0.28.0 — one "This week", not two lists**
 
