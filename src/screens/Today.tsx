@@ -6,16 +6,15 @@ import type { CSSProperties, PointerEvent as RPointerEvent } from 'react'
 import { useStore } from '../core/hooks'
 import { eventsStore, currentStreak } from '../core/events'
 import { settingsStore, setModuleOrder } from '../core/settings'
-import { enabledModules, moduleById } from '../core/registry'
+import { enabledModules } from '../core/registry'
 import { navigate } from '../core/router'
 import { todayKey, lastNDayKeys, dayKey, shiftDay, weekStartKey } from '../core/dates'
 import { oneStore } from '../core/one'
-import { computePulse, nextMoves } from '../core/score'
+import { computePulse } from '../core/score'
 import { Chevron, Empty } from '../app/ui'
 import Ring from '../app/Ring'
 import ErrorBoundary from '../app/ErrorBoundary'
-import InsightsSection from '../app/Insights'
-import { cadenceStore, recentMoodAvg } from '../modules/cadence/model'
+import ThisWeek from '../app/Insights'
 
 function useWeekPulse() {
   const events = useStore(eventsStore)
@@ -28,7 +27,6 @@ function useWeekPulse() {
 function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
   const events = useStore(eventsStore)
   const today = todayKey()
-  const moves = nextMoves(pulse)
   const streak = currentStreak(events, today)
   const activeDays = new Set(events.map((e) => dayKey(e.ts)))
   const week = lastNDayKeys(7)
@@ -93,55 +91,6 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
         ))}
       </div>
 
-      {(moves.length > 0 || pulse.modules.some((m) => m.plateauNote)) && (
-        <div className="wp-moves">
-          <div className="wp-moves-label">{won ? 'Keep or coast' : 'Next moves'}</div>
-          {moves.map((mv) => (
-            <button
-              key={mv.id}
-              className="wp-move"
-              style={{ ['--wc' as string]: mv.accentVar } as CSSProperties}
-              onClick={() => navigate('/m/' + mv.id)}
-            >
-              <span className="wp-ic">
-                {(() => {
-                  const M = moduleById(mv.id)!.Icon
-                  return <M size={13} />
-                })()}
-              </span>
-              <span>{mv.text}</span>
-              <Chevron />
-            </button>
-          ))}
-          {(() => {
-            const mood = recentMoodAvg(cadenceStore.get())
-            const gh = pulse.modules.find((m) => m.id === 'ghisa')
-            if (mood !== null && mood <= 2.5 && gh && gh.score !== null && gh.score < 70) {
-              return (
-                <div className="wp-note">
-                  Mood has been low lately and training volume dipped with it — the two usually
-                  travel together. A lighter session still counts; so does saying so in CADENCE.
-                </div>
-              )
-            }
-            return null
-          })()}
-          {(() => {
-            const held = pulse.modules.filter((m) => m.plateauNote)
-            if (held.length === 0) return null
-            if (held.length === 1) return <div className="wp-note">{held[0].plateauNote}</div>
-            return (
-              <div className="wp-note">
-                Holding your ceilings — {held.map((m) => m.scorer.label).join(', ')}. Raise any in
-                the engine if there's genuinely room; holding is winning.
-              </div>
-            )
-          })()}
-          {won && moves.length === 0 && (
-            <div className="wp-note">Everything above target. Rest is also training.</div>
-          )}
-        </div>
-      )}
     </>
   )
 }
@@ -229,8 +178,8 @@ export default function Today() {
       <WeekCloseSheet />
       <WeekPulseCard pulse={pulse} />
 
-      <ErrorBoundary name="Insights" compact>
-        <InsightsSection />
+      <ErrorBoundary name="This week" compact>
+        <ThisWeek pulse={pulse} />
       </ErrorBoundary>
 
       {modules.length === 0 && (

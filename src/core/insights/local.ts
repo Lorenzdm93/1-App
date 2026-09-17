@@ -78,7 +78,7 @@ function render(sig: Signal, d: Digest, lead: boolean): Insight | null {
             : weekDone && m.deltaPct !== null && m.deltaPct > 0
               ? `${m.label} is up ${pct(m.deltaPct)} from last week.`
               : `${m.label} has been climbing over the last few weeks.`,
-        recommendation: `Protect the streak with the smallest version that still counts — consistency is the whole engine.`,
+        recommendation: `Keep it going — even a short session holds the run.`,
         confidence: confFromWeeks(m.weeksTracked),
         moduleId: m.id,
       }
@@ -91,7 +91,7 @@ function render(sig: Signal, d: Digest, lead: boolean): Insight | null {
         type: 'trend',
         title: `${n} weeks won in a row`,
         observation: `You've beaten your own pace ${n} weeks running — compounding is now +${comp.toFixed(1)}%.`,
-        recommendation: `Don't chase a bigger week; just keep the streak alive. Banked weeks never come back off the ledger.`,
+        recommendation: `Keep the streak alive; no need to force a bigger week.`,
         confidence: n >= 4 ? 'high' : 'medium',
         moduleId: null,
       }

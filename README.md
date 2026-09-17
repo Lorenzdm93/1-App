@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.27.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.28.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,18 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.28.0 — one "This week", not two lists**
+
+The separate *Next Moves* and *Worth your attention* sections have merged into a
+single, compact **This week** feed — because they were saying the same thing
+twice (an "opportunity" insight and a next move are the same information). Now
+the unit is the *module*, not the card: each row combines what's happening with
+what to do. GHISA quietly climbing for weeks but sitting at 0% today shows as one
+line — "GHISA is on a run" over "24,786 kg to go" — instead of a celebration
+card stacked above a duplicate action. Compact two-line rows, a ↑/↓ for
+direction, the module's accent, urgent things first, four at most. Turning AI
+insights off in Settings cleanly reverts it to plain next-moves rows.
 
 **New in v0.27.0 — the app that reads your week back to you**
 

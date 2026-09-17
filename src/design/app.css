@@ -5929,73 +5929,59 @@ html { overscroll-behavior: none; }
 .card > .brandmark { margin: 0 0 10px; opacity: 0.95; }
 
 /* ============================================================
-   v0.27.0 — the insights layer
+   v0.28.0 — "This week": one compact, merged feed
+   (supersedes v0.27.0 Next Moves + insight cards)
    ============================================================ */
-.insights { margin-top: 4px; }
-.insights-head { display: flex; align-items: center; justify-content: space-between; }
-.insights-head .section-label { margin: 18px 2px 10px; }
-.insights-refresh {
+.thisweek { margin-top: 4px; }
+.tw-top { display: flex; align-items: center; justify-content: space-between; }
+.tw-top .section-label { margin: 18px 2px 10px; }
+.tw-refresh {
   display: grid; place-items: center; width: 30px; height: 30px;
   color: var(--faint); border-radius: 9px; background: transparent;
 }
-.insights-refresh:disabled { opacity: 0.4; }
-.insights-refresh:active { transform: scale(0.92); }
+.tw-refresh:disabled { opacity: 0.4; }
+.tw-refresh:active { transform: scale(0.92); }
 
-.insight {
+.tw-row {
   position: relative;
+  display: flex; align-items: center; gap: 12px;
   background: var(--surface, var(--card));
   border: 1px solid var(--line-soft);
-  border-radius: var(--radius, 18px);
-  padding: 15px 16px 15px 18px;
-  margin-bottom: 10px;
+  border-radius: 14px;
+  padding: 11px 13px;
+  margin-bottom: 8px;
   box-shadow: var(--e1, none);
-  overflow: hidden;
 }
-/* the accent edge — the module's own colour, or the app accent */
-.insight::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: var(--wc, var(--accent));
-  opacity: 0.85;
+.tw-row::before {
+  content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 2.5px;
+  border-radius: 3px; background: var(--wc, var(--accent)); opacity: 0.9;
 }
-.insight-tap { cursor: pointer; transition: border-color 0.2s ease, transform 0.12s ease; }
-.insight-tap:active { transform: scale(0.994); }
-.insight-tap:hover { border-color: color-mix(in srgb, var(--wc, var(--accent)) 30%, var(--line)); }
+.tw-tap { cursor: pointer; transition: border-color 0.18s ease, transform 0.12s ease; }
+.tw-tap:active { transform: scale(0.995); }
+.tw-tap:hover { border-color: color-mix(in srgb, var(--wc, var(--accent)) 28%, var(--line)); }
 
-.insight-top { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
-.insight-type {
-  font-family: var(--font-mono, monospace); font-size: 10px; font-weight: 700;
-  letter-spacing: 0.1em; text-transform: uppercase;
+.tw-ic {
+  flex: none; width: 30px; height: 30px; border-radius: 9px;
+  display: grid; place-items: center;
   color: var(--wc, var(--accent));
+  background: color-mix(in srgb, var(--wc, var(--accent)) 13%, transparent);
 }
-.insight-conf {
-  margin-left: auto; font-family: var(--font-mono, monospace);
-  font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--faint); border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px;
+.tw-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tw-line {
+  font-size: 13.5px; font-weight: 600; color: var(--ink); line-height: 1.35;
+  display: flex; align-items: baseline; gap: 5px; min-width: 0;
 }
-.insight-conf.conf-high { color: var(--good, #35c78f); border-color: color-mix(in srgb, var(--good, #35c78f) 40%, var(--line)); }
-.insight-conf.conf-low { opacity: 0.7; }
+.tw-sub { font-size: 12px; color: var(--dim); line-height: 1.45; }
+.tw-arrow { flex: none; font-weight: 800; font-size: 11.5px; line-height: 1; }
+.tw-arrow.up { color: var(--good, #35c78f); }
+.tw-arrow.dn { color: var(--warn, #d8a657); }
+.tw-row > svg:last-child { color: var(--faint); flex: none; }
+.tw-note { font-size: 12px; line-height: 1.5; color: var(--faint); padding: 2px 4px 8px; }
 
-.insight-title {
-  font-family: var(--font-display, serif); font-size: 17px; letter-spacing: -0.01em;
-  color: var(--ink); margin-bottom: 5px; line-height: 1.25;
-}
-.insight-obs { font-size: 13.5px; line-height: 1.55; color: var(--dim); margin: 0; }
-.insight-ctx { font-size: 12.5px; line-height: 1.5; color: var(--faint); margin: 5px 0 0; }
-.insight-rec {
-  display: flex; align-items: flex-start; gap: 8px; margin-top: 11px;
-  padding-top: 11px; border-top: 1px solid var(--line-soft);
-  font-size: 13px; line-height: 1.5; color: var(--ink);
-}
-.insight-rec .rec-dot {
-  flex: none; width: 6px; height: 6px; border-radius: 50%; margin-top: 6px;
-  background: var(--wc, var(--accent));
-}
-.insight-rec svg { margin-left: auto; flex: none; align-self: center; }
-
-/* loading skeleton */
-.insight-skel { pointer-events: none; }
-.skel-line { height: 11px; border-radius: 6px; background: var(--line-soft); margin: 8px 0; animation: skel-pulse 1.3s ease-in-out infinite; }
-.skel-line.w40 { width: 40%; } .skel-line.w60 { width: 60%; } .skel-line.w80 { width: 80%; }
+/* skeleton (shared) */
+.tw-skel { pointer-events: none; }
+.skel-line { height: 10px; border-radius: 6px; background: var(--line-soft); margin: 7px 0; animation: skel-pulse 1.3s ease-in-out infinite; }
+.skel-line.w40 { width: 40%; } .skel-line.w60 { width: 60%; }
 @keyframes skel-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .skel-line { animation: none; } }
 
