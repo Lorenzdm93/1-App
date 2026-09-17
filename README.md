@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.29.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.30.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -26,6 +26,18 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.30.0 — log by just saying it**
+
+The other half of the AI idea: turning messy reality into structured data with
+one line. A slim **Quick log** bar on Today opens a box where you type what you
+did — *"squat 5x5 100kg, meditated 10 min, took Vitamin D3"* — and it parses each
+clause into the right module: 2,500 kg of GHISA volume, 10 min of RESPIRO, a
+SANA dose. It reads durations, set×rep×weight, and matches habit and supplement
+names against what you *actually* track, so it never invents an entry. Every
+parse is shown as reviewable chips you confirm before anything is written —
+nothing is logged blind. Runs on-device (free, private); an LLM pass for fuzzier
+phrasing rides the same seam next, and ORA fasts + CALIBER tests join after.
 
 **New in v0.29.0 — your week, in words**
 

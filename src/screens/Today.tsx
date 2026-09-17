@@ -15,6 +15,7 @@ import { Chevron, Empty } from '../app/ui'
 import Ring from '../app/Ring'
 import ErrorBoundary from '../app/ErrorBoundary'
 import ThisWeek from '../app/Insights'
+import QuickLog from '../app/QuickLog'
 
 function useWeekPulse() {
   const events = useStore(eventsStore)
@@ -174,6 +175,8 @@ export default function Today() {
         <div className="eyebrow">{dateLabel}</div>
         <h1 className="screen-title">Today</h1>
       </div>
+
+      <QuickLog />
 
       <WeekCloseSheet />
       <WeekPulseCard pulse={pulse} />

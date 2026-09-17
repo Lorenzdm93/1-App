@@ -6000,3 +6000,46 @@ html { overscroll-behavior: none; }
   margin: 0; font-size: 14px; line-height: 1.62; color: var(--dim);
   font-family: var(--font-display);
 }
+
+/* ============================================================
+   v0.30.0 — Quick log: natural-language capture
+   ============================================================ */
+.qlog-bar {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  background: var(--surface, var(--card)); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 14px; margin-bottom: 14px;
+  text-align: left; cursor: pointer; transition: border-color 0.18s ease, transform 0.12s ease;
+}
+.qlog-bar:hover { border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.qlog-bar:active { transform: scale(0.996); }
+.qlog-plus {
+  flex: none; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center;
+  background: var(--accent); color: var(--bg); font-weight: 700; font-size: 17px; line-height: 1;
+}
+.qlog-ph { font-size: 13.5px; color: var(--faint); }
+
+.qlog-inrow { display: flex; gap: 8px; align-items: stretch; }
+.qlog-inrow .ai-in { flex: 1; }
+.qlog-go { flex: none; padding-left: 18px; padding-right: 18px; }
+.qlog-empty { font-size: 12.5px; color: var(--faint); line-height: 1.55; margin: 14px 2px 0; }
+
+.qlog-drafts { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.qlog-chip {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px;
+  background: var(--surface, var(--card)); text-align: left; cursor: pointer;
+  opacity: 0.5; transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+.qlog-chip.on { opacity: 1; border-color: color-mix(in srgb, var(--wc) 40%, var(--line)); }
+.qlog-chip-mod {
+  flex: none; min-width: 60px;
+  font-family: var(--font-mono, monospace); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--wc, var(--accent));
+}
+.qlog-chip-detail { flex: 1; min-width: 0; font-size: 13px; color: var(--ink); }
+.qlog-chip-mark {
+  flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; border: 1px solid var(--wc, var(--accent)); color: var(--wc, var(--accent));
+}
+.qlog-chip.on .qlog-chip-mark { background: var(--wc, var(--accent)); color: var(--bg); border-color: var(--wc, var(--accent)); }
+.qlog-hint { font-size: 11.5px; color: var(--faint); text-align: center; margin: 10px 0 0; }
