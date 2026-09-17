@@ -5927,3 +5927,83 @@ html { overscroll-behavior: none; }
 .brandmark { display: block; }
 .ob-hero .brandmark { margin: 12px auto 0; }
 .card > .brandmark { margin: 0 0 10px; opacity: 0.95; }
+
+/* ============================================================
+   v0.27.0 — the insights layer
+   ============================================================ */
+.insights { margin-top: 4px; }
+.insights-head { display: flex; align-items: center; justify-content: space-between; }
+.insights-head .section-label { margin: 18px 2px 10px; }
+.insights-refresh {
+  display: grid; place-items: center; width: 30px; height: 30px;
+  color: var(--faint); border-radius: 9px; background: transparent;
+}
+.insights-refresh:disabled { opacity: 0.4; }
+.insights-refresh:active { transform: scale(0.92); }
+
+.insight {
+  position: relative;
+  background: var(--surface, var(--card));
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius, 18px);
+  padding: 15px 16px 15px 18px;
+  margin-bottom: 10px;
+  box-shadow: var(--e1, none);
+  overflow: hidden;
+}
+/* the accent edge — the module's own colour, or the app accent */
+.insight::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--wc, var(--accent));
+  opacity: 0.85;
+}
+.insight-tap { cursor: pointer; transition: border-color 0.2s ease, transform 0.12s ease; }
+.insight-tap:active { transform: scale(0.994); }
+.insight-tap:hover { border-color: color-mix(in srgb, var(--wc, var(--accent)) 30%, var(--line)); }
+
+.insight-top { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.insight-type {
+  font-family: var(--font-mono, monospace); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--wc, var(--accent));
+}
+.insight-conf {
+  margin-left: auto; font-family: var(--font-mono, monospace);
+  font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--faint); border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px;
+}
+.insight-conf.conf-high { color: var(--good, #35c78f); border-color: color-mix(in srgb, var(--good, #35c78f) 40%, var(--line)); }
+.insight-conf.conf-low { opacity: 0.7; }
+
+.insight-title {
+  font-family: var(--font-display, serif); font-size: 17px; letter-spacing: -0.01em;
+  color: var(--ink); margin-bottom: 5px; line-height: 1.25;
+}
+.insight-obs { font-size: 13.5px; line-height: 1.55; color: var(--dim); margin: 0; }
+.insight-ctx { font-size: 12.5px; line-height: 1.5; color: var(--faint); margin: 5px 0 0; }
+.insight-rec {
+  display: flex; align-items: flex-start; gap: 8px; margin-top: 11px;
+  padding-top: 11px; border-top: 1px solid var(--line-soft);
+  font-size: 13px; line-height: 1.5; color: var(--ink);
+}
+.insight-rec .rec-dot {
+  flex: none; width: 6px; height: 6px; border-radius: 50%; margin-top: 6px;
+  background: var(--wc, var(--accent));
+}
+.insight-rec svg { margin-left: auto; flex: none; align-self: center; }
+
+/* loading skeleton */
+.insight-skel { pointer-events: none; }
+.skel-line { height: 11px; border-radius: 6px; background: var(--line-soft); margin: 8px 0; animation: skel-pulse 1.3s ease-in-out infinite; }
+.skel-line.w40 { width: 40%; } .skel-line.w60 { width: 60%; } .skel-line.w80 { width: 80%; }
+@keyframes skel-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .skel-line { animation: none; } }
+
+/* settings key/url input */
+.ai-in {
+  width: 100%; box-sizing: border-box;
+  background: var(--raised, rgba(127,127,127,0.06)); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; font-size: 13.5px; font-family: var(--font-mono, monospace);
+}
+.ai-in:focus-visible { outline: none; border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }

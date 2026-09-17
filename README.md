@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.26.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.27.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -14,7 +14,7 @@
 
 **The operating system for getting one percent better every day.**
 
-One app, many instruments. Enable only the modules you want; everything feeds one dashboard, one streak, one metric stream. Offline-first, no account, your data never leaves the device.
+One app, many instruments. Enable only the modules you want; everything feeds one dashboard, one streak, one metric stream. Offline-first, no account — your data stays on your device by default.
 
 ## Modules
 
@@ -26,6 +26,26 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 | **RESPIRO** | Breathwork — geometric tracers, five protocols + custom, breath-hold test, your own Spotify audio | Begin a session in one tap |
 | **SANA** | Stacks of supplements & medicines — dial, per-stack take-all, history heatmap, reference library | Doses left today |
 | **CALIBER** | Strength meter — e1RM, level bar with your target marker, per-lift trends, standards tables | — |
+
+**New in v0.27.0 — the app that reads your week back to you**
+
+The engine has always scored your week; now it *interprets* it. On Today, above
+your modules, up to three insight cards surface what actually deserves attention
+— a module quietly slipping, one on a genuine run, your biggest opportunity this
+week, a won-week streak worth protecting. Everything is read from your own
+numbers, so it can never disagree with the ring, and a calm week shows nothing
+at all: silence is a valid answer.
+
+It ships **on-device by default** — pure heuristics over your data, no account,
+no network, no cost, nothing leaving the phone. Two optional upgrades sit behind
+a switch in Settings → Insights for when you want an LLM's nuance: a **cloud**
+provider (deploy the one-file Cloudflare Worker in `worker/`, which holds the
+key so the app never does) and **your own API key** (Anthropic or OpenAI, stored
+only on this device and kept out of backups). Both send only a numbers-only
+summary — no logs, no identifiers — and if either ever fails, the app falls
+straight back to the on-device read. One `InsightProvider` seam behind all of
+it, so on-device AI (Apple's Foundation Models, once native) drops in later
+without touching a card.
 
 **New in v0.26.0 — programs, and the exercise photos come home**
 

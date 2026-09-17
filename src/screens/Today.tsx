@@ -14,6 +14,7 @@ import { computePulse, nextMoves } from '../core/score'
 import { Chevron, Empty } from '../app/ui'
 import Ring from '../app/Ring'
 import ErrorBoundary from '../app/ErrorBoundary'
+import InsightsSection from '../app/Insights'
 import { cadenceStore, recentMoodAvg } from '../modules/cadence/model'
 
 function useWeekPulse() {
@@ -227,6 +228,10 @@ export default function Today() {
 
       <WeekCloseSheet />
       <WeekPulseCard pulse={pulse} />
+
+      <ErrorBoundary name="Insights" compact>
+        <InsightsSection />
+      </ErrorBoundary>
 
       {modules.length === 0 && (
         <Empty title="No modules enabled" sub="Turn on the tools you want in the Modules tab." />

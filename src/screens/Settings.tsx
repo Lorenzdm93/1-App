@@ -13,8 +13,19 @@ import { setModuleLines, setDevTools } from '../core/settings'
 import { enabledModules } from '../core/registry'
 import { navigate } from '../core/router'
 import Mark from '../app/Mark'
+import {
+  insightsConfigStore,
+  setInsightsEnabled,
+  setProviderId,
+  setCloudUrl,
+  setOwnKey,
+  setOwnKeyVendor,
+  hasOwnKey,
+  type ProviderId,
+  type OwnKeyVendor,
+} from '../core/insights/config'
 
-const APP_VERSION = '0.26.0'
+const APP_VERSION = '0.27.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
@@ -30,6 +41,10 @@ export default function Settings() {
   const [pendingImport, setPendingImport] = useState<string | null>(null)
   const sync = useStore(syncStore)
   const notify = useStore(notifyStore)
+  const iCfg = useStore(insightsConfigStore)
+  const [urlInput, setUrlInput] = useState(iCfg.cloudUrl ?? '')
+  const [keyInput, setKeyInput] = useState('')
+  const [keySet, setKeySet] = useState(hasOwnKey())
 
   /* Hidden unlock: five taps on the version reveals the sample-data loader.
      Public builds ship with it invisible, but it is one gesture away whenever
@@ -239,6 +254,122 @@ export default function Settings() {
         </div>
       </div>
 
+      <div className="section-label">Insights</div>
+      <div className="card">
+        <div className="nrow">
+          <div>
+            <span>AI insights</span>
+            <p className="cloudnote" style={{ margin: '3px 0 0' }}>
+              Notices trends, regressions and your biggest weekly opportunity — read from your own data.
+            </p>
+          </div>
+          <Switch checked={iCfg.enabled} onChange={setInsightsEnabled} label="AI insights" />
+        </div>
+
+        {iCfg.enabled && (
+          <div style={{ marginTop: 14, borderTop: '1px solid var(--line-soft)', paddingTop: 14 }}>
+            <Seg<ProviderId>
+              options={[
+                { id: 'local', label: 'On-device' },
+                { id: 'cloud', label: 'Cloud' },
+                { id: 'ownkey', label: 'My key' },
+              ]}
+              value={iCfg.providerId}
+              onChange={setProviderId}
+            />
+
+            {iCfg.providerId === 'local' && (
+              <p className="cloudnote" style={{ marginTop: 10 }}>
+                Runs entirely on your device — nothing leaves the phone, no account, no cost.
+              </p>
+            )}
+
+            {iCfg.providerId === 'cloud' && (
+              <div style={{ marginTop: 12 }}>
+                <p className="cloudnote" style={{ marginBottom: 8 }}>
+                  Sends a <b>numbers-only</b> summary to your own endpoint — no logs, no identifiers.
+                  Deploy it from <span className="num">worker/</span>, then paste the URL.
+                </p>
+                <input
+                  className="ai-in"
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://…workers.dev"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                />
+                <div className="btn-row" style={{ marginTop: 8 }}>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      setCloudUrl(urlInput)
+                      toast(urlInput.trim() ? 'Cloud endpoint saved' : 'Cloud endpoint cleared')
+                    }}
+                  >
+                    Save URL
+                  </button>
+                </div>
+                <p className="cloudnote" style={{ marginTop: 8 }}>
+                  {iCfg.cloudUrl ? 'Connected.' : 'Not set — falling back to on-device.'}
+                </p>
+              </div>
+            )}
+
+            {iCfg.providerId === 'ownkey' && (
+              <div style={{ marginTop: 12 }}>
+                <p className="cloudnote" style={{ marginBottom: 8 }}>
+                  Uses your own API key, stored only on this device and kept out of backups. A
+                  numbers-only summary is sent to the provider; neither trains on API data by default.
+                </p>
+                <Seg<OwnKeyVendor>
+                  options={[
+                    { id: 'anthropic', label: 'Anthropic' },
+                    { id: 'openai', label: 'OpenAI' },
+                  ]}
+                  value={iCfg.ownKeyVendor}
+                  onChange={setOwnKeyVendor}
+                />
+                <input
+                  className="ai-in"
+                  style={{ marginTop: 10 }}
+                  type="password"
+                  autoComplete="off"
+                  placeholder="Paste API key"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                />
+                <div className="btn-row" style={{ marginTop: 8 }}>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      setOwnKey(keyInput)
+                      setKeyInput('')
+                      setKeySet(hasOwnKey())
+                      toast('Key saved on this device')
+                    }}
+                  >
+                    Save key
+                  </button>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      setOwnKey(null)
+                      setKeySet(false)
+                      toast('Key removed')
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+                <p className="cloudnote" style={{ marginTop: 8 }}>
+                  {keySet ? 'Key set on this device.' : 'No key — falling back to on-device.'}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {settings.devTools && (
       <>
       <div className="section-label">Sample data</div>
@@ -314,6 +445,7 @@ export default function Settings() {
         danger
         onConfirm={() => {
           clearAll()
+          setOwnKey(null)
           location.reload()
         }}
         onClose={() => setConfirmErase(false)}
