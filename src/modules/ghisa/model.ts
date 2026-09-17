@@ -737,6 +737,39 @@ export interface FinishResult {
 }
 
 /** Prototype finish: keep only completed sets as numbers; empty session just discards. */
+/** Most recent completed workout with this name, or null. */
+export function lastWorkoutByName(name: string): Workout | null {
+  const key = name.trim().toLowerCase()
+  let best: Workout | null = null
+  for (const w of ghisaStore.get().workouts) {
+    if (w.name.trim().toLowerCase() === key && (!best || w.startedAt > best.startedAt)) best = w
+  }
+  return best
+}
+
+/** "I did <program>, same as last time" — clone the most recent workout of that
+    name as today's. Mirrors finishWorkout's write path (append + ring event) so
+    it lands in history and moves the weekly volume; PRs are cleared (a repeat is
+    not a new PR). */
+export function repeatWorkout(name: string, now = Date.now()): Workout | null {
+  const last = lastWorkoutByName(name)
+  if (!last) return null
+  const workout: Workout = {
+    ...last,
+    id: uid(),
+    startedAt: now,
+    entries: last.entries.map((e) => ({
+      ...e,
+      id: uid(),
+      sets: e.sets.map((s) => ({ ...s, id: uid(), prs: [] })),
+    })),
+    prCount: 0,
+  }
+  ghisaStore.set((s) => ({ ...s, workouts: [...s.workouts, workout] }))
+  logEvent({ module: 'ghisa', kind: 'session', value: workout.volume, unit: 'kg' })
+  return workout
+}
+
 export function finishWorkout(name: string): FinishResult | null {
   const st = ghisaStore.get()
   const active = st.active

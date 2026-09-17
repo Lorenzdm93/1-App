@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.32.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.33.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -30,6 +30,16 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 **v0.30.2 — quick-log typing fix:** the sheet stole focus from the text field on every keystroke (a fresh onClose closure re-ran the focus effect); the Sheet now reads onClose via a ref, so you can type normally.
 
 **v0.30.1 — quick-log input fix:** the Quick log text field was collapsed behind the "Read" button; it now fills the row so you can type into it.
+
+**New in v0.33.0 — quick log speaks fasting and programs**
+
+Two more things quick log understands, on-device. **Fasting -> ORA:** "fasted
+18h", "did 16:8", "digiunato 20 ore", "OMAD" all log a completed fast with the
+right protocol and target. **Programs by name:** it learns your GHISA program and
+session names, so "did Push Day" (or "same numbers as last time") clones your
+most recent session of that name — it lands in history and moves the weekly
+volume, PRs cleared since a repeat is not a new best. Fresh sets x reps x weight
+still take precedence when you give them. As always you confirm every chip.
 
 **New in v0.32.0 — quick log understands more, two ways**
 

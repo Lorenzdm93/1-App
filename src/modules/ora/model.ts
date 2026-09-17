@@ -248,6 +248,30 @@ export function endFast(now = Date.now()): Fast | null {
   return fast
 }
 
+/** Log a fast you already completed, without the live timer — for quick capture.
+    protocolId sets the target (else the stated hours are the target = a hit). */
+export function logCompletedFast(hours: number, protocolId?: string, now = Date.now()): Fast {
+  const targetH = protocolId ? protocolById(protocolId).fastH : Math.round(hours * 10) / 10
+  const fast: Fast = {
+    id: uid(),
+    startTs: now - Math.round(hours * 3_600_000),
+    endTs: now,
+    targetH,
+    protocolId: protocolId ?? 'custom',
+    hit: hours >= targetH,
+  }
+  oraStore.set((s) => ({ ...s, fasts: [fast, ...s.fasts].slice(0, 1000) }))
+  logEvent({
+    module: 'ora',
+    kind: 'fast',
+    ts: now,
+    value: Math.round(hours * 10) / 10,
+    unit: 'h',
+    meta: { target: targetH, hit: fast.hit },
+  })
+  return fast
+}
+
 export function deleteFast(id: string): void {
   const st = oraStore.get()
   const f = st.fasts.find((x) => x.id === id)

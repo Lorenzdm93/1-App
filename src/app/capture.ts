@@ -22,11 +22,13 @@ import { e1rm } from '../core/strength'
 import { activeHabits, setCheck, cadenceStore } from '../modules/cadence/model'
 import { sanaStore, takeDose } from '../modules/sana/model'
 import { caliberStore, logTest } from '../modules/caliber/model'
+import { ghisaStore, lastWorkoutByName, repeatWorkout } from '../modules/ghisa/model'
+import { oraStore, logCompletedFast, PROTOCOLS, protocolById } from '../modules/ora/model'
 import { runLLM } from '../core/insights/cloud'
 import { insightsConfigStore, hasOwnKey } from '../core/insights/config'
 import { uid } from '../core/id'
 
-export type CaptureModule = 'grove' | 'respiro' | 'ghisa' | 'cadence' | 'sana' | 'caliber'
+export type CaptureModule = 'grove' | 'respiro' | 'ghisa' | 'cadence' | 'sana' | 'caliber' | 'ora'
 
 export interface CaptureDraft {
   id: string
@@ -136,6 +138,44 @@ function num(v: unknown): number {
   return 0
 }
 
+/** Names of the user's programs + past sessions, longest first. */
+function workoutNames(): string[] {
+  const gh = ghisaStore.get()
+  const set = new Set<string>()
+  for (const t of gh.templates) set.add(t.name)
+  for (const w of gh.workouts) set.add(w.name)
+  return [...set].filter((n) => n.trim().length >= 3).sort((a, b) => b.length - a.length)
+}
+
+/** A "did <program>" reference → the program name + last time's volume (if any). */
+function matchWorkoutName(clause: string): { name: string; lastVolume: number | null } | null {
+  for (const n of workoutNames()) {
+    if (mentions(clause, n)) {
+      const last = lastWorkoutByName(n)
+      return { name: n, lastVolume: last ? last.volume : null }
+    }
+  }
+  return null
+}
+
+/** Parse a fasting clause → { hours, protocolId? } or null. */
+function parseFast(clause: string): { hours: number; protocolId?: string } | null {
+  const isFast = /\bfast(ed|ing)?\b|\bdigiun\w*\b/i.test(clause)
+  const ratio = clause.match(/\b(\d{1,2})\s*:\s*(\d{1,2})\b/)
+  if (ratio) {
+    const p = PROTOCOLS.find((x) => x.name === `${ratio[1]}:${ratio[2]}`)
+    if (p) return { hours: p.fastH, protocolId: p.id }
+    if (isFast) return { hours: parseInt(ratio[1], 10) }
+  }
+  if (/\bomad\b/i.test(clause)) return { hours: 23, protocolId: 'omad' }
+  if (!isFast) return null
+  const h = clause.match(/(\d+(?:[.,]\d+)?)\s*(?:h|hr|hrs|hour|hours|ore)\b/i)
+  if (h) return { hours: parseFloat(h[1].replace(',', '.')) }
+  // "fasted" with no number → the user's default protocol
+  const def = oraStore.get().protocolId
+  return { hours: protocolById(def).fastH, protocolId: def }
+}
+
 /* ---------------- the local parser ---------------- */
 
 export function localParse(text: string): CaptureDraft[] {
@@ -164,7 +204,21 @@ export function localParse(text: string): CaptureDraft[] {
       }
       continue
     }
-    // 2 — GROVE focus (keyword + duration)
+    // 2 — GHISA workout by name (a program / past session) → repeat last numbers
+    const wref = matchWorkoutName(clause)
+    if (wref) {
+      if (wref.lastVolume != null) {
+        out.push({
+          id: uid(),
+          module: 'ghisa',
+          value: wref.lastVolume,
+          refId: wref.name,
+          detail: `${wref.name} · ${fmtKg(wref.lastVolume)} kg · like last time`,
+        })
+      }
+      continue
+    }
+    // 3 — GROVE focus (keyword + duration)
     const mins = toMinutes(clause)
     if (mins && mins > 0 && GROVE_KW.test(clause)) {
       out.push({ id: uid(), module: 'grove', value: mins, detail: `${mins} min focus` })
@@ -175,7 +229,20 @@ export function localParse(text: string): CaptureDraft[] {
       out.push({ id: uid(), module: 'respiro', value: mins, detail: `${mins} min breathwork` })
       continue
     }
-    // 4 — SANA: specific compounds by name, then a bulk "all/morning supplements"
+    // 4 — ORA fast (hours / protocol like 16:8 / OMAD)
+    const fast = parseFast(clause)
+    if (fast && fast.hours > 0) {
+      const hrs = Math.round(fast.hours * 10) / 10
+      out.push({
+        id: uid(),
+        module: 'ora',
+        value: hrs,
+        refId: fast.protocolId,
+        detail: fast.protocolId ? `${protocolById(fast.protocolId).name} · ${hrs}h fasted` : `${hrs}h fasted`,
+      })
+      continue
+    }
+    // 5 — SANA: specific compounds by name, then a bulk "all/morning supplements"
     let matchedSana = false
     for (const c of compounds) {
       if (seenSana.has(c.id)) continue
@@ -227,27 +294,32 @@ export function localParse(text: string): CaptureDraft[] {
 
 /* ---------------- LLM parser (own-key, optional) ---------------- */
 
-function captureSystemPrompt(compoundNames: string[], habitNames: string[]): string {
+function captureSystemPrompt(compoundNames: string[], habitNames: string[], programNames: string[]): string {
   return `You convert a short activity log into structured entries for a personal-tracking app. Output ONLY a JSON array (no prose, no markdown fences).
 
 Each entry is exactly one of:
 {"module":"grove","minutes":N}            // focus / deep work
 {"module":"respiro","minutes":N}           // meditation / breathwork
 {"module":"ghisa","volume":N,"exercise":"name"}   // weight-training total volume = sets*reps*weight
+{"module":"ghisa","workout":"<exact program name>"}  // "did <program>" with no fresh numbers — reuses last time's session
 {"module":"caliber","lift":"squat|bench|deadlift|pullup","e1rm":N}  // one strength top set; ONLY these four lifts
+{"module":"ora","hours":N,"protocol":"16:8|18:6|20:4|OMAD|24h|null"}  // a completed fast
 {"module":"sana","supplement":"<exact name>"}      // one entry per supplement taken
 {"module":"cadence","habit":"<exact name>"}        // one entry per habit completed
 
 Known supplements: ${compoundNames.join(', ') || '(none)'}.
 Known habits: ${habitNames.join(', ') || '(none)'}.
+Known programs: ${programNames.join(', ') || '(none)'}.
 
 Rules:
-- Use ONLY numbers present in the text. NEVER invent reps, weights, minutes or volume.
+- Use ONLY numbers present in the text. NEVER invent reps, weights, minutes, volume or fast hours.
+- Anything about fasting or an eating window -> an ora entry (protocol like 16:8 implies its hours; a bare "fasted 18h" is hours=18, protocol=null).
+- "did <program>" / "same numbers as last time" for a known program -> a ghisa workout entry with that exact program name (no volume field). If the user also gives fresh sets x reps x weight, use the volume form instead.
 - "all supplements" / "my supplements" -> one sana entry per known supplement. "morning supplements" -> only the morning ones if known, else all.
 - "all my tasks" / "all habits" -> one cadence entry per known habit.
-- For a barbell lift written as sets x reps x weight, output BOTH a ghisa entry (volume = sets*reps*weight, exercise = the lift name) AND, if the lift is squat/bench/deadlift/pullup, a caliber entry with e1rm = round(weight*(1+reps/30)).
-- supplement and habit values MUST be exact names from the lists above; drop anything not listed.
-- If you cannot determine concrete entries (missing numbers, vague), output [].`
+- For a barbell lift written as sets x reps x weight, output BOTH a ghisa volume entry (volume = sets*reps*weight, exercise = the lift name) AND, if the lift is squat/bench/deadlift/pullup, a caliber entry with e1rm = round(weight*(1+reps/30)).
+- supplement, habit and program values MUST be exact names from the lists above; drop anything not listed.
+- If you cannot determine concrete entries (missing numbers, vague, unknown program), output [].`
 }
 
 export function coerceCapture(
@@ -280,6 +352,17 @@ export function coerceCapture(
       const v = Math.round(num(o.volume))
       const ex = typeof o.exercise === 'string' ? o.exercise : ''
       out.push({ id: uid(), module: 'ghisa', value: v, detail: `${fmtKg(v)} kg${ex ? ` · ${ex}` : ''}` })
+    } else if (m === 'ghisa' && typeof o.workout === 'string') {
+      const match = workoutNames().find((n) => n.toLowerCase() === (o.workout as string).toLowerCase())
+      const last = match ? lastWorkoutByName(match) : null
+      if (match && last) {
+        out.push({ id: uid(), module: 'ghisa', value: last.volume, refId: match, detail: `${match} · ${fmtKg(last.volume)} kg · like last time` })
+      }
+    } else if (m === 'ora' && num(o.hours) > 0) {
+      const hrs = Math.round(num(o.hours) * 10) / 10
+      const label = typeof o.protocol === 'string' ? o.protocol : ''
+      const p = PROTOCOLS.find((x) => x.name.toLowerCase() === label.toLowerCase())
+      out.push({ id: uid(), module: 'ora', value: hrs, refId: p?.id, detail: p ? `${p.name} · ${hrs}h fasted` : `${hrs}h fasted` })
     } else if (m === 'caliber' && num(o.e1rm) > 0 && typeof o.lift === 'string' && caliberLifts.has(o.lift)) {
       const v = Math.round(num(o.e1rm))
       out.push({ id: uid(), module: 'caliber', refId: o.lift, value: v, detail: `${o.lift} · e1RM ~${v} kg` })
@@ -305,7 +388,7 @@ async function llmParse(text: string): Promise<CaptureDraft[] | null> {
   const compounds = sanaStore.get().compounds
   const habits = activeHabits(cadenceStore.get()).filter((h) => h.type === 'build')
   const raw = await runLLM(
-    captureSystemPrompt(compounds.map((c) => c.name), habits.map((h) => h.name)),
+    captureSystemPrompt(compounds.map((c) => c.name), habits.map((h) => h.name), workoutNames()),
     text,
   )
   if (raw === null) return null
@@ -335,7 +418,11 @@ export function applyDraft(d: CaptureDraft): void {
       logEvent({ module: 'respiro', kind: 'session', value: d.value, unit: 'min', meta: { src: 'quicklog' } })
       break
     case 'ghisa':
-      logEvent({ module: 'ghisa', kind: 'session', value: d.value, unit: 'kg', meta: { src: 'quicklog', note: d.detail } })
+      if (d.refId) repeatWorkout(d.refId) // a named program → clone last session
+      else logEvent({ module: 'ghisa', kind: 'session', value: d.value, unit: 'kg', meta: { src: 'quicklog', note: d.detail } })
+      break
+    case 'ora':
+      if (d.value) logCompletedFast(d.value, d.refId)
       break
     case 'cadence':
       if (d.refId) setCheck(d.refId, todayKey(), true)
