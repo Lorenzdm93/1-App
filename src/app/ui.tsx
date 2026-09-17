@@ -75,13 +75,18 @@ export function Sheet({
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
   /* Focus discipline: remember the opener, move focus into the dialog, give
-     it back on close. Escape closes. */
+     it back on close. Escape closes. onClose is read through a ref so a caller
+     that passes a fresh closure each render doesn't re-run this effect — which
+     would otherwise steal focus from an input inside the sheet on every
+     keystroke. */
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
   useEffect(() => {
     if (!open) return
     const prev = document.activeElement as HTMLElement | null
     const t = requestAnimationFrame(() => panelRef.current?.focus())
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') onCloseRef.current()
     }
     document.addEventListener('keydown', onKey)
     return () => {
@@ -89,7 +94,7 @@ export function Sheet({
       document.removeEventListener('keydown', onKey)
       prev?.focus?.()
     }
-  }, [open, onClose])
+  }, [open])
   if (!open) return null
   return createPortal(
     <div className="sheet-scrim" onClick={onClose}>

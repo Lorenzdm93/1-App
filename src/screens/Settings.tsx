@@ -25,7 +25,7 @@ import {
   type OwnKeyVendor,
 } from '../core/insights/config'
 
-const APP_VERSION = '0.30.1'
+const APP_VERSION = '0.30.2'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
