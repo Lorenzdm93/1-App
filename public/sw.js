@@ -3,7 +3,7 @@
    first visit). Assets: cache-first (Vite hashes make staleness impossible).
    Updates: the new worker WAITS; the app shows "Update ready" and the person
    chooses the moment. No mid-session rug-pulls. */
-var CACHE = 'onepercent-v62'
+var CACHE = 'onepercent-v63'
 /* The two latin faces are precached: typography must survive a cold start with
    no network. latin-ext and the italics stay runtime-cached, fetched on demand. */
 var CORE = [

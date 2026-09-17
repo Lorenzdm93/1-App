@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.30.2-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.31.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -30,6 +30,16 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 **v0.30.2 — quick-log typing fix:** the sheet stole focus from the text field on every keystroke (a fresh onClose closure re-ran the focus effect); the Sheet now reads onClose via a ref, so you can type normally.
 
 **v0.30.1 — quick-log input fix:** the Quick log text field was collapsed behind the "Read" button; it now fills the row so you can type into it.
+
+**New in v0.31.0 — quick log understands lifts**
+
+Quick log now knows barbell movements. Name a lift the way you'd say it —
+"deadlifted 5x5 at 160kg", "squat 5x5 100kg", "bench pressed 3x8 60kg" — and it
+cleans the exercise name and files **two** entries you can accept or skip: the
+GHISA volume (sets×reps×weight) *and* a CALIBER strength test (estimated 1-rep
+max), because one honest top set is both training and a strength data point.
+Non-barbell lifts (overhead press, rows) stay volume-only, and it only offers a
+module you actually use.
 
 **New in v0.30.0 — log by just saying it**
 

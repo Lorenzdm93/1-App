@@ -17,11 +17,14 @@
 import { logEvent } from '../core/events'
 import { todayKey } from '../core/dates'
 import { moduleById } from '../core/registry'
+import { settingsStore } from '../core/settings'
+import { e1rm } from '../core/strength'
 import { activeHabits, setCheck, cadenceStore } from '../modules/cadence/model'
 import { sanaStore, takeDose } from '../modules/sana/model'
+import { caliberStore, logTest } from '../modules/caliber/model'
 import { uid } from '../core/id'
 
-export type CaptureModule = 'grove' | 'respiro' | 'ghisa' | 'cadence' | 'sana'
+export type CaptureModule = 'grove' | 'respiro' | 'ghisa' | 'cadence' | 'sana' | 'caliber'
 
 export interface CaptureDraft {
   id: string
@@ -50,13 +53,14 @@ function toMinutes(s: string): number | null {
   return found ? Math.round(min) : null
 }
 
-/** sets×reps×weight → total volume, plus the exercise name if present. */
-function toVolume(s: string): { volume: number; note: string } | null {
+/** sets×reps×weight → total volume, plus the components for e1RM. */
+interface VolParse { volume: number; sets: number; reps: number; weight: number }
+function toVolume(s: string): VolParse | null {
   const sr = s.match(/(\d+)\s*[x×]\s*(\d+)/i)
   if (!sr) {
     const vol = s.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i)
     if (vol && /\b(volume|total)\b/i.test(s)) {
-      return { volume: Math.round(parseFloat(vol[1].replace(',', '.'))), note: '' }
+      return { volume: Math.round(parseFloat(vol[1].replace(',', '.'))), sets: 0, reps: 0, weight: 0 }
     }
     return null
   }
@@ -72,12 +76,33 @@ function toVolume(s: string): { volume: number; note: string } | null {
     if (nums.length) w = parseFloat(nums[nums.length - 1].replace(',', '.'))
   }
   if (w <= 0) return null
-  const note = s
+  return { volume: Math.round(sets * reps * w), sets, reps, weight: w }
+}
+
+/** Common lifts → clean name + CALIBER lift id (null = volume-only, no strength lift). */
+const LIFTS: { re: RegExp; id: string | null; name: string }[] = [
+  { re: /\b(dead\s*lift\w*|deadlift\w*|dl)\b/i, id: 'deadlift', name: 'deadlift' },
+  { re: /\b(back\s*squat\w*|front\s*squat\w*|squat\w*)\b/i, id: 'squat', name: 'squat' },
+  { re: /\b(bench(\s*press)?\w*|bp)\b/i, id: 'bench', name: 'bench' },
+  { re: /\b(pull[-\s]?ups?|chin[-\s]?ups?)\b/i, id: 'pullup', name: 'pull-up' },
+  { re: /\b(overhead\s*press\w*|shoulder\s*press\w*|military\s*press\w*|ohp)\b/i, id: null, name: 'overhead press' },
+  { re: /\b(barbell\s*row\w*|bent[-\s]?over\s*row\w*|rows?\b|rowing)\b/i, id: null, name: 'row' },
+  { re: /\b(bicep\s*curl\w*|curls?\b|curling)\b/i, id: null, name: 'curl' },
+  { re: /\b(leg\s*press\w*)\b/i, id: null, name: 'leg press' },
+]
+function detectLift(s: string): { id: string | null; name: string } | null {
+  for (const l of LIFTS) if (l.re.test(s)) return { id: l.id, name: l.name }
+  return null
+}
+
+/** Fallback exercise label when no known lift matched — strip numbers and filler. */
+function cleanExercise(s: string): string {
+  return s
     .replace(/\d+(?:[.,]\d+)?/g, '')
-    .replace(/[x×@]|kg/gi, '')
+    .replace(/[x×@]/gi, '')
+    .replace(/\b(kg|reps?|sets?|at|for|the|a|did|done|of|my)\b/gi, '')
     .replace(/\s+/g, ' ')
     .trim()
-  return { volume: Math.round(sets * reps * w), note }
 }
 
 function escapeRe(s: string): string {
@@ -110,10 +135,16 @@ export function localParse(text: string): CaptureDraft[] {
   const seenHabit = new Set<string>()
 
   for (const clause of clauses) {
-    // 1 — GHISA volume (needs numbers, so it's unambiguous)
+    // 1 — GHISA volume (+ CALIBER strength for a known barbell lift)
     const vol = toVolume(clause)
-    if (vol && (GHISA_KW.test(clause) || /[x×]/i.test(clause))) {
-      out.push({ id: uid(), module: 'ghisa', value: vol.volume, detail: `${fmtKg(vol.volume)} kg${vol.note ? ` · ${vol.note}` : ''}` })
+    const lift = detectLift(clause)
+    if (vol && (GHISA_KW.test(clause) || lift || /[x×]/i.test(clause))) {
+      const name = lift?.name ?? cleanExercise(clause)
+      out.push({ id: uid(), module: 'ghisa', value: vol.volume, detail: `${fmtKg(vol.volume)} kg${name ? ` · ${name}` : ''}` })
+      if (lift?.id && vol.weight > 0 && vol.reps > 0 && caliberStore.get().lifts.includes(lift.id)) {
+        const est = Math.round(e1rm(vol.weight, vol.reps))
+        out.push({ id: uid(), module: 'caliber', refId: lift.id, value: est, detail: `${lift.name} · e1RM ~${est} kg` })
+      }
       continue
     }
     // 2 — GROVE focus (keyword + duration)
@@ -148,7 +179,8 @@ export function localParse(text: string): CaptureDraft[] {
       }
     }
   }
-  return out
+  const enabled = new Set(settingsStore.get().enabled)
+  return out.filter((d) => enabled.has(d.module))
 }
 
 /* ---------------- orchestration + apply ---------------- */
@@ -175,6 +207,9 @@ export function applyDraft(d: CaptureDraft): void {
       break
     case 'sana':
       if (d.refId) takeDose(d.refId)
+      break
+    case 'caliber':
+      if (d.refId && d.value) logTest(d.refId, d.value)
       break
   }
 }
