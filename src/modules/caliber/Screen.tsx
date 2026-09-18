@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { t } from '../../core/i18n'
 import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { toast } from '../../core/toast'
@@ -108,7 +109,7 @@ function TestTab() {
     <>
       <div className="card">
         <div className="cb-profile-head">
-          <span className="label" style={{ color: 'var(--m-caliber)' }}>Profile</span>
+          <span className="label" style={{ color: 'var(--m-caliber)' }}>{t('Profile')}</span>
           <Seg<Sex>
             options={[
               { id: 'm', label: 'M' },
@@ -119,7 +120,7 @@ function TestTab() {
           />
         </div>
         <div className="cb-fields">
-          <Field label="Height cm">
+          <Field label={t('Height cm')}>
             <input className="tinput" inputMode="numeric" value={height} placeholder="—"
               onChange={(e) => {
                 setHeight(e.target.value)
@@ -127,7 +128,7 @@ function TestTab() {
                 patchCaliber({ height: n !== null && n > 0 ? Math.round(n) : null })
               }} />
           </Field>
-          <Field label="Bodyweight kg">
+          <Field label={t('Bodyweight kg')}>
             <input className="tinput" inputMode="decimal" value={bw}
               onChange={(e) => {
                 setBw(e.target.value)
@@ -135,7 +136,7 @@ function TestTab() {
                 if (n !== null && n > 0) patchCaliber({ bodyweight: n })
               }} />
           </Field>
-          <Field label="Aim for top %">
+          <Field label={t('Aim for top %')}>
             <input className="tinput" inputMode="numeric" value={aim}
               onChange={(e) => {
                 setAim(e.target.value)
@@ -145,7 +146,7 @@ function TestTab() {
           </Field>
         </div>
         <div className="kv" style={{ marginTop: 12 }}>
-          <span className="k">Your lifts <span className="hint">· tap to include — chase only what your body agrees to</span></span>
+          <span className="k">{t('Your lifts')} <span className="hint">{t('· tap to include — chase only what your body agrees to')}</span></span>
         </div>
         <div className="chips">
           {LIFTS.map((l) => {
@@ -167,7 +168,7 @@ function TestTab() {
         </div>
         <div className="cb-profile-line num">
           {bmi !== null && <>BMI <b>{bmi}</b> · </>}
-          goals set for top <b>{aimTop}%</b> of adult {st.sex === 'm' ? 'men' : 'women'} at <b>{bwN ?? st.bodyweight} kg</b>
+          {t('goals set for top {p}% of adult {sex} at {bw} kg', { p: aimTop, sex: st.sex === 'm' ? t('men') : t('women'), bw: bwN ?? st.bodyweight })}
         </div>
       </div>
 
@@ -182,7 +183,7 @@ function TestTab() {
           ))}
         </div>
         <div className="cb-fields two">
-          <Field label="Reps">
+          <Field label={t('Reps')}>
             <input className="tinput" inputMode="numeric" value={reps}
               onChange={(e) => {
                 setReps(e.target.value)
@@ -190,7 +191,7 @@ function TestTab() {
                 if (n !== null && n >= 1) patchCaliber({ reps: Math.round(n) })
               }} />
           </Field>
-          <Field label={isBW ? 'Added kg (belt)' : 'Weight kg'}>
+          <Field label={isBW ? t('Added kg (belt)') : t('Weight kg')}>
             <input className="tinput" inputMode="decimal" value={weight}
               onChange={(e) => {
                 setWeight(e.target.value)
@@ -203,7 +204,7 @@ function TestTab() {
         {valid && shown !== null && youPct !== null && level !== null && (
           <>
             <div className="cb-est">
-              <div className="cb-est-k">Estimated 1RM{isBW ? ' · added' : ''}</div>
+              <div className="cb-est-k">{t('Estimated 1RM')}{isBW ? ' · ' + t('added') : ''}</div>
               <div className="cb-est-v">
                 <span className="num">{isBW && shown >= 0 ? '+' : ''}{shown}</span>
                 <span className="u">kg</span>
@@ -219,35 +220,35 @@ function TestTab() {
               </div>
             </div>
 
-            <div className="cb-you">You</div>
+            <div className="cb-you">{t('You')}</div>
             <PercentileAxis you={youPct} aim={100 - aimTop} />
 
             {goalTotal !== null && goalShown !== null && goalPct !== null && (
               <div className="cb-goalbar-wrap">
                 <div className="cb-goalbar-head">
-                  <span>Progress to goal</span>
+                  <span>{t('Progress to goal')}</span>
                   <span className="num">{goalPct}%</span>
                 </div>
                 <div className="cb-goalbar"><i style={{ width: `${goalPct}%` }} /></div>
                 <div className="cb-goalbar-sub num">
                   {toGo !== null && toGo > 0
-                    ? `${toGo} kg to go (goal ${isBW ? '+' : ''}${goalShown} kg)`
-                    : `goal met — ${isBW ? '+' : ''}${goalShown} kg is behind you`}
+                    ? t('{n} kg to go (goal {g} kg)', { n: toGo, g: (isBW ? '+' : '') + goalShown })
+                    : t('goal met — {g} kg is behind you', { g: (isBW ? '+' : '') + goalShown })}
                 </div>
               </div>
             )}
 
             {toGo !== null && toGo > 0 && goalTotal !== null && (
               <div className="cb-reach">
-                <div className="cb-reach-k">To reach your goal</div>
+                <div className="cb-reach-k">{t('To reach your goal')}</div>
                 <div className="kv">
-                  <span className="k">at {isBW ? `+${weightN}` : weightN} kg</span>
+                  <span className="k">{t('at {x} kg', { x: isBW ? '+' + weightN : weightN })}</span>
                   <span className="num">
-                    {repsForTarget(load as number, goalTotal) > 15 ? 'add weight first' : `${repsForTarget(load as number, goalTotal)} reps`}
+                    {repsForTarget(load as number, goalTotal) > 15 ? t('add weight first') : t('{n} reps', { n: repsForTarget(load as number, goalTotal) })}
                   </span>
                 </div>
                 <div className="kv">
-                  <span className="k">at {repsN} reps</span>
+                  <span className="k">{t('at {n} reps', { n: repsN })}</span>
                   <span className="num">
                     {isBW
                       ? `+${Math.max(0, roundTo(weightForTarget(repsN as number, goalTotal) - (bwN as number), 0.5))} kg`
@@ -260,9 +261,9 @@ function TestTab() {
             <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }}
               onClick={() => {
                 const pr = logTest(st.liftId, eTotal as number)
-                toast(pr ? `New ${lift.name} PR — ${isBW ? '+' + shown : shown} kg` : 'Set saved')
+                toast(pr ? t('New {lift} PR — {v} kg', { lift: lift.name, v: isBW ? '+' + shown : shown }) : t('Set saved'))
               }}>
-              Save this set
+              {t('Save this set')}
             </button>
           </>
         )}
@@ -271,7 +272,7 @@ function TestTab() {
       {bwN !== null && (
         <div className="card">
           <div className="card-head">
-            <span className="label" style={{ color: 'var(--m-caliber)' }}>Goals · top {aimTop}% · {bwN} kg</span>
+            <span className="label" style={{ color: 'var(--m-caliber)' }}>{t('Goals · top {p}% · {bw} kg', { p: aimTop, bw: bwN })}</span>
           </div>
           <div className="cb-goals">
             {LIFTS.filter((l) => st.lifts.includes(l.id)).map((l) => {
@@ -279,7 +280,7 @@ function TestTab() {
               const v = l.bw ? Math.max(0, roundTo(total - bwN, 0.5)) : total
               return (
                 <div key={l.id} className="cb-goal">
-                  <div className="k">{l.name}{l.bw ? ' added' : ''}</div>
+                  <div className="k">{l.name}{l.bw ? ' ' + t('added') : ''}</div>
                   <div className="v num">{l.bw ? '+' : ''}{String(v).replace('.', ',')}<span className="u"> kg</span></div>
                 </div>
               )
@@ -312,7 +313,7 @@ function ProgressTab() {
               {s.length >= 2 ? (
                 <div className="cb-mini-chart"><Line values={s} accentVar="var(--m-caliber)" /></div>
               ) : (
-                <div className="cb-mini-empty">no sets yet</div>
+                <div className="cb-mini-empty">{t('no sets yet')}</div>
               )}
               {s.length > 0 && <div className="v num">{disp(l, Math.max(...s))} kg</div>}
             </button>
@@ -321,25 +322,25 @@ function ProgressTab() {
       </div>
       <div className="card">
         <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-caliber)' }}>{liftById(lift).name} · estimated 1RM over time</span>
+          <span className="label" style={{ color: 'var(--m-caliber)' }}>{t('{name} · estimated 1RM over time', { name: liftById(lift).name })}</span>
         </div>
         {series.length >= 2 ? (
           <>
             <Line values={series} accentVar="var(--m-caliber)" />
             <div className="cd-heat-label num">
-              {series.length} sets · best {disp(liftById(lift), Math.max(...series))} kg · last {disp(liftById(lift), series[series.length - 1])} kg
+              {t('{n} sets · best {b} kg · last {l} kg', { n: series.length, b: disp(liftById(lift), Math.max(...series)), l: disp(liftById(lift), series[series.length - 1]) })}
             </div>
           </>
         ) : (
-          <div className="rs-foot">Save at least two sets of {liftById(lift).name} and the trend draws itself here.</div>
+          <div className="rs-foot">{t('Save at least two sets of {name} and the trend draws itself here.', { name: liftById(lift).name })}</div>
         )}
       </div>
       <div className="card">
         <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-caliber)' }}>History</span>
+          <span className="label" style={{ color: 'var(--m-caliber)' }}>{t('History')}</span>
         </div>
         {recent.length === 0 ? (
-          <div className="rs-foot">No saved sets yet. Log one on Test and it lands here.</div>
+          <div className="rs-foot">{t('No saved sets yet. Log one on Test and it lands here.')}</div>
         ) : (
           recent.map((r, i) => (
             <div className="kv" key={i}>
@@ -373,7 +374,7 @@ function StandardsTab() {
     <>
       <div className="card">
         <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-caliber)' }}>Standards for your bodyweight</span>
+          <span className="label" style={{ color: 'var(--m-caliber)' }}>{t('Standards for your bodyweight')}</span>
         </div>
         <p className="guide-p">
           Where each 1RM lands on the percentile scale, at <b>{bw} kg</b> bodyweight for the selected
@@ -381,7 +382,7 @@ function StandardsTab() {
         </p>
         <div className="cb-tbl num" style={{ ['--cols' as string]: String(cols.length) } as CSSProperties}>
           <div className="cb-tbl-row head">
-            <span className="lift">Lift</span>
+            <span className="lift">{t('Lift')}</span>
             {cols.map((p) => (
               <span key={p} className={p === aimPct ? 'aim' : ''}>{p}th{p === aimPct ? ' · aim' : ''}</span>
             ))}

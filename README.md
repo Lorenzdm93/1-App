@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.36.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.37.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -30,6 +30,16 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 **v0.30.2 — quick-log typing fix:** the sheet stole focus from the text field on every keystroke (a fresh onClose closure re-ran the focus effect); the Sheet now reads onClose via a ref, so you can type normally.
 
 **v0.30.1 — quick-log input fix:** the Quick log text field was collapsed behind the "Read" button; it now fills the row so you can type into it.
+
+**New in v0.37.0 — CALIBER, translated inside**
+
+First of the module interiors: CALIBER's full screen — profile fields, lift
+picker, the estimated-1RM readout, goal/percentile bars, history, toasts — now
+speaks Deutsch, Italiano and Español. (Its few dense formula-explainer
+paragraphs stay English for a final prose sweep.) The remaining module interiors
+— GROVE, CADENCE, ORA, RESPIRO, SANA, then GHISA last — follow a couple per pass;
+each is a real body of strings, so they get done and verified module by module
+rather than one risky mega-commit.
 
 **New in v0.36.0 — full-build localization pass**
 
