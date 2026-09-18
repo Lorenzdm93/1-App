@@ -1,4 +1,5 @@
 import { oraStore, weekFastScore, elapsedH, targetHoursFor } from './model'
+import { t as tr } from '../../core/i18n'
 import { wireOraIntegrations } from './integrations'
 
 /* Registration-time side effect: fast minutes stream into CADENCE. */
@@ -84,11 +85,11 @@ const ora: ModuleDefinition = {
       const st = oraStore.get()
       if (st.current) {
         const left = st.current.targetH - elapsedH(st.current.startTs)
-        if (left > 0) return `${Math.ceil(left * 10) / 10}h to target — the fast in progress lifts the week.`
-        return 'Target reached — end the fast when you\'re ready and bank it.'
+        if (left > 0) return tr('{n}h to target — the fast in progress lifts the week.', { n: Math.ceil(left * 10) / 10 })
+        return tr('Target reached — end the fast when you\u2019re ready and bank it.')
       }
       const t = targetHoursFor(st)
-      return `A completed ${t}h fast today raises the week's average.`
+      return tr("A completed {n}h fast today raises the week's average.", { n: t })
     },
   },
 }

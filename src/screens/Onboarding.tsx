@@ -4,6 +4,7 @@ import { completeOnboarding } from '../core/settings'
 import { OnePercentRing, Toggle } from '../app/ui'
 import Philosophy from '../app/Philosophy'
 import Mark from '../app/Mark'
+import { t } from '../core/i18n'
 
 interface Goal {
   id: string
@@ -51,7 +52,7 @@ export default function Onboarding() {
       <div className="ob-hero">
         <OnePercentRing size={150} modules={[...MODULES]} activeIds={selected} />
         <Mark size={58} title="" />
-        <div className="ob-line">{step === 'why' ? 'Small daily gains, compounded. Here\u2019s the whole idea.' : 'Pick your instruments.'}</div>
+        <div className="ob-line">{step === 'why' ? t('Small daily gains, compounded. Here\u2019s the whole idea.') : t('Pick your instruments.')}</div>
       </div>
 
       {step === 'why' && (
@@ -59,27 +60,27 @@ export default function Onboarding() {
           <div className="card"><Philosophy /></div>
           <div className="ob-cta">
             <button className="btn btn-primary" onClick={() => setStep('pick')}>
-              Got it — choose my modules
+              {t('Got it — choose my modules')}
             </button>
           </div>
         </>
       )}
 
       {step === 'pick' && (<>
-      <button className="backlink" onClick={() => setStep('why')}>‹ The idea</button>
-      <div className="section-label">What are you here for?</div>
+      <button className="backlink" onClick={() => setStep('why')}>{t('\u2039 The idea')}</button>
+      <div className="section-label">{t('What are you here for?')}</div>
       <div className="chips">
         {GOALS.map((g) => {
           const on = g.modules.every((m) => selected.has(m))
           return (
             <button key={g.id} className={'chip' + (on ? ' on' : '')} onClick={() => applyGoal(g)}>
-              {g.label}
+              {t(g.label)}
             </button>
           )
         })}
       </div>
 
-      <div className="section-label">Modules — change any time</div>
+      <div className="section-label">{t('Modules — change any time')}</div>
       {MODULES.map((m) => {
         const on = selected.has(m.id)
         return (
@@ -92,9 +93,9 @@ export default function Onboarding() {
                 <div className="name" style={{ color: on ? m.accentVar : 'var(--dim)' }}>
                   {m.name}
                 </div>
-                <div className="tag">{m.tagline}</div>
+                <div className="tag">{t(m.tagline)}</div>
               </div>
-              <Toggle on={on} onChange={() => toggle(m.id)} label={`Enable ${m.name}`} />
+              <Toggle on={on} onChange={() => toggle(m.id)} label={t('Enable {name}', { name: m.name })} />
             </div>
           </div>
         )
@@ -106,7 +107,7 @@ export default function Onboarding() {
           disabled={count === 0}
           onClick={() => completeOnboarding([...selected])}
         >
-          {count === 0 ? 'Pick at least one' : `Start with ${count} module${count > 1 ? 's' : ''}`}
+          {count === 0 ? t('Pick at least one') : count === 1 ? t('Start with {count} module', { count }) : t('Start with {count} modules', { count })}
         </button>
       </div>
       </>)}

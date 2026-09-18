@@ -1,4 +1,5 @@
 import { navigate } from '../core/router'
+import { t as tr } from '../core/i18n'
 import { useTabGlider } from './TabBar'
 import type { ModuleTab } from '../core/types'
 
@@ -34,7 +35,7 @@ export default function ModuleTabBar({
             aria-current={t.id === active ? 'page' : undefined}
           >
             {t.Icon && <t.Icon size={18} />}
-            <span>{t.label}</span>
+            <span>{tr(t.label)}</span>
           </button>
         ))}
       </div>

@@ -1,4 +1,5 @@
 import { caliberStore } from './model'
+import { t } from '../../core/i18n'
 import { oneStore } from '../../core/one'
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
@@ -108,8 +109,8 @@ const caliber: ModuleDefinition = {
       return 40
     },
     advice({ value }) {
-      if (value === 70) return 'Tested and held — strength moves in 2–4 week steps; the next PR is loading.'
-      return 'Down on the retest — check sleep and recovery before chasing the number again.'
+      if (value === 70) return t('Tested and held — strength moves in 2–4 week steps; the next PR is loading.')
+      return t('Down on the retest — check sleep and recovery before chasing the number again.')
     },
   },
 }

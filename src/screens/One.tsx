@@ -11,9 +11,10 @@ import { navigate } from '../core/router'
 import { todayKey } from '../core/dates'
 import { parseNum } from '../app/ui'
 import Ring from '../app/Ring'
+import { t } from '../core/i18n'
 
 const RATES = [
-  { r: 0.005, year: '+30% a year' },
+  { r: 0.005, year: '+30% a year' },  // translated at render
   { r: 0.01, year: '+68% a year' },
   { r: 0.02, year: '+180% a year' },
 ]
@@ -29,19 +30,19 @@ export default function One() {
   const bestWeek = Object.values(one.weekLog).reduce((b, r) => Math.max(b, r.score), 0)
 
   const goalRows: { key: 'grove' | 'respiro' | 'ghisa'; label: string; unit: string }[] = [
-    { key: 'grove', label: 'GROVE focus', unit: 'min / week' },
-    { key: 'respiro', label: 'RESPIRO breathwork', unit: 'min / week' },
-    { key: 'ghisa', label: 'GHISA volume', unit: 'kg / week' },
+    { key: 'grove', label: t('GROVE focus'), unit: t('min / week') },
+    { key: 'respiro', label: t('RESPIRO breathwork'), unit: t('min / week') },
+    { key: 'ghisa', label: t('GHISA volume'), unit: t('kg / week') },
   ]
 
   return (
     <>
       <div className="screen-head one-head">
-        <button className="one-back" onClick={() => navigate('/')} aria-label="Back to Today">
+        <button className="one-back" onClick={() => navigate('/')} aria-label={t('Back to Today')}>
           ‹
         </button>
         <div>
-          <div className="eyebrow">The engine</div>
+          <div className="eyebrow">{t('The engine')}</div>
           <h1 className="screen-title">
             Your 1<span className="one-pct">%</span>
           </h1>
@@ -54,8 +55,7 @@ export default function One() {
             <span className="one-score num">—</span>
           </div>
           <p className="one-status">
-            Nothing measured yet this week. The first logged action in any module sets your baseline
-            — from there, every week is you against your own recent pace.
+            {t('Nothing measured yet this week. The first logged action in any module sets your baseline — from there, every week is you against your own recent pace.')}
           </p>
         </div>
       ) : (
@@ -63,13 +63,13 @@ export default function One() {
           <div className="one-ring-wrap">
             <Ring value={Math.min(120, pulse.score)} accent={won ? 'var(--good)' : 'var(--accent)'} size={196} stroke={15}>
               <span className={'one-ring-v num' + (won ? ' won' : '')}>{pulse.score}<i>%</i></span>
-              <span className="one-ring-k">{won ? 'week won' : 'of 1% better'}</span>
+              <span className="one-ring-k">{won ? t('week won') : t('of 1% better')}</span>
             </Ring>
           </div>
           <p className="one-status">
             {won
-              ? `Week won — you're ${one.rate * 100}% past your own 4-week pace. Everything from here is compound interest.`
-              : `${100 - pulse.score}% of the way left to beat your trailing 4-week pace by ${one.rate * 100}%. The gap is listed below, module by module.`}
+              ? t("Week won — you're {r}% past your own 4-week pace. Everything from here is compound interest.", { r: one.rate * 100 })
+              : t('{left}% of the way left to beat your trailing 4-week pace by {r}%. The gap is listed below, module by module.', { left: 100 - pulse.score, r: one.rate * 100 })}
           </p>
         </div>
       )}
@@ -77,23 +77,23 @@ export default function One() {
       <div className="ins-grid three">
         <div className="one-stat">
           <div className="v num">{pulse.wonWeeks}</div>
-          <div className="k">weeks won</div>
+          <div className="k">{t('weeks won')}</div>
         </div>
         <div className="one-stat lit">
           <div className="v num">+{pulse.compoundPct.toFixed(1)}%</div>
-          <div className="k">compounded</div>
+          <div className="k">{t('compounded')}</div>
         </div>
         <div className="one-stat">
           <div className="v num">{streak}d</div>
-          <div className="k">day streak</div>
+          <div className="k">{t('day streak')}</div>
         </div>
       </div>
 
       {pulse.spark.length >= 2 && (
         <div className="card">
           <div className="card-head">
-            <span className="label">Week by week</span>
-            <span className="one-best num">best {bestWeek}%</span>
+            <span className="label">{t('Week by week')}</span>
+            <span className="one-best num">{t('best {n}%', { n: bestWeek })}</span>
           </div>
           <Bars
             data={pulse.spark.map((s) => ({ label: s.label, value: s.value }))}
@@ -110,7 +110,7 @@ export default function One() {
 
       <div className="card">
         <div className="card-head">
-          <span className="label">This week, module by module</span>
+          <span className="label">{t('This week, module by module')}</span>
         </div>
         {pulse.modules.map((m) => (
           <button
@@ -125,8 +125,8 @@ export default function One() {
               <em className="num">
                 {m.score === null
                   ? m.scorer.mode === 'event'
-                    ? 'no test yet'
-                    : 'sits out'
+                    ? t('no test yet')
+                    : t('sits out')
                   : `${m.score}%`}
               </em>
             </span>
@@ -138,17 +138,17 @@ export default function One() {
             <span className="one-row-sub">
               {m.score === null
                 ? m.scorer.mode === 'event'
-                  ? 'Only weeks with a saved set count — sparse testing never drags the average.'
-                  : 'Nothing to measure yet — first activity sets the baseline.'
+                  ? t('Only weeks with a saved set count — sparse testing never drags the average.')
+                  : t('Nothing to measure yet — first activity sets the baseline.')
                 : m.scorer.mode === 'completion'
-                  ? `${Math.round((m.value as number) * 100)}% of the week's ${m.scorer.label} completed.`
+                  ? t("{p}% of the week's {label} completed.", { p: Math.round((m.value as number) * 100), label: m.scorer.label })
                   : m.scorer.mode === 'event'
                     ? m.score >= 100
-                      ? 'Tested and moved — a PR beyond your rate.'
+                      ? t('Tested and moved — a PR beyond your rate.')
                       : m.score >= 70
-                        ? 'Tested and held. Strength moves in steps.'
-                        : 'Tested lower — recovery first, numbers after.'
-                    : `${Math.round(m.value as number).toLocaleString()} of ${Math.round(m.target as number).toLocaleString()} ${m.scorer.unit}${m.goalCapped ? ' · at your ceiling' : ''}`}
+                        ? t('Tested and held. Strength moves in steps.')
+                        : t('Tested lower — recovery first, numbers after.')
+                    : `${Math.round(m.value as number).toLocaleString()} of ${Math.round(m.target as number).toLocaleString()} ${m.scorer.unit}${m.goalCapped ? ' ' + t('· at your ceiling') : ''}`}
             </span>
           </button>
         ))}
@@ -156,7 +156,7 @@ export default function One() {
 
       <div className="card">
         <div className="card-head">
-          <span className="label">Your rate</span>
+          <span className="label">{t('Your rate')}</span>
         </div>
         <div className="one-rates">
           {RATES.map(({ r, year }) => (
@@ -166,8 +166,8 @@ export default function One() {
               onClick={() => setRate(r)}
             >
               <b className="num">{r * 100}%</b>
-              <span>weekly</span>
-              <em className="num">{year}</em>
+              <span>{t('weekly')}</span>
+              <em className="num">{t(year)}</em>
             </button>
           ))}
         </div>
@@ -180,7 +180,7 @@ export default function One() {
 
       <div className="card">
         <div className="card-head">
-          <span className="label">Ceilings · where holding wins</span>
+          <span className="label">{t('Ceilings · where holding wins')}</span>
         </div>
         {goalRows.map((g) => (
           <div className="kv" key={g.key}>
@@ -225,7 +225,7 @@ export default function One() {
         </p>
       </div>
 
-      <div className="section-label">The philosophy</div>
+      <div className="section-label">{t('The philosophy')}</div>
       <div className="card"><Philosophy /></div>
     </>
   )

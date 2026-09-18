@@ -1,4 +1,5 @@
 import { cadenceStore, weekCompletion, weekAdvice } from './model'
+import { t } from '../../core/i18n'
 import { weekStartKey, todayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import { lazyRetry } from '../../core/lazyload'
@@ -79,7 +80,7 @@ const cadence: ModuleDefinition = {
       return weekCompletion(cadenceStore.get(), start)
     },
     advice() {
-      return weekAdvice(cadenceStore.get(), weekStartKey(todayKey())) ?? 'A little behind — the smallest habit today restarts the pull.'
+      return weekAdvice(cadenceStore.get(), weekStartKey(todayKey())) ?? t('A little behind — the smallest habit today restarts the pull.')
     },
   },
 }

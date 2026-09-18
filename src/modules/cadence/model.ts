@@ -1,4 +1,5 @@
 import { createPersistedStore } from '../../core/store'
+import { t } from '../../core/i18n'
 import { uid } from '../../core/id'
 import { resetLedger } from '../../core/one'
 import { mulberry32 } from '../../core/rng'
@@ -635,10 +636,10 @@ export function weekAdvice(st: CadenceState, weekStart: string, today = todayKey
     if (missing > 0 && (worst === null || missing > worst.missing)) worst = { name: h.name, missing }
   }
   if (worst) {
-    return `Check ${worst.name} on ${worst.missing} more day${worst.missing === 1 ? '' : 's'} to complete the week.`
+    return worst.missing === 1 ? t('Check {name} on {n} more day to complete the week.', { name: worst.name, n: worst.missing }) : t('Check {name} on {n} more days to complete the week.', { name: worst.name, n: worst.missing })
   }
   const quit = activeHabits(st).find((h) => h.type === 'quit' && daysClean(st, h.id, today) < 7)
-  if (quit) return `${quit.name}: ${7 - daysClean(st, quit.id, today)} clean days to the 7-day run.`
+  if (quit) return t('{name}: {n} clean days to the 7-day run.', { name: quit.name, n: 7 - daysClean(st, quit.id, today) })
   return null
 }
 

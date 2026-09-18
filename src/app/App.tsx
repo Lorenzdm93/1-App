@@ -128,7 +128,7 @@ function ModuleScreen({ id, tab }: { id: string; tab?: string }) {
         </span>
         <div className="titles">
           <Wordmark name={mod.name} accent={mod.accentVar} />
-          <div className="sub eyebrow-sub">{mod.tagline}</div>
+          <div className="sub eyebrow-sub">{t(mod.tagline)}</div>
         </div>
       </div>
       <ErrorBoundary name={mod.name} key={mod.id + ':' + active}>
@@ -146,7 +146,7 @@ function ModuleIntro({ mod }: { mod: NonNullable<ReturnType<typeof moduleById>> 
   useStore(introStore)
   if (!mod.intro || !shouldShowIntro(mod.id)) return null
   return (
-    <Sheet open title={`Welcome to ${mod.name}`} onClose={() => markIntroSeen(mod.id)}>
+    <Sheet open title={t('Welcome to {name}', { name: mod.name })} onClose={() => markIntroSeen(mod.id)}>
       {mod.intro.body.map((p, i) => (
         <p className="guide-p" key={i}>{p}</p>
       ))}

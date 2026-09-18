@@ -1,4 +1,5 @@
 import { sanaStore, weekAdherence, dueOn, isTaken } from './model'
+import { t } from '../../core/i18n'
 import { wireSanaIntegrations } from './integrations'
 
 /* Registration-time side effect: dose changes stream into CADENCE. */
@@ -98,8 +99,8 @@ const sana: ModuleDefinition = {
       const st = sanaStore.get()
       const today = todayKey()
       const left = dueOn(st, today).filter(({ compound }) => !isTaken(st, compound.id, today)).length
-      if (left > 0) return `${left} dose${left === 1 ? '' : 's'} today keeps the perfect week alive.`
-      return 'A missed dose earlier this week — page back on Today to log it if it was actually taken.'
+      if (left > 0) return left === 1 ? t('{n} dose today keeps the perfect week alive.', { n: left }) : t('{n} doses today keeps the perfect week alive.', { n: left })
+      return t('A missed dose earlier this week — page back on Today to log it if it was actually taken.')
     },
   },
 }

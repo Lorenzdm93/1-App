@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
+import { t } from '../core/i18n'
 import { useStore } from '../core/hooks'
 import { toastStore } from '../core/toast'
 import type { ModuleDefinition } from '../core/types'
@@ -140,7 +141,7 @@ export function ConfirmSheet({
       <p style={{ color: 'var(--dim)', fontSize: 14, marginBottom: 16 }}>{body}</p>
       <div className="btn-row">
         <button className="btn btn-ghost" onClick={onClose}>
-          Cancel
+          {t('Cancel')}
         </button>
         <button
           className={'btn ' + (danger ? 'btn-danger' : 'btn-primary')}
