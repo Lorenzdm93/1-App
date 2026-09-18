@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.37.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.46.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -30,6 +30,90 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 **v0.30.2 — quick-log typing fix:** the sheet stole focus from the text field on every keystroke (a fresh onClose closure re-ran the focus effect); the Sheet now reads onClose via a ref, so you can type normally.
 
 **v0.30.1 — quick-log input fix:** the Quick log text field was collapsed behind the "Read" button; it now fills the row so you can type into it.
+
+**New in v0.46.0 — SANA Library encyclopedia translated (app is 100% localised)**
+
+The last body: SANA's 47-compound reference shelf — every one-line note, the
+"what it is" paragraph, and the caution — now reads in Deutsch, Italiano and
+Español. Compound and chemical names stay as data. With this, the entire app —
+all seven modules and the shell — is translated end to end. Full smoke test:
+CALIBER, RESPIRO, CADENCE, SANA (interface + library), GROVE, ORA and GHISA all
+render correctly in Italian; bundle is clean.
+
+**New in v0.45.0 — GHISA part 2: the module is done (app now fully translated)**
+
+Part 2 finishes GHISA in Deutsch, Italiano and Español: Profile with its metric
+charts, the Statistics / My exercises / Measures / Calendar dashboards, the
+per-exercise detail (progression, history, records), Settings, and the whole
+program builder — goal and frequency explanations, each split's reasoning, and
+the weekly-set tables. With GHISA complete, every module's interface is
+translated. The one remaining body is SANA's Library encyclopedia (47 supplement
+descriptions), which gets its own careful pass next.
+
+**New in v0.44.0 — GHISA part 1: the workout core, translated inside**
+
+GHISA is the biggest module, so it comes in two passes. Part 1 covers the core:
+the Home dashboard (stats, volume charts, recent workouts), the Train tab and
+template editor, the live workout (set rows, superset menus, rest timer, finish
+sheet), the exercise picker, the 1RM calculator, and the save-summary — all in
+Deutsch, Italiano and Español, with muscle groups and locale dates. Part 2 (next)
+finishes GHISA: Profile/Statistics/Measures/Calendar, the Library and exercise
+detail, the program builder, and settings — then SANA's Library encyclopedia.
+
+**New in v0.43.0 — ORA, translated inside (and the small modules are done)**
+
+ORA runs fully in Deutsch, Italiano and Español: the fasting ring and protocol
+picker, all the sheets (window, custom, start, end, edit), the metabolic-stage
+timeline (Fed → Deep autophagy with every body/note), the protocol descriptions,
+progress stats, milestones, the fasting log, and the medical disclaimer. That
+completes all six of the smaller modules — CALIBER, RESPIRO, CADENCE, SANA
+(interface), GROVE and ORA. Left: GHISA, and SANA's Library encyclopedia.
+
+**New in v0.42.0 — GROVE, translated inside**
+
+GROVE runs fully in Deutsch, Italiano and Español now: the focus timer (modes,
+length presets, controls, keyboard hints, give-up), the live grove strip and
+stats, the Tasks tab, the isometric Forest with its tree-size legend and animal
+companions, and GROVE's own settings block (durations, flow, signals, backup).
+Four of the six small modules are fully done; SANA's interface too. Left: ORA,
+then GHISA — plus SANA's Library encyclopedia pass.
+
+**New in v0.41.0 — SANA interface, translated inside**
+
+SANA's whole interface now runs in Deutsch, Italiano and Español: Today's dial,
+stack rows and dose slots (morning/midday/evening/night) and forms, the stack
+builder and editor, the week/month/year history with its stats and the streak
+guide, and the Library tab's framing. Compound names stay as data (like every
+module's names). The one remaining piece is the Library's 47-compound reference
+descriptions — a supplement encyclopedia that gets its own careful pass. Next:
+GROVE, then ORA, then GHISA.
+
+**New in v0.40.0 — CALIBER & RESPIRO finished (prose and all)**
+
+Completion pass: the explainer paragraphs I'd deferred are now translated too —
+CALIBER's 1RM-formula, percentile and reverse-math guides, and RESPIRO's full
+technique descriptions (Coherent, Sigh, 4·7·8, Nadi Shodhana, Wim Hof and the
+rest), the safety caution, and every tools/sound explainer. CALIBER, RESPIRO and
+CADENCE are now fully in Deutsch, Italiano and Español — nothing left in English
+inside them. From here, each remaining module (SANA, GROVE, ORA, then GHISA) gets
+done complete, prose included, in one go.
+
+**New in v0.39.0 — CADENCE, translated inside**
+
+CADENCE's full screen — the daily ring and habit cards, the mood row, month and
+year heatmaps with their stats, and the whole add/edit-habit form and manage
+sheet — now runs in Deutsch, Italiano and Español, with locale-aware weekday and
+month names via Intl. Three of the six small modules done (CALIBER, RESPIRO,
+CADENCE). Next: SANA, then GROVE, then ORA — GHISA last.
+
+**New in v0.38.0 — RESPIRO, translated inside**
+
+RESPIRO's full interactive surface — the practice cards, the live session
+(phase cues, controls, Wim Hof retentions), the config sheet, progress stats,
+and the whole sound/tools tab — now runs in Deutsch, Italiano and Español. It was
+the biggest of the small modules (~90 strings). Technique descriptions and the
+few guide paragraphs stay English for the final prose sweep. Next: CADENCE, then
+SANA, GROVE, ORA — GHISA last.
 
 **New in v0.37.0 — CALIBER, translated inside**
 

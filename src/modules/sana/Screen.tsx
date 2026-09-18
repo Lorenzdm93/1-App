@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
+import { t, localeTag } from '../../core/i18n'
 import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { navigate } from '../../core/router'
@@ -59,7 +60,7 @@ function FormGlyph({ form }: { form: Form }) {
 
 function InfoDot({ onClick }: { onClick: () => void }) {
   return (
-    <button className="sn-info" onClick={onClick} aria-label="About this compound">
+    <button className="sn-info" onClick={onClick} aria-label={t('About this compound')}>
       i
     </button>
   )
@@ -86,22 +87,21 @@ function CompoundInfo({ compound, onClose }: { compound: Compound | null; onClos
     <Sheet open={compound !== null} title={live?.name ?? ''} onClose={() => { saveDose(); onClose() }}>
       {live && (
         <>
-          <div className="kv"><span className="k">Dose <span className="hint">· tune it</span></span>
+          <div className="kv"><span className="k">{t('Dose')} <span className="hint">{t('· tune it')}</span></span>
             <span className="sn-doseedit">
-              <input value={amt} inputMode="decimal" aria-label="Amount"
+              <input value={amt} inputMode="decimal" aria-label={t('Amount')}
                 onChange={(e) => setAmt(e.target.value)} onBlur={saveDose} />
-              <input value={unit} aria-label="Unit"
+              <input value={unit} aria-label={t('Unit')}
                 onChange={(e) => setUnit(e.target.value)} onBlur={saveDose} />
             </span>
           </div>
-          {live.chem && <div className="kv"><span className="k">Also known as</span><span>{live.chem}</span></div>}
-          <div className="kv"><span className="k">When</span><span>{SLOTS.find((s) => s.id === live.slot)?.label}</span></div>
-          {live.note && <p className="sn-note-line">{live.note}</p>}
-          {lib && <p className="guide-p">{lib.info}</p>}
-          {lib?.caution && <div className="rs-warning" style={{ marginTop: 10 }}><b>Worth knowing.</b> {lib.caution}</div>}
+          {live.chem && <div className="kv"><span className="k">{t('Also known as')}</span><span>{live.chem}</span></div>}
+          <div className="kv"><span className="k">{t('When')}</span><span>{t(SLOTS.find((s) => s.id === live.slot)?.label ?? '')}</span></div>
+          {live.note && <p className="sn-note-line">{t(live.note)}</p>}
+          {lib && <p className="guide-p">{t(lib.info)}</p>}
+          {lib?.caution && <div className="rs-warning" style={{ marginTop: 10 }}><b>{t('Worth knowing.')}</b> {t(lib.caution)}</div>}
           <p className="rs-foot">
-            SANA records what you chose to take — dose and timing decisions stay with you and, for
-            medicines, your prescriber.
+            {t('SANA records what you chose to take — dose and timing decisions stay with you and, for medicines, your prescriber.')}
           </p>
         </>
       )}
@@ -145,8 +145,8 @@ function Dial({ taken, due }: { taken: number; due: number }) {
           <span className="sep">/</span>
           <span className="b num">{due}</span>
         </div>
-        <div className="sn-dial-k">doses taken</div>
-        <div className="sn-dial-pct num">{due > 0 ? Math.round(pct * 100) : 0}% complete</div>
+        <div className="sn-dial-k">{t('doses taken')}</div>
+        <div className="sn-dial-pct num">{t('{n}% complete', { n: due > 0 ? Math.round(pct * 100) : 0 })}</div>
       </div>
     </div>
   )
@@ -159,7 +159,7 @@ function StackDots({ stacks }: { stacks: Stack[] }) {
       {stacks.map((s) => (
         <i key={s.id} style={{ background: s.color }} />
       ))}
-      {stacks.length > 1 && <em>shared</em>}
+      {stacks.length > 1 && <em>{t('shared')}</em>}
     </span>
   )
 }
@@ -181,18 +181,18 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
 
   const label =
     dayOffset === 0
-      ? 'Today'
+      ? t('Today')
       : dayOffset === -1
-        ? 'Yesterday'
-        : new Date(day + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
-  const sub = new Date(day + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+        ? t('Yesterday')
+        : new Date(day + 'T12:00:00').toLocaleDateString(localeTag(), { weekday: 'short', day: 'numeric', month: 'short' })
+  const sub = new Date(day + 'T12:00:00').toLocaleDateString(localeTag(), { month: 'short', day: 'numeric' })
 
   if (st.stacks.length === 0) {
     return (
       <>
-        <Empty title="No stacks yet" sub="A stack is a regimen — Daily Foundation, Sport, Sleep. Build one and Today assembles itself." />
+        <Empty title={t('No stacks yet')} sub={t('A stack is a regimen — Daily Foundation, Sport, Sleep. Build one and Today assembles itself.')} />
         <div style={{ marginTop: 12 }}>
-          <button className="btn btn-primary" onClick={onGoStacks}>Build the first stack</button>
+          <button className="btn btn-primary" onClick={onGoStacks}>{t('Build the first stack')}</button>
         </div>
       </>
     )
@@ -201,14 +201,14 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
   return (
     <>
       <div className="sn-pager">
-        <button className="nav" onClick={() => setDayOffset((o) => o - 1)} aria-label="Previous day">‹</button>
+        <button className="nav" onClick={() => setDayOffset((o) => o - 1)} aria-label={t('Previous day')}>‹</button>
         <button className="mid" disabled={dayOffset === 0}
           onClick={() => setDayOffset(0)}
-          aria-label={dayOffset === 0 ? undefined : 'Jump back to today'}>
+          aria-label={dayOffset === 0 ? undefined : t('Jump back to today')}>
           <span className="lbl">{label}</span>
-          <span className="sub">{dayOffset === 0 ? sub : sub + ' · tap for today'}</span>
+          <span className="sub">{dayOffset === 0 ? sub : sub + ' ' + t('· tap for today')}</span>
         </button>
-        <button className="nav" onClick={() => setDayOffset((o) => Math.min(0, o + 1))} disabled={dayOffset === 0} aria-label="Next day">›</button>
+        <button className="nav" onClick={() => setDayOffset((o) => Math.min(0, o + 1))} disabled={dayOffset === 0} aria-label={t('Next day')}>›</button>
       </div>
 
       <div className="card sn-dial-card">
@@ -216,8 +216,8 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
       </div>
 
       <div className="sn-follow-head">
-        <span className="section-label" style={{ margin: 0 }}>Following {followedStacks.length} stack{followedStacks.length === 1 ? '' : 's'}</span>
-        <button className="chip" onClick={() => setChanging(true)}>Change</button>
+        <span className="section-label" style={{ margin: 0 }}>{followedStacks.length === 1 ? t('Following {n} stack', { n: followedStacks.length }) : t('Following {n} stacks', { n: followedStacks.length })}</span>
+        <button className="chip" onClick={() => setChanging(true)}>{t('Change')}</button>
       </div>
       {followedStacks.map((s) => {
         const ids = s.compoundIds.filter((id) => {
@@ -243,15 +243,15 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
             <span className="num sn-stackrow-count">{done}/{ids.length}</span>
             <button
               className={'sn-stackrow-take' + (done === ids.length && ids.length > 0 ? ' done' : '')}
-              aria-label={`Take all of ${s.name}`}
+              aria-label={t('Take all of {name}', { name: s.name })}
               onClick={(e) => {
                 e.stopPropagation()
                 if (done === ids.length && ids.length > 0) {
                   const n = untakeMany(ids, day)
-                  toast(`${s.name} — ${n} unticked`)
+                  toast(t('{name} — {n} unticked', { name: s.name, n }))
                 } else {
                   const n = takeMany(ids, day)
-                  if (n > 0) toast(`${s.name} — ${n} taken`)
+                  if (n > 0) toast(t('{name} — {n} taken', { name: s.name, n }))
                 }
               }}
             >
@@ -263,11 +263,11 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
       <p className="rs-foot sn-filter-line" style={{ marginTop: 4 }}>
         {focused ? (
           <>
-            Showing <b style={{ color: focused.color }}>{focused.name}</b> only ·{' '}
-            <button className="linklike" onClick={() => setFocusStack(null)}>show all stacks</button>
+            {t('Showing')} <b style={{ color: focused.color }}>{focused.name}</b> {t('only')} ·{' '}
+            <button className="linklike" onClick={() => setFocusStack(null)}>{t('show all stacks')}</button>
           </>
         ) : (
-          <>Tap a stack to see only its doses. Shared compounds are listed once.</>
+          <>{t('Tap a stack to see only its doses. Shared compounds are listed once.')}</>
         )}
       </p>
 
@@ -278,17 +278,17 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
         return (
           <div key={slot.id}>
             <div className="sn-slot-head">
-              <span className="sn-slot-title">{slot.glyph} {slot.label}</span>
+              <span className="sn-slot-title">{slot.glyph} {t(slot.label)}</span>
               <span className="num sn-slot-count">{rows.length - remaining.length}/{rows.length}</span>
               <button
                 className="chip"
                 disabled={remaining.length === 0}
                 onClick={() => {
                   const n = takeMany(remaining.map((r) => r.compound.id), day)
-                  if (n > 0) toast(`${slot.label} — ${n} taken`)
+                  if (n > 0) toast(t('{slot} — {n} taken', { slot: t(slot.label), n }))
                 }}
               >
-                Take all
+                {t('Take all')}
               </button>
             </div>
             {rows.map(({ compound, stacks }) => {
@@ -310,12 +310,12 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
                       {compound.amount} {compound.unit}
                       {compound.chem && <span className="chem"> · {compound.chem}</span>}
                     </div>
-                    {compound.note && <div className="sn-comp-note">{compound.note}</div>}
+                    {compound.note && <div className="sn-comp-note">{t(compound.note)}</div>}
                   </div>
                   <button
                     className={'sn-check' + (taken ? ' on' : '')}
                     onClick={() => takeDose(compound.id, day)}
-                    aria-label={(taken ? 'Untake ' : 'Take ') + compound.name}
+                    aria-label={taken ? t('Untake {name}', { name: compound.name }) : t('Take {name}', { name: compound.name })}
                   >
                     ✓
                   </button>
@@ -327,19 +327,19 @@ function TodayTab({ onGoStacks }: { onGoStacks: () => void }) {
       })}
 
       {dayOffset < 0 && (
-        <p className="rs-foot">Filling in {label.toLowerCase()} — doses carry that day's date, so the streak stays honest.</p>
+        <p className="rs-foot">{t("Filling in {label} — doses carry that day's date, so the streak stays honest.", { label: label.toLowerCase() })}</p>
       )}
 
       <CompoundInfo compound={info} onClose={() => setInfo(null)} />
-      <Sheet open={changing} title="Following today" onClose={() => setChanging(false)}>
-        <p className="guide-p">Pick which stacks apply to {label.toLowerCase()}. Off days are normal — a Sport stack can rest when you do.</p>
+      <Sheet open={changing} title={t('Following today')} onClose={() => setChanging(false)}>
+        <p className="guide-p">{t('Pick which stacks apply to {label}. Off days are normal — a Sport stack can rest when you do.', { label: label.toLowerCase() })}</p>
         {st.stacks.map((s) => {
           const on = followed.includes(s.id)
           return (
             <button key={s.id} className={'sn-follow-row' + (on ? ' on' : '')} onClick={() => toggleFollow(day, s.id)}>
               <span className="sn-stackrow-emoji" style={{ ['--sk' as string]: s.color } as CSSProperties}>{s.emoji}</span>
               <span className="sn-follow-name">{s.name}</span>
-              <span className="sn-follow-state">{on ? 'Following' : 'Off'}</span>
+              <span className="sn-follow-state">{on ? t('Following') : t('Off')}</span>
             </button>
           )
         })}
@@ -374,21 +374,21 @@ function CompoundForm({
     const already = existing.find((c) => c.name.toLowerCase() === e.name.toLowerCase())
     if (already) {
       linkCompound(stack.id, already.id)
-      toast(`${e.name} linked — shared with its other stack`)
+      toast(t('{name} linked — shared with its other stack', { name: e.name }))
     } else {
       addCompound(stack.id, { name: e.name, chem: e.chem, amount: e.amount, unit: e.unit, form: e.form, slot: e.slot, note: e.note })
-      toast(`${e.name} added`)
+      toast(t('{name} added', { name: e.name }))
     }
     onDone()
   }
 
   function addCustom() {
     if (name.trim() === '') {
-      toast('Give it a name')
+      toast(t('Give it a name'))
       return
     }
     addCompound(stack.id, { name, chem, amount, unit, form, slot, note })
-    toast(`${name.trim()} added`)
+    toast(t('{name} added', { name: name.trim() }))
     onDone()
   }
 
@@ -396,9 +396,9 @@ function CompoundForm({
     <>
       <Seg<'library' | 'custom' | 'existing'>
         options={[
-          { id: 'library', label: 'Library' },
-          { id: 'custom', label: 'Custom' },
-          { id: 'existing', label: 'Existing' },
+          { id: 'library', label: t('Library') },
+          { id: 'custom', label: t('Custom') },
+          { id: 'existing', label: t('Existing') },
         ]}
         value={mode}
         onChange={setMode}
@@ -410,7 +410,7 @@ function CompoundForm({
               <span className="sn-comp-glyph"><FormGlyph form={e.form} /></span>
               <span className="sn-lib-main">
                 <span className="sn-lib-name">{e.name}</span>
-                <span className="sn-lib-sub num">{e.amount} {e.unit} · {SLOTS.find((s) => s.id === e.slot)?.label}</span>
+                <span className="sn-lib-sub num">{e.amount} {e.unit} · {t(SLOTS.find((s) => s.id === e.slot)?.label ?? '')}</span>
               </span>
               <span className="sn-lib-add">+</span>
             </button>
@@ -419,43 +419,43 @@ function CompoundForm({
       )}
       {mode === 'custom' && (
         <div style={{ marginTop: 12 }}>
-          <Field label="Name"><input className="tinput" value={name} onChange={(e) => setName(e.target.value)} placeholder="Vitamin D3" /></Field>
-          <Field label="Chemical / secondary name (optional)"><input className="tinput" value={chem} onChange={(e) => setChem(e.target.value)} placeholder="Cholecalciferol" /></Field>
+          <Field label={t('Name')}><input className="tinput" value={name} onChange={(e) => setName(e.target.value)} placeholder="Vitamin D3" /></Field>
+          <Field label={t('Chemical / secondary name (optional)')}><input className="tinput" value={chem} onChange={(e) => setChem(e.target.value)} placeholder="Cholecalciferol" /></Field>
           <div className="cb-fields" style={{ marginTop: 0 }}>
-            <Field label="Amount"><input className="tinput" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="2000" /></Field>
-            <Field label="Unit"><input className="tinput" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="IU" /></Field>
-            <Field label="Form">
+            <Field label={t('Amount')}><input className="tinput" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="2000" /></Field>
+            <Field label={t('Unit')}><input className="tinput" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="IU" /></Field>
+            <Field label={t('Form')}>
               <select className="tinput" value={form} onChange={(e) => setForm(e.target.value as Form)}>
-                {FORMS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
+                {FORMS.map((f) => <option key={f.id} value={f.id}>{t(f.label)}</option>)}
               </select>
             </Field>
           </div>
-          <Field label="Time of day">
+          <Field label={t('Time of day')}>
             <div className="chips">
               {SLOTS.map((s) => (
                 <button key={s.id} className={'chip' + (slot === s.id ? ' on' : '')} style={{ ['--chip-accent' as string]: 'var(--m-sana)' } as CSSProperties} onClick={() => setSlot(s.id)}>
-                  {s.glyph} {s.label}
+                  {s.glyph} {t(s.label)}
                 </button>
               ))}
             </div>
           </Field>
-          <Field label="Note (the italic line on Today)"><input className="tinput" value={note} onChange={(e) => setNote(e.target.value)} placeholder="With a meal that has fat" /></Field>
+          <Field label={t('Note (the italic line on Today)')}><input className="tinput" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('With a meal that has fat')} /></Field>
           <div style={{ marginTop: 12 }}>
-            <button className="btn btn-primary" onClick={addCustom}>Add compound</button>
+            <button className="btn btn-primary" onClick={addCustom}>{t('Add compound')}</button>
           </div>
         </div>
       )}
       {mode === 'existing' && (
         <div style={{ marginTop: 12 }}>
           {linkable.length === 0 ? (
-            <p className="guide-p">Every existing compound is already in this stack. Shared compounds count once on Today, however many stacks carry them.</p>
+            <p className="guide-p">{t('Every existing compound is already in this stack. Shared compounds count once on Today, however many stacks carry them.')}</p>
           ) : (
             linkable.map((c) => (
-              <button key={c.id} className="sn-lib-row" onClick={() => { linkCompound(stack.id, c.id); toast(`${c.name} linked`); onDone() }}>
+              <button key={c.id} className="sn-lib-row" onClick={() => { linkCompound(stack.id, c.id); toast(t('{name} linked', { name: c.name })); onDone() }}>
                 <span className="sn-comp-glyph"><FormGlyph form={c.form} /></span>
                 <span className="sn-lib-main">
                   <span className="sn-lib-name">{c.name}</span>
-                  <span className="sn-lib-sub num">{c.amount} {c.unit} · {SLOTS.find((s) => s.id === c.slot)?.label}</span>
+                  <span className="sn-lib-sub num">{c.amount} {c.unit} · {t(SLOTS.find((s) => s.id === c.slot)?.label ?? '')}</span>
                 </span>
                 <span className="sn-lib-add">+</span>
               </button>
@@ -481,13 +481,13 @@ function StackEditor({ stackId, onBack }: { stackId: string; onBack: () => void 
   return (
     <>
       <div className="sn-ed-head">
-        <button className="rs-back" style={{ padding: 0 }} onClick={onBack}>‹ Your stacks</button>
-        <button className="sn-trash" onClick={() => setConfirmDelete(true)} aria-label="Delete stack">🗑</button>
+        <button className="rs-back" style={{ padding: 0 }} onClick={onBack}>{t('‹ Your stacks')}</button>
+        <button className="sn-trash" onClick={() => setConfirmDelete(true)} aria-label={t('Delete stack')}>🗑</button>
       </div>
-      <Field label="Name">
+      <Field label={t('Name')}>
         <input className="tinput" value={stack.name} onChange={(e) => updateStack(stack.id, { name: e.target.value })} />
       </Field>
-      <Field label="Icon">
+      <Field label={t('Icon')}>
         <div className="sn-emoji-grid">
           {STACK_EMOJIS.map((e) => (
             <button key={e} className={'sn-emoji' + (stack.emoji === e ? ' on' : '')} onClick={() => updateStack(stack.id, { emoji: e })}>
@@ -496,15 +496,15 @@ function StackEditor({ stackId, onBack }: { stackId: string; onBack: () => void 
           ))}
         </div>
       </Field>
-      <Field label="Colour">
+      <Field label={t('Colour')}>
         <div className="sn-colors">
           {STACK_COLORS.map((c) => (
-            <button key={c} className={'sn-color' + (stack.color === c ? ' on' : '')} style={{ background: c }} onClick={() => updateStack(stack.id, { color: c })} aria-label={`Colour ${c}`} />
+            <button key={c} className={'sn-color' + (stack.color === c ? ' on' : '')} style={{ background: c }} onClick={() => updateStack(stack.id, { color: c })} aria-label={t('Colour {c}', { c })} />
           ))}
         </div>
 
         <div className="sn-ed-days">
-          <span className="k">Active days <span className="hint">· all off = every day</span></span>
+          <span className="k">{t('Active days')} <span className="hint">{t('· all off = every day')}</span></span>
           <div className="sn-daychips">
             {[1, 2, 3, 4, 5, 6, 0].map((d) => {
               const on = (stack.days ?? []).includes(d)
@@ -525,36 +525,36 @@ function StackEditor({ stackId, onBack }: { stackId: string; onBack: () => void 
           </div>
         </div>
       </Field>
-      <div className="section-label" style={{ marginTop: 18 }}>Compounds</div>
-      {comps.length === 0 && <p className="guide-p">Empty stack — add from the library, or link a compound another stack already has.</p>}
+      <div className="section-label" style={{ marginTop: 18 }}>{t('Compounds')}</div>
+      {comps.length === 0 && <p className="guide-p">{t('Empty stack — add from the library, or link a compound another stack already has.')}</p>}
       {comps.map((c) => (
         <div key={c.id} className="card sn-ed-comp" style={{ ['--sk' as string]: stack.color } as CSSProperties}>
           <span className="sn-comp-glyph tint"><FormGlyph form={c.form} /></span>
           <div className="sn-comp-main">
             <div className="sn-comp-name">{c.name}</div>
-            <div className="sn-comp-dose num">{c.amount} {c.unit} · {SLOTS.find((s) => s.id === c.slot)?.label}</div>
+            <div className="sn-comp-dose num">{c.amount} {c.unit} · {t(SLOTS.find((s) => s.id === c.slot)?.label ?? '')}</div>
           </div>
-          <button className="sn-trash sm" onClick={() => { unlinkCompound(stack.id, c.id); toast(`${c.name} removed`) }} aria-label={`Remove ${c.name}`}>🗑</button>
+          <button className="sn-trash sm" onClick={() => { unlinkCompound(stack.id, c.id); toast(t('{name} removed', { name: c.name })) }} aria-label={t('Remove {name}', { name: c.name })}>🗑</button>
         </div>
       ))}
       <button className="btn btn-ghost" style={{ width: '100%', marginTop: 6 }} onClick={() => setAddingComp(true)}>
-        + Add compound
+        {t('+ Add compound')}
       </button>
       <button
         className={'sn-follow-big' + (following ? ' on' : '')}
         onClick={() => toggleFollow(today, stack.id)}
       >
-        {following ? '✓ Following this today' : 'Not following today — tap to follow'}
+        {following ? t('✓ Following this today') : t('Not following today — tap to follow')}
       </button>
 
-      <Sheet open={addingComp} title={`Add to ${stack.name}`} onClose={() => setAddingComp(false)}>
+      <Sheet open={addingComp} title={t('Add to {name}', { name: stack.name })} onClose={() => setAddingComp(false)}>
         <CompoundForm stack={stack} existing={st.compounds} onDone={() => setAddingComp(false)} />
       </Sheet>
       <ConfirmSheet
         open={confirmDelete}
-        title={`Delete ${stack.name}?`}
-        body="Compounds shared with other stacks stay; compounds only this stack carries are removed with it. History already logged is untouched."
-        actionLabel="Delete stack"
+        title={t('Delete {name}?', { name: stack.name })}
+        body={t('Compounds shared with other stacks stay; compounds only this stack carries are removed with it. History already logged is untouched.')}
+        actionLabel={t('Delete stack')}
         danger
         onConfirm={() => { deleteStack(stack.id); onBack() }}
         onClose={() => setConfirmDelete(false)}
@@ -570,9 +570,9 @@ function StacksTab() {
   if (editing) return <StackEditor stackId={editing} onBack={() => setEditing(null)} />
   return (
     <>
-      <h2 className="sn-h1">Your stacks</h2>
+      <h2 className="sn-h1">{t('Your stacks')}</h2>
       <div className="kv" style={{ marginTop: 2, marginBottom: 10 }}>
-        <span className="k">Quick-log method <span className="hint">· how the Today shortcut thinks</span></span>
+        <span className="k">{t('Quick-log method')} <span className="hint">{t('· how the Today shortcut thinks')}</span></span>
         <div className="chips">
           {(['stack', 'slot'] as const).map((mth) => (
             <button
@@ -580,12 +580,12 @@ function StacksTab() {
               className={'chip' + ((st.logMethod ?? 'stack') === mth ? ' on' : '')}
               onClick={() => setLogMethod(mth)}
             >
-              {mth === 'stack' ? 'By stack' : 'By time of day'}
+              {mth === 'stack' ? t('By stack') : t('By time of day')}
             </button>
           ))}
         </div>
       </div>
-      <p className="sn-sub">Saved regimens you can switch between on any day.</p>
+      <p className="sn-sub">{t('Saved regimens you can switch between on any day.')}</p>
       <button
         className="btn btn-primary"
         style={{ width: '100%', marginBottom: 14 }}
@@ -594,7 +594,7 @@ function StacksTab() {
           setEditing(s.id)
         }}
       >
-        + New stack
+        {t('+ New stack')}
       </button>
       {st.stacks.map((s) => {
         const active = followedOn(st, today).includes(s.id)
@@ -604,10 +604,10 @@ function StacksTab() {
             <span className="sn-stackcard-main">
               <span className="sn-stackcard-name">
                 {s.name}
-                {active && <em className="sn-active">Active today</em>}
+                {active && <em className="sn-active">{t('Active today')}</em>}
               </span>
               <span className="sn-stackcard-sub num">
-                {s.compoundIds.length} compound{s.compoundIds.length === 1 ? '' : 's'} · {s.compoundIds.length} dose{s.compoundIds.length === 1 ? '' : 's'}/day
+                {s.compoundIds.length === 1 ? t('{n} compound · {n2} dose/day', { n: s.compoundIds.length, n2: s.compoundIds.length }) : t('{n} compounds · {n2} doses/day', { n: s.compoundIds.length, n2: s.compoundIds.length })}
               </span>
             </span>
             <span className="sn-chev">›</span>
@@ -680,7 +680,7 @@ function HistoryTab() {
 
   const weekStart = shiftDay(startOfWeek(today), weekOff * 7)
   const weekDays = Array.from({ length: 7 }, (_, i) => shiftDay(weekStart, i))
-  const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString(localeTag(), { month: 'short', day: 'numeric' })
 
   const base = new Date(today + 'T12:00:00')
   const mDate = new Date(base.getFullYear(), base.getMonth() + monthOff, 1, 12)
@@ -688,7 +688,7 @@ function HistoryTab() {
   const mMonth = mDate.getMonth()
   const firstCol = (new Date(mYear, mMonth, 1, 12).getDay() + 6) % 7
   const daysInMonth = new Date(mYear, mMonth + 1, 0).getDate()
-  const monthLabel = mDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  const monthLabel = mDate.toLocaleDateString(localeTag(), { month: 'long', year: 'numeric' })
 
   /* Year-aligned consistency, like CADENCE: the whole calendar year, scrolled to now. */
   const heatYear = today.slice(0, 4)
@@ -711,22 +711,22 @@ function HistoryTab() {
   return (
     <>
       <div className="ins-grid three">
-        <StatBox label="day streak" value={String(stats.streak)} />
-        <StatBox label="best run" value={String(stats.bestRun)} />
-        <StatBox label="30-day rate" value={`${stats.rate30}%`} />
+        <StatBox label={t('day streak')} value={String(stats.streak)} />
+        <StatBox label={t('best run')} value={String(stats.bestRun)} />
+        <StatBox label={t('30-day rate')} value={`${stats.rate30}%`} />
       </div>
 
       <div className="card">
         <div className="sn-hist-head">
-          <span className="sn-hist-title">Week</span>
+          <span className="sn-hist-title">{t('Week')}</span>
           <span className="sn-hist-nav">
-            <button onClick={() => setWeekOff((o) => o - 1)} aria-label="Previous week">‹</button>
+            <button onClick={() => setWeekOff((o) => o - 1)} aria-label={t('Previous week')}>‹</button>
             <span className="num">{fmt(weekDays[0])} – {fmt(weekDays[6])}</span>
-            <button onClick={() => setWeekOff((o) => Math.min(0, o + 1))} disabled={weekOff === 0} aria-label="Next week">›</button>
+            <button onClick={() => setWeekOff((o) => Math.min(0, o + 1))} disabled={weekOff === 0} aria-label={t('Next week')}>›</button>
           </span>
         </div>
         <div className="sn-week">
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((l) => <span key={l} className="sn-week-l">{l}</span>)}
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((l) => <span key={l} className="sn-week-l">{t(l)}</span>)}
           {weekDays.map((d) => {
             const c = dayCount(st, d)
             const future = d > today
@@ -743,11 +743,11 @@ function HistoryTab() {
 
       <div className="card">
         <div className="sn-hist-head">
-          <span className="sn-hist-title">Month</span>
+          <span className="sn-hist-title">{t('Month')}</span>
           <span className="sn-hist-nav">
-            <button onClick={() => setMonthOff((o) => o - 1)} aria-label="Previous month">‹</button>
+            <button onClick={() => setMonthOff((o) => o - 1)} aria-label={t('Previous month')}>‹</button>
             <span className="num">{monthLabel}</span>
-            <button onClick={() => setMonthOff((o) => Math.min(0, o + 1))} disabled={monthOff === 0} aria-label="Next month">›</button>
+            <button onClick={() => setMonthOff((o) => Math.min(0, o + 1))} disabled={monthOff === 0} aria-label={t('Next month')}>›</button>
           </span>
         </div>
         <div className="sn-month">
@@ -762,15 +762,11 @@ function HistoryTab() {
       </div>
 
       <div className="card">
-        <div className="sn-hist-head"><span className="sn-hist-title">Consistency</span><span className="rs-foot" style={{ margin: 0 }}>{heatYear}</span></div>
+        <div className="sn-hist-head"><span className="sn-hist-title">{t('Consistency')}</span><span className="rs-foot" style={{ margin: 0 }}>{heatYear}</span></div>
         <SnYearHeat weeks={yearWeeks} today={today} cellFor={cellFor} />
       </div>
       <div className="card guide">
-        <p>
-          <b>Reading the streak.</b> A day counts when everything due that day was taken — off days
-          (no stacks followed) neither break nor extend it. The 30-day rate is the honest one:
-          doses taken over doses due, gaps and all.
-        </p>
+        <p><b>{t("Reading the streak.")}</b> {t("A day counts when everything due that day was taken \u2014 off days (no stacks followed) neither break nor extend it. The 30-day rate is the honest one: doses taken over doses due, gaps and all.")}</p>
       </div>
     </>
   )
@@ -785,15 +781,15 @@ function LibraryTab() {
   const inStack = (e: LibraryEntry) => st.compounds.some((c) => c.name.toLowerCase() === e.name.toLowerCase())
   return (
     <>
-      <h2 className="sn-h1">Library</h2>
-      <p className="sn-sub">A reference shelf of common compounds — what they are, when people take them. Informational, never prescriptive.</p>
+      <h2 className="sn-h1">{t('Library')}</h2>
+      <p className="sn-sub">{t('A reference shelf of common compounds — what they are, when people take them. Informational, never prescriptive.')}</p>
       {LIBRARY.map((e) => (
         <button key={e.name} className="card card-tap sn-comp" onClick={() => setOpen(e)}>
           <span className="sn-comp-glyph"><FormGlyph form={e.form} /></span>
           <div className="sn-comp-main">
-            <div className="sn-comp-name">{e.name}{inStack(e) && <em className="sn-active">In your stack</em>}</div>
+            <div className="sn-comp-name">{e.name}{inStack(e) && <em className="sn-active">{t('In your stack')}</em>}</div>
             <div className="sn-comp-dose num">{e.amount} {e.unit}<span className="chem"> · {e.chem}</span></div>
-            <div className="sn-comp-note">{e.note}</div>
+            <div className="sn-comp-note">{t(e.note)}</div>
           </div>
           <span className="sn-chev">›</span>
         </button>
@@ -801,21 +797,21 @@ function LibraryTab() {
       <Sheet open={open !== null} title={open?.name ?? ''} onClose={() => { setOpen(null); setPicking(false) }}>
         {open && !picking && (
           <>
-            <div className="kv"><span className="k">Typical form</span><span>{FORMS.find((f) => f.id === open.form)?.label} · {open.amount} {open.unit}</span></div>
-            <div className="kv"><span className="k">Usual slot</span><span>{SLOTS.find((s) => s.id === open.slot)?.label}</span></div>
-            <p className="sn-note-line">{open.note}</p>
-            <p className="guide-p">{open.info}</p>
-            {open.caution && <div className="rs-warning" style={{ marginTop: 10 }}><b>Worth knowing.</b> {open.caution}</div>}
+            <div className="kv"><span className="k">{t('Typical form')}</span><span>{t(FORMS.find((f) => f.id === open.form)?.label ?? '')} · {open.amount} {open.unit}</span></div>
+            <div className="kv"><span className="k">{t('Usual slot')}</span><span>{t(SLOTS.find((s) => s.id === open.slot)?.label ?? '')}</span></div>
+            <p className="sn-note-line">{t(open.note)}</p>
+            <p className="guide-p">{t(open.info)}</p>
+            {open.caution && <div className="rs-warning" style={{ marginTop: 10 }}><b>{t('Worth knowing.')}</b> {t(open.caution)}</div>}
             {st.stacks.length > 0 && (
               <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={() => setPicking(true)}>
-                Add to a stack
+                {t('Add to a stack')}
               </button>
             )}
           </>
         )}
         {open && picking && (
           <>
-            <p className="guide-p">Which stack should carry {open.name}?</p>
+            <p className="guide-p">{t('Which stack should carry {name}?', { name: open.name })}</p>
             {st.stacks.map((s) => (
               <button
                 key={s.id}
@@ -824,14 +820,14 @@ function LibraryTab() {
                   const already = st.compounds.find((c) => c.name.toLowerCase() === open.name.toLowerCase())
                   if (already) linkCompound(s.id, already.id)
                   else addCompound(s.id, { name: open.name, chem: open.chem, amount: open.amount, unit: open.unit, form: open.form, slot: open.slot, note: open.note })
-                  toast(`${open.name} → ${s.name}`)
+                  toast(open.name + ' → ' + s.name)
                   setOpen(null)
                   setPicking(false)
                 }}
               >
                 <span className="sn-stackrow-emoji" style={{ ['--sk' as string]: s.color } as CSSProperties}>{s.emoji}</span>
                 <span className="sn-follow-name">{s.name}</span>
-                <span className="sn-follow-state">Add ›</span>
+                <span className="sn-follow-state">{t('Add ›')}</span>
               </button>
             ))}
           </>
