@@ -9,6 +9,7 @@ import { settingsStore, setModuleOrder } from '../core/settings'
 import { enabledModules } from '../core/registry'
 import { navigate } from '../core/router'
 import { todayKey, lastNDayKeys, dayKey, shiftDay, weekStartKey } from '../core/dates'
+import { t, localeTag } from '../core/i18n'
 import { oneStore } from '../core/one'
 import { computePulse } from '../core/score'
 import { Chevron, Empty } from '../app/ui'
@@ -53,7 +54,7 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
         <div className="wp-ring-wrap">
           <Ring value={Math.min(120, pulse.score)} accent={won ? 'var(--good)' : 'var(--accent)'} size={158} stroke={13}>
             <span className={'wp-ring-v num' + (won ? ' won' : '')}>{pulse.score}<i>%</i></span>
-            <span className="wp-ring-k">this week</span>
+            <span className="wp-ring-k">{t('this week')}</span>
           </Ring>
         </div>
         <p className="wp-coach">
@@ -103,7 +104,7 @@ export default function Today() {
   const pulse = useWeekPulse()
   const pulseById = new Map(pulse.modules.map((m) => [m.id, m]))
 
-  const dateLabel = new Date().toLocaleDateString(undefined, {
+  const dateLabel = new Date().toLocaleDateString(localeTag(), {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -173,7 +174,7 @@ export default function Today() {
     <>
       <div className="screen-head">
         <div className="eyebrow">{dateLabel}</div>
-        <h1 className="screen-title">Today</h1>
+        <h1 className="screen-title">{t('Today')}</h1>
       </div>
 
       <QuickLog />

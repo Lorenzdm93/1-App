@@ -27,6 +27,7 @@ import {
 import { insightsConfigStore } from '../core/insights/config'
 import type { InsightType } from '../core/insights/types'
 import { Chevron } from './ui'
+import { t } from '../core/i18n'
 
 type Pulse = ReturnType<typeof computePulse>
 
@@ -144,11 +145,11 @@ export default function ThisWeek({ pulse }: { pulse: Pulse }) {
   return (
     <section className="thisweek" aria-label="This week">
       <div className="tw-top">
-        <span className="section-label">This week</span>
+        <span className="section-label">{t('This week')}</span>
         {cfg.enabled && (
           <button
             className="tw-refresh"
-            aria-label="Refresh"
+            aria-label={t('Refresh')}
             disabled={status.generating}
             onClick={() => void regenerateInsights()}
           >

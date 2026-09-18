@@ -5,6 +5,7 @@ import { useRoute, navigate } from '../core/router'
 import { moduleById } from '../core/registry'
 import { useStore } from '../core/hooks'
 import { settingsStore } from '../core/settings'
+import { localeStore, t } from '../core/i18n'
 import { useTheme } from './theme'
 import Today from '../screens/Today'
 import RespiroDock from '../modules/respiro/Dock'
@@ -26,7 +27,7 @@ import { send as sendNotify } from '../core/notify'
 
 function ScreenLoader() {
   return (
-    <div className="screen-loader" role="status" aria-label="Loading">
+    <div className="screen-loader" role="status" aria-label={t('Loading')}>
       <span className="ring" />
     </div>
   )
@@ -54,14 +55,14 @@ function UpdateToast() {
   if (!worker) return null
   return (
     <div className="update-pill" role="status">
-      <span>Update ready</span>
+      <span>{t('Update ready')}</span>
       <button
         onClick={() => {
           worker.postMessage({ type: 'SKIP_WAITING' })
           setWorker(null)
         }}
       >
-        Restart
+        {t('Restart')}
       </button>
     </div>
   )
@@ -119,7 +120,7 @@ function ModuleScreen({ id, tab }: { id: string; tab?: string }) {
   return (
     <div className="mod-scope" style={{ ['--accent' as string]: mod.accentVar } as CSSProperties}>
       <div className="mod-head">
-        <button className="back" onClick={() => navigate('/')} aria-label="Back to Today">
+        <button className="back" onClick={() => navigate('/')} aria-label={t('Back to Today')}>
           <BackIcon />
         </button>
         <span className="mod-mark">
@@ -155,7 +156,7 @@ function ModuleIntro({ mod }: { mod: NonNullable<ReturnType<typeof moduleById>> 
         style={{ width: '100%', marginTop: 14 }}
         onClick={() => markIntroSeen(mod.id)}
       >
-        Start
+        {t('Start')}
       </button>
     </Sheet>
   )
@@ -164,6 +165,7 @@ function ModuleIntro({ mod }: { mod: NonNullable<ReturnType<typeof moduleById>> 
 export default function App() {
   const route = useRoute()
   const settings = useStore(settingsStore)
+  const { lang } = useStore(localeStore)
   useTheme(settings.theme)
 
   if (!settings.onboarded) {
@@ -179,11 +181,11 @@ export default function App() {
 
   return (
     <>
-      <a className="skip-link" href="#main">Skip to content</a>
+      <a className="skip-link" href="#main">{t('Skip to content')}</a>
       <div className="edge-fade top" aria-hidden="true" />
       <div className="edge-fade bottom" aria-hidden="true" />
       <main className="frame" id="main" tabIndex={-1}>
-        <div className="view" key={route.name === 'module' ? 'm-' + route.id + '-' + (route.tab ?? '') : route.name}>
+        <div className="view" key={lang + ':' + (route.name === 'module' ? 'm-' + route.id + '-' + (route.tab ?? '') : route.name)}>
         <Suspense fallback={<ScreenLoader />}>
         {route.name === 'today' && <Today />}
         {route.name === 'modules' && <Modules />}

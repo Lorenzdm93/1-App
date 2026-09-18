@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { navigate, type Route } from '../core/router'
+import { t as tr } from '../core/i18n'
 
 /** Hevy-style sliding pill: measure the active tab, glide the indicator to
     it. Measurement-based, so it survives variable widths and the module
@@ -81,7 +82,7 @@ export default function TabBar({ route }: { route: Route }) {
             aria-current={on ? 'page' : undefined}
           >
             <t.Icon />
-            {t.label}
+            {tr(t.label)}
           </button>
           )
         })}

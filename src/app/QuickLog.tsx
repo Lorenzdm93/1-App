@@ -8,6 +8,7 @@ import type { CSSProperties } from 'react'
 import { Sheet } from './ui'
 import { toast } from '../core/toast'
 import { parseCapture, applyDrafts, draftChrome, type CaptureDraft } from './capture'
+import { t } from '../core/i18n'
 
 export default function QuickLog() {
   const [open, setOpen] = useState(false)
@@ -54,28 +55,28 @@ export default function QuickLog() {
     <>
       <button className="qlog-bar" onClick={() => setOpen(true)} aria-label="Quick log">
         <span className="qlog-plus" aria-hidden="true">+</span>
-        <span className="qlog-ph">Log what you did…</span>
+        <span className="qlog-ph">{t('Log what you did…')}</span>
       </button>
 
-      <Sheet open={open} title="Quick log" onClose={close}>
+      <Sheet open={open} title={t('Quick log')} onClose={close}>
         <div className="qlog">
           <div className="qlog-inrow">
             <input
               className="ai-in"
               autoFocus
-              placeholder="e.g. squat 5x5 100kg, meditated 10 min"
+              placeholder={t('e.g. squat 5x5 100kg, meditated 10 min')}
               value={text}
               onChange={(e) => { setText(e.target.value); setParsed(false) }}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void doParse() } }}
             />
             <button className="btn btn-primary qlog-go" onClick={() => void doParse()} disabled={!text.trim() || parsing}>
-              {parsing ? '…' : 'Read'}
+              {parsing ? '…' : t('Read')}
             </button>
           </div>
 
           {parsed && drafts.length === 0 && (
             <p className="qlog-empty">
-              Couldn't read that. Try “25 min focus”, “squat 5x5 100kg”, or the name of a habit or supplement you track.
+              {t("Couldn't read that. Try “25 min focus”, “squat 5x5 100kg”, or the name of a habit or supplement you track.")}
             </p>
           )}
 
@@ -105,9 +106,9 @@ export default function QuickLog() {
                 onClick={commit}
                 disabled={selected.length === 0}
               >
-                Log {selected.length} {selected.length === 1 ? 'entry' : 'entries'}
+                {selected.length === 1 ? t('Log one entry') : t('Log {n} entries', { n: selected.length })}
               </button>
-              <p className="qlog-hint">Tap a card to include or skip it. Nothing is saved until you log.</p>
+              <p className="qlog-hint">{t('Tap a card to include or skip it. Nothing is saved until you log.')}</p>
             </>
           )}
         </div>

@@ -6,6 +6,7 @@ import { oneStore } from '../core/one'
 import { eventsStore } from '../core/events'
 import { Bars, MultiLine } from '../app/charts'
 import { StatBox } from '../app/ui'
+import { t } from '../core/i18n'
 import WeekReview from '../app/WeekReview'
 import { weekRecap } from '../core/score'
 import { ghisaStore } from '../modules/ghisa/model'
@@ -57,21 +58,21 @@ export default function Profile() {
   return (
     <>
       <div className="screen-head">
-        <div className="eyebrow">The long game</div>
-        <h1 className="screen-title">Profile</h1>
+        <div className="eyebrow">{t('The long game')}</div>
+        <h1 className="screen-title">{t('Profile')}</h1>
       </div>
 
       <WeekReview />
 
       <div className="card">
         <div className="ins-grid three">
-          <StatBox label="weeks won" value={`${won}/${weeks.length}`} />
-          <StatBox label="compounded" value={won > 0 ? `+${compound}%` : '—'} />
-          <StatBox label="best week" value={best > 0 ? `${Math.round(best)}%` : '—'} />
+          <StatBox label={t('weeks won')} value={`${won}/${weeks.length}`} />
+          <StatBox label={t('compounded')} value={won > 0 ? `+${compound}%` : '—'} />
+          <StatBox label={t('best week')} value={best > 0 ? `${Math.round(best)}%` : '—'} />
         </div>
         {weeks.length >= 2 && (
           <>
-            <div className="section-label">The ledger</div>
+            <div className="section-label">{t('The ledger')}</div>
             <Bars data={weeks.slice(-16).map(([k, w]) => ({ label: k.slice(5), value: w.score }))} accentVar="var(--good)" goodAt={100} />
           </>
         )}
@@ -89,7 +90,7 @@ export default function Profile() {
           if (series.length < 2) return null
           return (
             <>
-              <div className="section-label">Modules over time</div>
+              <div className="section-label">{t('Modules over time')}</div>
               <MultiLine series={series} labels={labels} height={140} ariaLabel="Module scores by week" />
               <div className="mlegend">
                 {series.map((s) => (
@@ -104,7 +105,7 @@ export default function Profile() {
         </button>
       </div>
 
-      <div className="section-label">This week vs last</div>
+      <div className="section-label">{t('This week vs last')}</div>
       <div className="card rcp">
         {(() => {
           const rows = weekRecap()
@@ -142,7 +143,7 @@ export default function Profile() {
         })()}
       </div>
 
-      <div className="section-label">Per module — all time</div>
+      <div className="section-label">{t('Per module — all time')}</div>
       {mods.map((m) => {
         const wonHere = weeks.filter(([, w]) => (w.per[m.id] ?? 0) >= 100).length
         return (

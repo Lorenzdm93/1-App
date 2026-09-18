@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.33.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.34.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -30,6 +30,17 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 **v0.30.2 — quick-log typing fix:** the sheet stole focus from the text field on every keystroke (a fresh onClose closure re-ran the focus effect); the Sheet now reads onClose via a ref, so you can type normally.
 
 **v0.30.1 — quick-log input fix:** the Quick log text field was collapsed behind the "Read" button; it now fills the row so you can type into it.
+
+**New in v0.34.0 — Deutsch, Italiano, Español**
+
+1% now speaks four languages, switchable in **Settings -> Language** (English,
+Deutsch, Italiano, Español). Switching re-renders instantly. Dates and numbers
+follow the locale too (decimal commas, localized weekday/month). This first pass
+localizes the app chrome — navigation, screen titles, section headers, Settings,
+quick log, the This-week header — and is built on a translate-by-source-string
+layer with English fallback, so the deeper module screens and the generated
+coaching/insight prose keep working in English and get translated in the next
+passes without anything breaking in between.
 
 **New in v0.33.0 — quick log speaks fasting and programs**
 

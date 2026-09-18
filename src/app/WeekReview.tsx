@@ -10,6 +10,7 @@ import { settingsStore } from '../core/settings'
 import { buildDigest } from '../core/insights/digest'
 import { weeklyNarrative } from '../core/insights/narrative'
 import { insightsConfigStore } from '../core/insights/config'
+import { t } from '../core/i18n'
 
 export default function WeekReview() {
   const cfg = useStore(insightsConfigStore)
@@ -26,7 +27,7 @@ export default function WeekReview() {
   if (!text) return null
   return (
     <div className="card wk-review">
-      <div className="section-label" style={{ marginTop: 0 }}>Your week, read back</div>
+      <div className="section-label" style={{ marginTop: 0 }}>{t('Your week, read back')}</div>
       <p className="wk-review-body">{text}</p>
     </div>
   )

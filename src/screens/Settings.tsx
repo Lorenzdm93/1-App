@@ -12,6 +12,7 @@ import { notifyStore, notifyStatus, enableNotifications, disableNotifications, s
 import { setModuleLines, setDevTools } from '../core/settings'
 import { enabledModules } from '../core/registry'
 import { navigate } from '../core/router'
+import { LOCALES, localeStore, setLocale, t, type Locale } from '../core/i18n'
 import Mark from '../app/Mark'
 import {
   insightsConfigStore,
@@ -25,7 +26,7 @@ import {
   type OwnKeyVendor,
 } from '../core/insights/config'
 
-const APP_VERSION = '0.33.0'
+const APP_VERSION = '0.34.0'
 
 const THEME_OPTIONS = [
   { id: 'system', label: 'System' },
@@ -42,6 +43,7 @@ export default function Settings() {
   const sync = useStore(syncStore)
   const notify = useStore(notifyStore)
   const iCfg = useStore(insightsConfigStore)
+  const { lang } = useStore(localeStore)
   const [urlInput, setUrlInput] = useState(iCfg.cloudUrl ?? '')
   const [keyInput, setKeyInput] = useState('')
   const [keySet, setKeySet] = useState(hasOwnKey())
@@ -124,7 +126,12 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="section-label">Appearance</div>
+      <div className="section-label">{t('Language')}</div>
+      <div className="card">
+        <Seg<Locale> options={LOCALES} value={lang} onChange={setLocale} />
+      </div>
+
+      <div className="section-label">{t('Appearance')}</div>
       <div className="card">
         <Seg<Theme> options={THEME_OPTIONS} value={settings.theme} onChange={setTheme} />
         <p style={{ marginTop: 10, fontSize: 12.5, color: 'var(--faint)' }}>
@@ -132,7 +139,7 @@ export default function Settings() {
         </p>
       </div>
 
-      <div className="section-label">Backup</div>
+      <div className="section-label">{t('Backup')}</div>
       <div className="card">
         <div className="btn-row">
           <button className="btn btn-ghost" onClick={download}>
@@ -194,7 +201,7 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="section-label">Notifications</div>
+      <div className="section-label">{t('Notifications')}</div>
       <div className="card">
         {(() => {
           const status = notifyStatus()
@@ -239,7 +246,7 @@ export default function Settings() {
         })()}
       </div>
 
-      <div className="section-label">Display</div>
+      <div className="section-label">{t('Display')}</div>
       <div className="card">
         <div className="nrow">
           <div>
@@ -254,13 +261,13 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="section-label">Insights</div>
+      <div className="section-label">{t('Insights')}</div>
       <div className="card">
         <div className="nrow">
           <div>
-            <span>AI insights</span>
+            <span>{t('AI insights')}</span>
             <p className="cloudnote" style={{ margin: '3px 0 0' }}>
-              Notices trends, regressions and your biggest weekly opportunity — read from your own data.
+              {t('Notices trends, regressions and your biggest weekly opportunity — read from your own data.')}
             </p>
           </div>
           <Switch checked={iCfg.enabled} onChange={setInsightsEnabled} label="AI insights" />
@@ -270,9 +277,9 @@ export default function Settings() {
           <div style={{ marginTop: 14, borderTop: '1px solid var(--line-soft)', paddingTop: 14 }}>
             <Seg<ProviderId>
               options={[
-                { id: 'local', label: 'On-device' },
-                { id: 'cloud', label: 'Cloud' },
-                { id: 'ownkey', label: 'My key' },
+                { id: 'local', label: t('On-device') },
+                { id: 'cloud', label: t('Cloud') },
+                { id: 'ownkey', label: t('My key') },
               ]}
               value={iCfg.providerId}
               onChange={setProviderId}
@@ -306,7 +313,7 @@ export default function Settings() {
                       toast(urlInput.trim() ? 'Cloud endpoint saved' : 'Cloud endpoint cleared')
                     }}
                   >
-                    Save URL
+                    {t('Save URL')}
                   </button>
                 </div>
                 <p className="cloudnote" style={{ marginTop: 8 }}>
@@ -348,7 +355,7 @@ export default function Settings() {
                       toast('Key saved on this device')
                     }}
                   >
-                    Save key
+                    {t('Save key')}
                   </button>
                   <button
                     className="btn btn-ghost"
@@ -358,7 +365,7 @@ export default function Settings() {
                       toast('Key removed')
                     }}
                   >
-                    Remove
+                    {t('Remove')}
                   </button>
                 </div>
                 <p className="cloudnote" style={{ marginTop: 8 }}>
@@ -372,7 +379,7 @@ export default function Settings() {
 
       {settings.devTools && (
       <>
-      <div className="section-label">Sample data</div>
+      <div className="section-label">{t('Sample data')}</div>
       <div className="card">
         <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--faint)', lineHeight: 1.6 }}>
           Twelve months of realistic, seam-linked history across every module — deterministic, so
@@ -413,7 +420,7 @@ export default function Settings() {
       </>
       )}
 
-      <div className="section-label">Danger zone</div>
+      <div className="section-label">{t('Danger zone')}</div>
       <div className="card">
         <button className="btn btn-danger" onClick={() => setConfirmErase(true)}>
           Erase all data
