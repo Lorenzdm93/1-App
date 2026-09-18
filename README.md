@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.34.0-35c78f?style=flat-square" alt="version">
+  <img src="https://img.shields.io/badge/version-0.35.0-35c78f?style=flat-square" alt="version">
   <img src="https://img.shields.io/badge/react-18-1b1e24?style=flat-square" alt="react">
   <img src="https://img.shields.io/badge/build-vite-1b1e24?style=flat-square" alt="vite">
   <img src="https://img.shields.io/badge/pwa-installable-1b1e24?style=flat-square" alt="pwa">
@@ -30,6 +30,17 @@ One app, many instruments. Enable only the modules you want; everything feeds on
 **v0.30.2 — quick-log typing fix:** the sheet stole focus from the text field on every keystroke (a fresh onClose closure re-ran the focus effect); the Sheet now reads onClose via a ref, so you can type normally.
 
 **v0.30.1 — quick-log input fix:** the Quick log text field was collapsed behind the "Read" button; it now fills the row so you can type into it.
+
+**New in v0.35.0 — the whole home screen, translated**
+
+Localization pass two: the entire Today surface now speaks the selected language,
+not just its frame. The coaching paragraph, the streak/weeks-won stats, the
+week-close ritual, the This-week insight cards (titles + recommendations), the
+Profile "week in review" narrative, and the workout/focus/breath next-moves are
+all translated in Deutsch, Italiano and Español, with locale-aware numbers
+(decimal commas). Still on the list for the next passes: the remaining modules'
+coaching lines, module labels, and the deep module screens — all English until
+then via fallback, nothing broken in between.
 
 **New in v0.34.0 — Deutsch, Italiano, Español**
 

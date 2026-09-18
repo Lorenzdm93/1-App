@@ -37,11 +37,9 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
   if (pulse.score === null) {
     return (
       <button className="card hero wp wp-tap" onClick={() => navigate('/one')}>
-        <div className="wp-empty-title">Your 1% starts with one log.</div>
+        <div className="wp-empty-title">{t('Your 1% starts with one log.')}</div>
         <p className="wp-empty-sub">
-          Finish anything — a set, a session, a habit tick — and this becomes your weekly score:
-          beat your own recent pace by {rate * 100}% and the week is won. Tap to see how the engine
-          works.
+          {t('Finish anything — a set, a session, a habit tick — and this becomes your weekly score: beat your own recent pace by {r}% and the week is won. Tap to see how the engine works.', { r: rate * 100 })}
         </p>
       </button>
     )
@@ -58,17 +56,17 @@ function WeekPulseCard({ pulse }: { pulse: ReturnType<typeof computePulse> }) {
           </Ring>
         </div>
         <p className="wp-coach">
-          <b>Coaching</b>
+          <b>{t('Coaching')}</b>
           {won
-            ? ` You're ${rate * 100}% past your own pace — the week is banked. Anything more is compound interest.`
+            ? t(" You're {r}% past your own pace — the week is banked. Anything more is compound interest.", { r: rate * 100 })
             : pulse.firstWeek
-              ? ' Week one — this week sets your pace. No bar to beat yet: everything you log writes its own starting line.'
-              : ` ${100 - pulse.score}% left to beat your 4-week pace by ${rate * 100}%. The next moves below close it.`}
+              ? t(' Week one — this week sets your pace. No bar to beat yet: everything you log writes its own starting line.')
+              : t(' {left}% left to beat your 4-week pace by {r}%. The next moves below close it.', { left: 100 - pulse.score, r: rate * 100 })}
         </p>
         <div className="wp-strip num">
-          <span>{streak}d streak</span>
+          <span>{t('{n}d streak', { n: streak })}</span>
           <span>·</span>
-          <span>{pulse.wonWeeks} week{pulse.wonWeeks === 1 ? '' : 's'} won</span>
+          <span>{pulse.wonWeeks === 1 ? t('one week won') : t('{n} weeks won', { n: pulse.wonWeeks })}</span>
           <span>·</span>
           <span className="lit">+{pulse.compoundPct.toFixed(1)}%</span>
         </div>
@@ -269,14 +267,14 @@ function WeekCloseSheet() {
   const won = rec.score >= 100
   const per = Object.entries(rec.per).filter(([, v]) => v !== null && v !== undefined) as [string, number][]
   return (
-    <Sheet open title="Week closed" onClose={() => markWeekClosed(prevWs)}>
+    <Sheet open title={t('Week closed')} onClose={() => markWeekClosed(prevWs)}>
       {won && <Confetti kind="week" />}
       <div className="wkclose">
         <div className="score num">{rec.score}<small>%</small></div>
         <p className="line">
           {won
-            ? 'Won. It\u2019s in the ledger now — nothing can take it back, and it compounds.'
-            : 'An honest miss. Nothing is taken from you — the ledger only ever adds, and this week\u2019s bar still follows your own pace.'}
+            ? t('Won. It\u2019s in the ledger now — nothing can take it back, and it compounds.')
+            : t('An honest miss. Nothing is taken from you — the ledger only ever adds, and this week\u2019s bar still follows your own pace.')}
         </p>
         {per.length > 0 && (
           <div className="mods">
@@ -288,7 +286,7 @@ function WeekCloseSheet() {
           </div>
         )}
         <button className="btn btn-primary" style={{ width: '100%', marginTop: 16 }} onClick={() => markWeekClosed(prevWs)}>
-          {won ? 'Bank it' : 'On to this week'}
+          {won ? t('Bank it') : t('On to this week')}
         </button>
       </div>
     </Sheet>

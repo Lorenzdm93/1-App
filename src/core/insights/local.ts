@@ -5,6 +5,7 @@
  * LLM providers exist to add nuance and language, not to do anything this can't.
  */
 import type { Confidence, Digest, DigestModule, Insight, InsightProvider, Signal } from './types'
+import { t } from '../i18n'
 
 function confFromWeeks(weeks: number): Confidence {
   if (weeks >= 6) return 'high'
@@ -30,7 +31,7 @@ function render(sig: Signal, d: Digest, lead: boolean): Insight | null {
       return {
         id: idBase,
         type: 'opportunity',
-        title: lead ? 'Your biggest opportunity this week' : `Room in ${m.name}`,
+        title: lead ? t('Your biggest opportunity this week') : t('Room in {name}', { name: m.name }),
         observation: `${m.label} is at ${m.scoreNow}% of your own recent pace this week${
           m.gap > 0 ? `, about ${m.gap} ${m.unit} short.` : '.'
         }`,
@@ -38,7 +39,7 @@ function render(sig: Signal, d: Digest, lead: boolean): Insight | null {
           m.trend4v4 !== null && m.trend4v4 > 0
             ? `It's been climbing lately, so this is a dip within an upward run, not a collapse.`
             : undefined,
-        recommendation: m.advice ?? `One focused ${m.label.toLowerCase()} session this week closes most of the gap.`,
+        recommendation: m.advice ?? t('One focused {label} session this week closes most of the gap.', { label: m.label.toLowerCase() }),
         confidence: confFromWeeks(m.weeksTracked),
         moduleId: m.id,
       }
@@ -53,13 +54,13 @@ function render(sig: Signal, d: Digest, lead: boolean): Insight | null {
       return {
         id: idBase,
         type: 'regression',
-        title: `${m.name} is slipping`,
+        title: t('{name} is slipping', { name: m.name }),
         observation: `${m.label} is ${by}.`,
         context: (sig.data.wasRising as boolean)
           ? `It had been rising for weeks, which is exactly why the turn is worth catching now.`
           : undefined,
         recommendation:
-          m.advice ?? `A single ${m.label.toLowerCase()} session this week is usually enough to reverse it.`,
+          m.advice ?? t('A single {label} session this week is usually enough to reverse it.', { label: m.label.toLowerCase() }),
         confidence: confFromWeeks(m.weeksTracked),
         moduleId: m.id,
       }
@@ -71,14 +72,14 @@ function render(sig: Signal, d: Digest, lead: boolean): Insight | null {
       return {
         id: idBase,
         type: 'improvement',
-        title: `${m.name} is on a run`,
+        title: t('{name} is on a run', { name: m.name }),
         observation:
           streak >= 3
             ? `${m.label} has risen ${streak} weeks straight.`
             : weekDone && m.deltaPct !== null && m.deltaPct > 0
               ? `${m.label} is up ${pct(m.deltaPct)} from last week.`
               : `${m.label} has been climbing over the last few weeks.`,
-        recommendation: `Keep it going — even a short session holds the run.`,
+        recommendation: t('Keep it going — even a short session holds the run.'),
         confidence: confFromWeeks(m.weeksTracked),
         moduleId: m.id,
       }
@@ -89,9 +90,9 @@ function render(sig: Signal, d: Digest, lead: boolean): Insight | null {
       return {
         id: idBase,
         type: 'trend',
-        title: `${n} weeks won in a row`,
+        title: t('{n} weeks won in a row', { n }),
         observation: `You've beaten your own pace ${n} weeks running — compounding is now +${comp.toFixed(1)}%.`,
-        recommendation: `Keep the streak alive; no need to force a bigger week.`,
+        recommendation: t('Keep the streak alive; no need to force a bigger week.'),
         confidence: n >= 4 ? 'high' : 'medium',
         moduleId: null,
       }
@@ -102,10 +103,10 @@ function render(sig: Signal, d: Digest, lead: boolean): Insight | null {
       return {
         id: idBase,
         type: 'correlation',
-        title: 'Two areas are pulling apart',
+        title: t('Two areas are pulling apart'),
         observation: `${upName} has climbed while ${downName} has fallen over the same weeks.`,
         context: `They often move together — worth noticing, though one isn't necessarily causing the other.`,
-        recommendation: `A small ${downName} session this week rebalances the two.`,
+        recommendation: t('A small {name} session this week rebalances the two.', { name: downName }),
         confidence: 'medium',
         moduleId: sig.moduleId,
       }

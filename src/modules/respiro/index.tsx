@@ -1,4 +1,5 @@
 import { eventsStore } from '../../core/events'
+import { t, localeTag } from '../../core/i18n'
 import { wireRespiroIntegrations } from './integrations'
 
 /* Registration-time side effect: minutes stream into CADENCE. */
@@ -85,7 +86,7 @@ const respiro: ModuleDefinition = {
       return Math.round(v * 10) / 10
     },
     advice({ gap }) {
-      return `${Math.ceil(gap)} breath minutes to go — one Coherent Breathing sitting clears it.`
+      return t('{n} breath minutes to go — one Coherent Breathing sitting clears it.', { n: Math.ceil(gap) })
     },
   },
 }

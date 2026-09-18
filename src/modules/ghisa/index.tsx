@@ -1,4 +1,5 @@
 import { eventsStore } from '../../core/events'
+import { t, localeTag } from '../../core/i18n'
 import { dayKey } from '../../core/dates'
 import type { ModuleDefinition } from '../../core/types'
 import { lazyRetry } from '../../core/lazyload'
@@ -97,7 +98,7 @@ const ghisa: ModuleDefinition = {
       return Math.round(v)
     },
     advice({ gap }) {
-      return `${Math.ceil(gap).toLocaleString()} kg of volume to go — one honest session usually covers it.`
+      return t('{n} kg of volume to go — one honest session usually covers it.', { n: Math.ceil(gap).toLocaleString(localeTag()) })
     },
   },
 }

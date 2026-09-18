@@ -1,4 +1,5 @@
 import { eventsStore } from '../../core/events'
+import { t, localeTag } from '../../core/i18n'
 import { wireGroveIntegrations } from './integrations'
 
 /* Registration-time side effect: minutes stream into CADENCE. */
@@ -89,7 +90,7 @@ const grove: ModuleDefinition = {
     },
     advice({ gap }) {
       const block = gap <= 30 ? 25 : 50
-      return `${Math.ceil(gap)} focus minutes to go — a ${block}-minute session fits inside today.`
+      return t('{n} focus minutes to go — a {b}-minute session fits inside today.', { n: Math.ceil(gap), b: block })
     },
   },
 }

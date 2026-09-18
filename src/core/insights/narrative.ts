@@ -9,6 +9,7 @@
  * on its own and ships free and private.)
  */
 import type { Digest } from './types'
+import { t } from '../i18n'
 
 function pctAbs(n: number | null): string {
   return n === null ? '' : `${Math.abs(Math.round(n))}%`
@@ -24,11 +25,11 @@ export function weeklyNarrative(d: Digest): string | null {
 
   /* 1 — where the week stands */
   if (won) {
-    parts.push(`You're past your pace this week — it's banked.`)
+    parts.push(t("You're past your pace this week — it's banked."))
   } else if (complete) {
-    parts.push(`The week landed at ${d.overallScore}% of your own pace.`)
+    parts.push(t('The week landed at {p}% of your own pace.', { p: d.overallScore }))
   } else {
-    parts.push(`Partway through the week, you're at ${d.overallScore}% of your pace.`)
+    parts.push(t("Partway through the week, you're at {p}% of your pace.", { p: d.overallScore }))
   }
 
   /* 2 — the standout movers, judged on complete weeks only */
@@ -38,11 +39,11 @@ export function weeklyNarrative(d: Digest): string | null {
   const up = movers.find((m) => (m.trend4v4 as number) >= 8)
   const down = movers.find((m) => (m.trend4v4 as number) <= -8)
   if (up && down) {
-    parts.push(`${up.name} keeps climbing while ${down.name} has drifted the other way — worth noticing, if not necessarily connected.`)
+    parts.push(t('{up} keeps climbing while {down} has drifted the other way — worth noticing, if not necessarily connected.', { up: up.name, down: down.name }))
   } else if (up) {
-    parts.push(`${up.name} is the bright spot: ${up.label.toLowerCase()} has been climbing for weeks.`)
+    parts.push(t('{name} is the bright spot: {label} has been climbing for weeks.', { name: up.name, label: up.label.toLowerCase() }))
   } else if (down) {
-    parts.push(`${down.name} has been sliding off its recent average.`)
+    parts.push(t('{name} has been sliding off its recent average.', { name: down.name }))
   }
 
   /* 3 — the one gap that matters this week */
@@ -52,16 +53,16 @@ export function weeklyNarrative(d: Digest): string | null {
   if (gap) {
     const behind =
       complete && gap.deltaPct !== null && gap.deltaPct < 0
-        ? `down ${pctAbs(gap.deltaPct)} from last week`
-        : `the furthest from pace`
-    parts.push(`If one thing deserves the effort, it's ${gap.name} — ${behind}.`)
+        ? t('down {p}% from last week', { p: pctAbs(gap.deltaPct) })
+        : t('the furthest from pace')
+    parts.push(t("If one thing deserves the effort, it's {name} — {behind}.", { name: gap.name, behind }))
   }
 
   /* 4 — the ledger, compounding */
   if (d.wonStreak >= 2) {
-    parts.push(`${d.wonStreak} weeks won in a row now — compounding is +${d.compoundPct.toFixed(1)}%.`)
+    parts.push(t('{n} weeks won in a row now — compounding is +{c}%.', { n: d.wonStreak, c: d.compoundPct.toFixed(1) }))
   } else if (d.wonWeeks > 0) {
-    parts.push(`${d.wonWeeks} ${d.wonWeeks === 1 ? 'week' : 'weeks'} banked so far, compounding +${d.compoundPct.toFixed(1)}%.`)
+    parts.push(d.wonWeeks === 1 ? t('{n} week banked so far, compounding +{c}%.', { n: d.wonWeeks, c: d.compoundPct.toFixed(1) }) : t('{n} weeks banked so far, compounding +{c}%.', { n: d.wonWeeks, c: d.compoundPct.toFixed(1) }))
   }
 
   return parts.slice(0, 4).join(' ')

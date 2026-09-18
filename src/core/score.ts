@@ -12,6 +12,7 @@
  * freeze into the ledger; the current week is always live.
  */
 import { MODULES, enabledModules } from './registry'
+import { t } from './i18n'
 import { settingsStore } from './settings'
 import { oneStore } from './one'
 import { eventsStore } from './events'
@@ -185,7 +186,7 @@ export function computePulse(today = todayKey()): WeekPulse {
        closed weeks) and retires after 6 — past that you've clearly chosen the
        plateau, and a chosen plateau needs no commentary. */
     if (held >= 3 && held <= 5) {
-      m.plateauNote = `Held at your ${m.scorer.label} goal for ${held + 1} weeks — raise it in the engine if there's genuinely room, or enjoy the plateau. Holding a ceiling is winning.`
+      m.plateauNote = t("Held at your {label} goal for {n} weeks — raise it in the engine if there's genuinely room, or enjoy the plateau. Holding a ceiling is winning.", { label: m.scorer.label, n: held + 1 })
     }
   }
 
