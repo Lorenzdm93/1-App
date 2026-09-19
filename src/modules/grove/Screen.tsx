@@ -7,6 +7,8 @@
  * placement. All classes gv2-*.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { t, localeTag } from '../../core/i18n'
+import { t as tr } from '../../core/i18n'
 import type { ReactNode, CSSProperties, PointerEvent as RPointerEvent } from 'react'
 import { useStore } from '../../core/hooks'
 import { toast } from '../../core/toast'
@@ -114,12 +116,12 @@ function browserNotify(title: string, body: string): void {
 export function handleCompletion(ev: CompletionEvent): void {
   if (ev.finished === 'focus' && ev.plant) {
     chime('focus')
-    browserNotify('Session complete', 'A tree joined your forest. Time for a break.')
-    toast(ev.autoStarted ? 'Tree planted — break started' : 'Tree planted — time for a break')
+    browserNotify(t('Session complete'), t('A tree joined your forest. Time for a break.'))
+    toast(ev.autoStarted ? t('Tree planted — break started') : t('Tree planted — time for a break'))
   } else if (ev.finished !== 'focus') {
     chime('break')
-    browserNotify('Break over', 'Ready for the next session.')
-    toast(ev.autoStarted ? 'Next session started' : 'Ready for the next session')
+    browserNotify(t('Break over'), t('Ready for the next session.'))
+    toast(ev.autoStarted ? t('Next session started') : t('Ready for the next session'))
   }
 }
 
@@ -152,7 +154,7 @@ function FocusTab({ st, now, flashTs }: { st: GroveState; now: number; flashTs: 
   const paused = run !== null && run.pausedAt !== null
   const flashing = now - flashTs < 1600
 
-  const mainLabel = run ? (paused ? 'Resume' : 'Pause') : 'Start'
+  const mainLabel = run ? (paused ? t('Resume') : t('Pause')) : t('Start')
   function onMain() {
     primeAudio()
     if (!run) start()
@@ -163,7 +165,7 @@ function FocusTab({ st, now, flashTs }: { st: GroveState; now: number; flashTs: 
     if (!run) return
     if (run.mode === 'focus') {
       const ev = skipPhase()
-      if (ev) toast('Session skipped — nothing planted')
+      if (ev) toast(t('Session skipped — nothing planted'))
     } else {
       const ev = skipPhase()
       if (ev) handleCompletion(ev)
@@ -208,7 +210,7 @@ function FocusTab({ st, now, flashTs }: { st: GroveState; now: number; flashTs: 
   return (
     <div className={'gv2 gv2-focus' + (st.mode !== 'focus' ? ' gv2-break' : '')}>
       <div className={'gv2-card gv2-timercard' + (flashing ? ' flash' : '')}>
-        <div className="gv2-modes" role="tablist" aria-label="Timer mode">
+        <div className="gv2-modes" role="tablist" aria-label={t('Timer mode')}>
           {MODES.map((m) => (
             <button key={m.id} role="tab" aria-pressed={st.mode === m.id}
               className={run && run.mode === 'focus' ? 'locked' : undefined}
@@ -216,25 +218,25 @@ function FocusTab({ st, now, flashTs }: { st: GroveState; now: number; flashTs: 
                 if (run && run.mode === 'focus') return
                 if (run) stop()
                 setMode(m.id)
-              }}>{m.label}</button>
+              }}>{t(m.label)}</button>
           ))}
         </div>
 
-        <div className={'gv2-chips' + (run ? ' locked' : '')} aria-label="Length presets">
+        <div className={'gv2-chips' + (run ? ' locked' : '')} aria-label={t('Length presets')}>
           {presets.map((m) => (
             <button key={m} className={'chip' + (m === curMin ? ' on' : '')}
-              onClick={() => setRoundMinutes(st.mode, m)} title={`${m} minutes`}>{m}m</button>
+              onClick={() => setRoundMinutes(st.mode, m)} title={t('{m} minutes', { m })}>{m}m</button>
           ))}
           <button className={'chip custom' + (isPreset ? '' : ' on')}
-            onClick={() => setEditViaChip((n) => n + 1)} title="Type any length">
-            ✎ {isPreset ? 'custom' : curMin + 'm'}
+            onClick={() => setEditViaChip((n) => n + 1)} title={t('Type any length')}>
+            ✎ {isPreset ? t('custom') : curMin + 'm'}
           </button>
         </div>
 
         <DialWithChipEdit st={st} now={now} editSignal={editViaChip} />
 
-        <div className="gv2-cycle" aria-label="Cycle progress"
-          title={`${st.cyclePos} of ${st.settings.longEvery} sessions toward a long break`}>
+        <div className="gv2-cycle" aria-label={t('Cycle progress')}
+          title={t('{n} of {m} sessions toward a long break', { n: st.cyclePos, m: st.settings.longEvery })}>
           {Array.from({ length: st.settings.longEvery }).map((_, i) => (
             <span key={i} className={
               'dot' + (i < st.cyclePos ? ' done' : i === st.cyclePos && st.mode === 'focus' ? ' now' : '')
@@ -243,39 +245,39 @@ function FocusTab({ st, now, flashTs }: { st: GroveState; now: number; flashTs: 
         </div>
 
         <div className="gv2-controls">
-          <button className="gv2-iconbtn" onClick={() => { if (run) reset(); }} title="Reset (R)" aria-label="Reset timer">
+          <button className="gv2-iconbtn" onClick={() => { if (run) reset(); }} title={t('Reset (R)')} aria-label={t('Reset timer')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
           </button>
           <button className="gv2-mainbtn" onClick={onMain}>{mainLabel}</button>
-          <button className="gv2-iconbtn" onClick={onSkip} title="Skip (S)" aria-label="Skip to next phase">
+          <button className="gv2-iconbtn" onClick={onSkip} title={t('Skip (S)')} aria-label={t('Skip to next phase')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4l10 8-10 8V4z" /><path d="M19 5v14" /></svg>
           </button>
         </div>
         {run && run.mode === 'focus' && (
-          <button className="gv2-giveup" onClick={() => { giveUp(); toast('Session abandoned — the tree withered') }}>
-            Give up — the tree withers
+          <button className="gv2-giveup" onClick={() => { giveUp(); toast(t('Session abandoned — the tree withered')) }}>
+            {t('Give up — the tree withers')}
           </button>
         )}
         {run && run.mode !== 'focus' && (
-          <button className="gv2-giveup calm" onClick={() => { stop(); toast('Break ended') }}>
-            Stop the break
+          <button className="gv2-giveup calm" onClick={() => { stop(); toast(t('Break ended')) }}>
+            {t('Stop the break')}
           </button>
         )}
         <p className="gv2-kbd"><kbd>space</kbd> start · pause &nbsp; <kbd>R</kbd> reset &nbsp; <kbd>S</kbd> skip &nbsp; <kbd>1·2·3</kbd> mode</p>
 
         <div className="gv2-grove">
-          <div className="g-label">Today's grove</div>
+          <div className="g-label">{t('Today\'s grove')}</div>
           <div className="gv2-groverow">
             {todaysPlants.map((p, i) => (
               <PlantSprite key={p.id} kind={p.kind} p={1} h={46} prefix={'gr' + i}
-                title={`${p.minutes} min session · ${new Date(p.ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`} />
+                title={t('{n} min session · {time}', { n: p.minutes, time: new Date(p.ts).toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit' }) })} />
             ))}
             {growing && run && (
               <PlantSprite kind={kindForFocus(run.minutes)} p={growP} h={46} prefix="grow"
-                title={`Growing… ${Math.round(growP * 100)}%`} />
+                title={t('Growing… {n}%', { n: Math.round(growP * 100) })} />
             )}
             {todaysPlants.length === 0 && !growing && (
-              <span className="placeholder">Finish a focus session to grow your first tree of the day</span>
+              <span className="placeholder">{t('Finish a focus session to grow your first tree of the day')}</span>
             )}
           </div>
         </div>
@@ -340,7 +342,7 @@ function DialView({ st, now, editing, setEditing, onCommit }: {
         {editing && !run ? (
           <div className="time">
             <input ref={inputRef} type="number" min={1} max={180}
-              defaultValue={Math.round(totalMs / 60_000)} aria-label="Custom minutes"
+              defaultValue={Math.round(totalMs / 60_000)} aria-label={t('Custom minutes')}
               onBlur={commit}
               onKeyDown={(e) => {
                 e.stopPropagation()
@@ -351,18 +353,18 @@ function DialView({ st, now, editing, setEditing, onCommit }: {
         ) : (
           <div className={'time' + (run ? '' : ' editable')} role="timer"
             onClick={() => { if (!run) setEditing(true) }}
-            title={run ? undefined : 'Click to type any length'}>
+            title={run ? undefined : t('Click to type any length')}>
             {fmtClock(leftMs)}
           </div>
         )}
         <div className="phase">
           {st.mode === 'focus'
-            ? `Focus · session ${Math.min(st.cyclePos + 1, st.settings.longEvery)} of ${st.settings.longEvery}`
-            : MODE_LABEL[st.mode]}
+            ? t('Focus · session {n} of {m}', { n: Math.min(st.cyclePos + 1, st.settings.longEvery), m: st.settings.longEvery })
+            : t(MODE_LABEL[st.mode])}
         </div>
-        {!run && <div className="edit-hint">pick a preset above, or click the time to type</div>}
+        {!run && <div className="edit-hint">{t('pick a preset above, or click the time to type')}</div>}
         {activeTask && st.mode === 'focus' && (
-          <div className="task-tag">on <em>{activeTask.name}</em></div>
+          <div className="task-tag">{t('on {task}', { task: activeTask.name })}</div>
         )}
       </div>
     </div>
@@ -382,7 +384,7 @@ function StatsCard({ st }: { st: GroveState }) {
       const key = dayKey(d.getTime())
       out.push({
         key,
-        label: d.toLocaleDateString(undefined, { weekday: 'narrow' }),
+        label: d.toLocaleDateString(localeTag(), { weekday: 'narrow' }),
         count: st.plants.filter((p) => p.kind !== 'flower' && p.kind !== 'fern' && dayKey(p.ts) === key).length,
       })
     }
@@ -393,15 +395,15 @@ function StatsCard({ st }: { st: GroveState }) {
 
   return (
     <div className="gv2-card gv2-stats">
-      <h2>Today &amp; trends</h2>
+      <h2>{t('Today & trends')}</h2>
       <div className="body">
         <div className="gv2-statrow">
-          <div className="stat"><div className="v">{today.count}</div><div className="l">Sessions today</div></div>
-          <div className="stat"><div className="v">{today.minutes}<span>m</span></div><div className="l">Minutes today</div></div>
-          <div className="stat"><div className="v">{streak}<span>d</span></div><div className="l">Day streak</div></div>
+          <div className="stat"><div className="v">{today.count}</div><div className="l">{t('Sessions today')}</div></div>
+          <div className="stat"><div className="v">{today.minutes}<span>m</span></div><div className="l">{t('Minutes today')}</div></div>
+          <div className="stat"><div className="v">{streak}<span>d</span></div><div className="l">{t('Day streak')}</div></div>
         </div>
         <div className="gv2-chartwrap">
-          <div className="title">Sessions · last 14 days</div>
+          <div className="title">{t('Sessions · last 14 days')}</div>
           <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Sessions per day, last 14 days">
             {days.map((d, i) => {
               const h = d.count ? Math.max(3, (d.count / max) * (H - 26)) : 2
@@ -412,7 +414,7 @@ function StatsCard({ st }: { st: GroveState }) {
                 <g key={d.key}>
                   <rect x={x} y={y} width={bw - 8} height={h} rx={2.5}
                     fill={d.count ? (isToday ? 'var(--gv-brass)' : 'var(--gv-brass-mid)') : 'var(--gv-line)'}>
-                    <title>{d.count} session{d.count === 1 ? '' : 's'}</title>
+                    <title>{d.count === 1 ? t('{n} session', { n: d.count }) : t('{n} sessions', { n: d.count })}</title>
                   </rect>
                   {d.count > 0 && (
                     <text x={x + (bw - 8) / 2} y={y - 4} textAnchor="middle" className="cnt">{d.count}</text>
@@ -446,44 +448,43 @@ function TasksTab({ st }: { st: GroveState }) {
   return (
     <div className="gv2 gv2-page">
       <div className="gv2-card gv2-tasks">
-        <h2>Tasks {st.tasks.length > 0 && <span className="count">{open} open</span>}</h2>
+        <h2>{t('Tasks')} {st.tasks.length > 0 && <span className="count">{t('{n} open', { n: open })}</span>}</h2>
         <div className="body">
           <div className="gv2-taskadd">
-            <input type="text" value={name} maxLength={80} placeholder="What are you working on?"
+            <input type="text" value={name} maxLength={80} placeholder={t('What are you working on?')}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') submit() }} />
-            <div className="est" title="How many focus sessions you plan for this task">
-              <button onClick={() => setEst((v) => Math.max(1, v - 1))} aria-label="Fewer planned sessions">−</button>
+            <div className="est" title={t('How many focus sessions you plan for this task')}>
+              <button onClick={() => setEst((v) => Math.max(1, v - 1))} aria-label={t('Fewer planned sessions')}>−</button>
               <span>{est}</span>
-              <button onClick={() => setEst((v) => Math.min(20, v + 1))} aria-label="More planned sessions">+</button>
+              <button onClick={() => setEst((v) => Math.min(20, v + 1))} aria-label={t('More planned sessions')}>+</button>
             </div>
-            <button className="add" onClick={submit} aria-label="Add task">+</button>
+            <button className="add" onClick={submit} aria-label={t('Add task')}>+</button>
           </div>
           <p className="gv2-taskhelp">
-            Tap a task to make it <b>active</b> — every focus session you finish counts toward it
-            (done / planned). The checkbox just marks the task finished.
+            {t('Tap a task to make it active — every focus session you finish counts toward it (done / planned). The checkbox just marks the task finished.')}
           </p>
           <div className="gv2-tasklist">
             {st.tasks.map((t) => (
               <div key={t.id}
                 className={'gv2-task' + (t.finished ? ' done' : '') + (t.id === st.activeTaskId ? ' active' : '')}
                 onClick={() => setActiveTask(st.activeTaskId === t.id ? null : t.id)}
-                title={t.id === st.activeTaskId ? 'Active — finished sessions count toward this task' : 'Tap to make this the active task'}>
-                <button className="check" aria-label="Mark task finished"
+                title={t.id === st.activeTaskId ? tr('Active — finished sessions count toward this task') : tr('Tap to make this the active task')}>
+                <button className="check" aria-label={tr('Mark task finished')}
                   onClick={(e) => { e.stopPropagation(); toggleFinished(t.id) }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                 </button>
                 <span className="name">{t.name}</span>
-                <span className="sessions" title="Focus sessions finished on this task / planned">
-                  <b>{t.done}</b>/{t.planned} sessions
+                <span className="sessions" title={tr('Focus sessions finished on this task / planned')}>
+                  {tr('{done}/{planned} sessions', { done: t.done, planned: t.planned })}
                 </span>
-                <button className="del" aria-label="Delete task"
+                <button className="del" aria-label={tr('Delete task')}
                   onClick={(e) => { e.stopPropagation(); removeTask(t.id) }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M8 6V4h8v2m-9 0l1 14h8l1-14" /></svg>
                 </button>
               </div>
             ))}
-            {st.tasks.length === 0 && <div className="gv2-empty">No tasks yet — add one above.</div>}
+            {st.tasks.length === 0 && <div className="gv2-empty">{tr('No tasks yet — add one above.')}</div>}
           </div>
         </div>
       </div>
@@ -622,8 +623,8 @@ function ForestTab({ st }: { st: GroveState }) {
   })()
 
   const emptyCopy = span === 'all'
-    ? <>Your forest is empty —<br />every session you finish plants something here.</>
-    : <>Nothing planted in the last {span === 'week' ? '7 days' : span === 'month' ? '30 days' : 'year'} yet.<br />Finish a session to start this {span}'s growth.</>
+    ? <>{t('Your forest is empty — every session you finish plants something here.')}</>
+    : <>{t("Nothing planted in the last {range} yet. Finish a session to start this {span}'s growth.", { range: t(span === 'week' ? '7 days' : span === 'month' ? '30 days' : 'year'), span: t(span) })}</>
 
   return (
     <div className="gv2 gv2-page">
@@ -638,22 +639,22 @@ function ForestTab({ st }: { st: GroveState }) {
               </span>
             )}
           </div>
-          <div className="gv2-ranges" role="tablist" aria-label="Forest time range">
+          <div className="gv2-ranges" role="tablist" aria-label={t('Forest time range')}>
             {SPANS.map((s) => (
-              <button key={s.id} aria-pressed={span === s.id} onClick={() => setSpan(s.id)}>{s.label}</button>
+              <button key={s.id} aria-pressed={span === s.id} onClick={() => setSpan(s.id)}>{t(s.label)}</button>
             ))}
           </div>
           <div className="tools">
-            <span className="hint">drag plants to rearrange · drop on another to swap</span>
-            <button className="gv2-toolbtn" onClick={() => { reshuffle(); toast('Forest reshuffled') }} title="Randomise the layout">
+            <span className="hint">{t('drag plants to rearrange · drop on another to swap')}</span>
+            <button className="gv2-toolbtn" onClick={() => { reshuffle(); toast(t('Forest reshuffled')) }} title={t('Randomise the layout')}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5" /><path d="M4 20L21 3" /><path d="M21 16v5h-5" /><path d="M15 15l6 6" /><path d="M4 4l5 5" /></svg>
-              Shuffle
+              {t('Shuffle')}
             </button>
           </div>
         </div>
 
         <div className="gv2-stage">
-          <svg ref={svgRef} viewBox="0 0 620 392" aria-label="Isometric forest"
+          <svg ref={svgRef} viewBox="0 0 620 392" aria-label={t('Isometric forest')}
             onPointerDown={onPointerDown} onPointerMove={onPointerMove}
             onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
             <defs>
@@ -670,12 +671,12 @@ function ForestTab({ st }: { st: GroveState }) {
               const [cx, cy] = uvToIso(u, v)
               if (!Number.isFinite(cx) || !Number.isFinite(cy)) return null
               const dragging = drag !== null && drag.id === p.id
-              const when = new Date(p.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+              const when = new Date(p.ts).toLocaleDateString(localeTag(), { month: 'short', day: 'numeric' })
               return (
                 <g key={p.id} data-pid={p.id}
                   className={'gv2-plant' + (dragging ? ' dragging' : '')}
                   transform={`translate(${cx},${cy})`}>
-                  <title>{`${p.minutes} min focus · ${when} — drag to move`}</title>
+                  <title>{t('{n} min focus · {when} — drag to move', { n: p.minutes, when })}</title>
                   <ellipse cx="0" cy={TH} rx="12" ry="4.6" fill="#000" opacity="0.28" />
                   <g className="lift" transform={`translate(-15,${TH - 46})`}>
                     <PlantInner kind={p.kind} p={1} prefix="iso" />
@@ -705,23 +706,22 @@ function ForestTab({ st }: { st: GroveState }) {
 
         <div className="gv2-forestfoot">
           <div className="legend">
-            Focus grows the forest — <b>&lt;10m</b> shrub · <b>10–19m</b> birch · <b>20–39m</b> pine · <b>40m+</b> oak.
-            Breaks grow nothing — they're for you, not the grove.
+            {t("Focus grows the forest — <10m shrub · 10–19m birch · 20–39m pine · 40m+ oak. Breaks grow nothing — they're for you, not the grove.")}
           </div>
           <div className="gv2-companions">
             {ANIMALS.map((a) => (
               <span key={a.name} className={'comp' + (totalH >= a.hours ? '' : ' locked')}
-                title={`${a.name} — unlocks at ${a.hours}h of focus`}>
+                title={t('{name} — unlocks at {h}h of focus', { name: t(a.name), h: a.hours })}>
                 <AnimalSprite id={ANIMAL_IDS[a.name] ?? 'owl'} prefix={'bad-' + a.name} />
-                {a.name}
+                {t(a.name)}
               </span>
             ))}
             {next ? (
               <span className="next">
-                next: <b>{next.animal.name}</b> at {next.animal.hours}h — {Math.floor(next.soFarMin / 60)}h {next.soFarMin % 60}m so far
+                {t('next:')} <b>{t(next.animal.name)}</b> {t('at {h}h', { h: next.animal.hours })} — {Math.floor(next.soFarMin / 60)}h {next.soFarMin % 60}m {t('so far')}
               </span>
             ) : (
-              <span className="next"><b>All companions found</b></span>
+              <span className="next"><b>{t('All companions found')}</b></span>
             )}
           </div>
         </div>
@@ -735,9 +735,9 @@ function ForestTab({ st }: { st: GroveState }) {
 function Stepper({ value, onDelta, small }: { value: ReactNode; onDelta: (d: number) => void; small?: boolean }) {
   return (
     <div className={'gv2-stepper' + (small ? ' sm' : '')}>
-      <button onClick={() => onDelta(-1)} aria-label="Decrease">−</button>
+      <button onClick={() => onDelta(-1)} aria-label={t('Decrease')}>−</button>
       <span>{value}</span>
-      <button onClick={() => onDelta(1)} aria-label="Increase">+</button>
+      <button onClick={() => onDelta(1)} aria-label={t('Increase')}>+</button>
     </div>
   )
 }
@@ -761,7 +761,7 @@ export function GroveSettingsExtra() {
     a.download = `grove-backup-${todayKey()}.json`
     a.click()
     URL.revokeObjectURL(a.href)
-    toast('Backup downloaded')
+    toast(t('Backup downloaded'))
   }
   function importData(file: File) {
     const r = new FileReader()
@@ -770,46 +770,46 @@ export function GroveSettingsExtra() {
         const parsed = JSON.parse(String(r.result)) as { data?: unknown }
         /* The migration path doubles as the universal normalizer for imports. */
         groveStore.set(() => migrateGrove(parsed.data ?? parsed, 2))
-        toast('Backup restored')
+        toast(t('Backup restored'))
       } catch {
-        toast("That file couldn't be read as a Grove backup")
+        toast(t("That file couldn't be read as a Grove backup"))
       }
     }
     r.readAsText(file)
   }
   async function flipNotify() {
-    if (!('Notification' in window)) { toast("Notifications aren't supported in this browser"); return }
+    if (!('Notification' in window)) { toast(t("Notifications aren't supported in this browser")); return }
     if (st.settings.notify) { updateFlow({ notify: false }); return }
     const perm = await Notification.requestPermission()
-    if (perm !== 'granted') { toast('Permission was declined'); updateFlow({ notify: false }); return }
+    if (perm !== 'granted') { toast(t('Permission was declined')); updateFlow({ notify: false }); return }
     updateFlow({ notify: true })
   }
 
   return (
     <div className="gv2 gv2-setx">
-      <div className="g-label">Default durations</div>
-      <div className="gv2-setrow"><span className="sl">Focus</span><Stepper value={st.focusMin + 'm'} onDelta={(d) => setModeDefault('focus', st.focusMin + d * 5)} /></div>
-      <div className="gv2-setrow"><span className="sl">Short break</span><Stepper value={st.shortMin + 'm'} onDelta={(d) => setModeDefault('short', st.shortMin + d)} /></div>
-      <div className="gv2-setrow"><span className="sl">Long break</span><Stepper value={st.longMin + 'm'} onDelta={(d) => setModeDefault('long', st.longMin + d)} /></div>
-      <div className="gv2-setrow"><span className="sl">Long break after<small>focus sessions per cycle</small></span><Stepper value={st.settings.longEvery} onDelta={(d) => updateFlow({ longEvery: st.settings.longEvery + d })} /></div>
+      <div className="g-label">{t('Default durations')}</div>
+      <div className="gv2-setrow"><span className="sl">{t('Focus')}</span><Stepper value={st.focusMin + 'm'} onDelta={(d) => setModeDefault('focus', st.focusMin + d * 5)} /></div>
+      <div className="gv2-setrow"><span className="sl">{t('Short break')}</span><Stepper value={st.shortMin + 'm'} onDelta={(d) => setModeDefault('short', st.shortMin + d)} /></div>
+      <div className="gv2-setrow"><span className="sl">{t('Long break')}</span><Stepper value={st.longMin + 'm'} onDelta={(d) => setModeDefault('long', st.longMin + d)} /></div>
+      <div className="gv2-setrow"><span className="sl">{t('Long break after')}<small>{t('focus sessions per cycle')}</small></span><Stepper value={st.settings.longEvery} onDelta={(d) => updateFlow({ longEvery: st.settings.longEvery + d })} /></div>
 
-      <div className="g-label">Flow</div>
-      <div className="gv2-setrow"><span className="sl">Auto-start breaks<small>break begins when a session ends</small></span><Toggle on={st.settings.autoBreak} onFlip={() => updateFlow({ autoBreak: !st.settings.autoBreak })} /></div>
-      <div className="gv2-setrow"><span className="sl">Auto-start focus<small>next session begins when a break ends</small></span><Toggle on={st.settings.autoFocus} onFlip={() => updateFlow({ autoFocus: !st.settings.autoFocus })} /></div>
+      <div className="g-label">{t('Flow')}</div>
+      <div className="gv2-setrow"><span className="sl">{t('Auto-start breaks')}<small>{t('break begins when a session ends')}</small></span><Toggle on={st.settings.autoBreak} onFlip={() => updateFlow({ autoBreak: !st.settings.autoBreak })} /></div>
+      <div className="gv2-setrow"><span className="sl">{t('Auto-start focus')}<small>{t('next session begins when a break ends')}</small></span><Toggle on={st.settings.autoFocus} onFlip={() => updateFlow({ autoFocus: !st.settings.autoFocus })} /></div>
 
-      <div className="g-label">Signals</div>
-      <div className="gv2-setrow"><span className="sl">Chime on completion</span><Toggle on={st.settings.sound} onFlip={() => updateFlow({ sound: !st.settings.sound })} /></div>
-      <div className="gv2-setrow"><span className="sl">Browser notification<small>needs permission, works in background tabs</small></span><Toggle on={st.settings.notify} onFlip={() => { void flipNotify() }} /></div>
+      <div className="g-label">{t('Signals')}</div>
+      <div className="gv2-setrow"><span className="sl">{t('Chime on completion')}</span><Toggle on={st.settings.sound} onFlip={() => updateFlow({ sound: !st.settings.sound })} /></div>
+      <div className="gv2-setrow"><span className="sl">{t('Browser notification')}<small>{t('needs permission, works in background tabs')}</small></span><Toggle on={st.settings.notify} onFlip={() => { void flipNotify() }} /></div>
 
-      <div className="g-label">Data</div>
+      <div className="g-label">{t('Data')}</div>
       <div className="gv2-setbtns">
         {!hasDemo(st) ? (
-          <button className="gv2-ghostbtn" onClick={() => { seedDemo(); toast('Sample forest planted') }}>Load sample data</button>
+          <button className="gv2-ghostbtn" onClick={() => { seedDemo(); toast(t('Sample forest planted')) }}>{t('Load sample data')}</button>
         ) : (
-          <button className="gv2-ghostbtn" onClick={() => { removeDemo(); toast('Sample data removed — your real sessions are untouched') }}>Remove sample data</button>
+          <button className="gv2-ghostbtn" onClick={() => { removeDemo(); toast(t('Sample data removed — your real sessions are untouched')) }}>{t('Remove sample data')}</button>
         )}
-        <button className="gv2-ghostbtn" onClick={exportData}>Export backup</button>
-        <button className="gv2-ghostbtn" onClick={() => fileRef.current?.click()}>Import backup</button>
+        <button className="gv2-ghostbtn" onClick={exportData}>{t('Export backup')}</button>
+        <button className="gv2-ghostbtn" onClick={() => fileRef.current?.click()}>{t('Import backup')}</button>
         <button className={'gv2-ghostbtn danger' + (confirmErase ? ' armed' : '')}
           onClick={() => {
             if (!confirmErase) {
@@ -819,9 +819,9 @@ export function GroveSettingsExtra() {
             }
             resetAll()
             setConfirmErase(false)
-            toast('All Grove data erased')
+            toast(t('All Grove data erased'))
           }}>
-          {confirmErase ? 'Really erase everything?' : 'Erase all data'}
+          {confirmErase ? t('Really erase everything?') : t('Erase all data')}
         </button>
       </div>
       <input ref={fileRef} type="file" accept=".json" hidden

@@ -4,6 +4,8 @@
  * gh2-* classes, local stroke icons, hand-rolled SVG charts.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { t, localeTag } from '../../core/i18n'
+import { t as tr } from '../../core/i18n'
 import { SampleDataBlock } from '../../app/ui'
 import Confetti from '../../app/Confetti'
 import { Bars, DotLine } from '../../app/charts'
@@ -180,7 +182,7 @@ function GSheet({ open, onClose, children, full, title, right }: {
       <div className={'gh2-sheet' + (full ? ' full' : '')} onClick={(e) => e.stopPropagation()}>
         {title !== undefined && (
           <div className="gh2-sheethead">
-            <button className="gh2-close" onClick={onClose} aria-label="Close"><IX size={18} /></button>
+            <button className="gh2-close" onClick={onClose} aria-label={t('Close')}><IX size={18} /></button>
             <div className="gh2-display gh2-sheettitle">{title}</div>
             <div className="gh2-sheetright">{right ?? null}</div>
           </div>
@@ -208,7 +210,7 @@ function ActionSheet({ open, onClose, title, actions }: {
             </button>
           ))}
         </div>
-        <button className="gh2-actioncancel" onClick={onClose}>Cancel</button>
+        <button className="gh2-actioncancel" onClick={onClose}>{t('Cancel')}</button>
       </div>
     </div>
   )
@@ -311,12 +313,12 @@ function RestBar({ rest, onAdjust, onSkip }: {
           <span className="left">
             <ITimer size={18} style={{ color: 'var(--g-ember)' }} />
             <b className="gh2-display tnum">{fmtClock(remaining)}</b>
-            <i>rest</i>
+            <i>{t('rest')}</i>
           </span>
           <span className="right">
             <button className="adj" onClick={() => onAdjust(-15)}>−15</button>
             <button className="adj" onClick={() => onAdjust(15)}>+15</button>
-            <button className="skip" onClick={onSkip}><ISkip size={14} /> Skip</button>
+            <button className="skip" onClick={onSkip}><ISkip size={14} /> {t('Skip')}</button>
           </span>
         </div>
       </div>
@@ -337,27 +339,27 @@ function RMCalcSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
     pct: oneRM > 0 ? Math.round((1 / (1 + reps / 30)) * 100) : 0,
   }))
   return (
-    <GSheet open={open} onClose={onClose} title="1RM Calculator">
+    <GSheet open={open} onClose={onClose} title={t('1RM Calculator')}>
       <div className="gh2-pad">
         <div className="gh2-grid2">
           <div>
-            <div className="gh2-k">Weight (kg)</div>
+            <div className="gh2-k">{t('Weight (kg)')}</div>
             <input inputMode="decimal" value={w} onChange={(e) => setW(e.target.value)} className="gh2-bignum tnum gh2-display" />
           </div>
           <div>
-            <div className="gh2-k">Reps</div>
+            <div className="gh2-k">{t('Reps')}</div>
             <input inputMode="numeric" value={r} onChange={(e) => setR(e.target.value)} className="gh2-bignum tnum gh2-display" />
           </div>
         </div>
         <div className="gh2-1rm">
-          <div className="k">Estimated 1RM · Epley</div>
+          <div className="k">{t('Estimated 1RM · Epley')}</div>
           <div className="v gh2-display tnum">{oneRM > 0 ? oneRM : '—'}<small> kg</small></div>
-          <div className="b tnum">{bRM > 0 ? `Brzycki: ${bRM} kg` : '\u00a0'}</div>
+          <div className="b tnum">{bRM > 0 ? t('Brzycki: {b} kg', { b: bRM }) : '\u00a0'}</div>
         </div>
         <div className="gh2-listcard" style={{ marginTop: 16 }}>
           {rows.map((row) => (
             <div key={row.reps} className="gh2-calcrow">
-              <b>{row.reps} {row.reps === 1 ? 'rep' : 'reps'}</b>
+              <b>{row.reps === 1 ? t('{n} rep', { n: row.reps }) : t('{n} reps', { n: row.reps })}</b>
               <i>{row.pct}%</i>
               <span className="tnum">{row.weight > 0 ? row.weight + ' kg' : '—'}</span>
             </div>
@@ -401,30 +403,30 @@ function ExercisePicker({ open, onClose, onPick }: {
   }
 
   return (
-    <GSheet open={open} onClose={onClose} title="Add exercise" full
-      right={<button className="gh2-close ember" onClick={() => setCreating(!creating)} aria-label="New custom exercise"><IPlus size={18} /></button>}>
+    <GSheet open={open} onClose={onClose} title={t('Add exercise')} full
+      right={<button className="gh2-close ember" onClick={() => setCreating(!creating)} aria-label={t('New custom exercise')}><IPlus size={18} /></button>}>
       <div className="gh2-pad">
         {creating && (
           <div className="gh2-card gh2-rise" style={{ marginBottom: 16 }}>
-            <div className="gh2-k ember">New custom exercise</div>
-            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Exercise name" className="gh2-input" style={{ marginBottom: 12 }} />
+            <div className="gh2-k ember">{t('New custom exercise')}</div>
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t('Exercise name')} className="gh2-input" style={{ marginBottom: 12 }} />
             <div className="gh2-chips" style={{ marginBottom: 12 }}>
               {MUSCLES.map((m) => (
-                <button key={m} className={'gh2-chip fill' + (newMuscle === m ? ' on' : '')} onClick={() => setNewMuscle(m)}>{m}</button>
+                <button key={m} className={'gh2-chip fill' + (newMuscle === m ? ' on' : '')} onClick={() => setNewMuscle(m)}>{t(m)}</button>
               ))}
             </div>
-            <BigButton onClick={create} style={{ height: 46 }}>Create &amp; add</BigButton>
+            <BigButton onClick={create} style={{ height: 46 }}>{t('Create & add')}</BigButton>
           </div>
         )}
         <div className="gh2-search">
           <ISearch size={18} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search exercises" />
-          {q && <button onClick={() => setQ('')} aria-label="Clear search"><IX size={16} /></button>}
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Search exercises')} />
+          {q && <button onClick={() => setQ('')} aria-label={t('Clear search')}><IX size={16} /></button>}
         </div>
         <div className="gh2-chips">
-          <button className={'gh2-chip' + (!muscle ? ' on' : '')} onClick={() => setMuscle(null)}>All</button>
+          <button className={'gh2-chip' + (!muscle ? ' on' : '')} onClick={() => setMuscle(null)}>{t('All')}</button>
           {MUSCLES.map((m) => (
-            <button key={m} className={'gh2-chip' + (muscle === m ? ' on' : '')} onClick={() => setMuscle(muscle === m ? null : m)}>{m}</button>
+            <button key={m} className={'gh2-chip' + (muscle === m ? ' on' : '')} onClick={() => setMuscle(muscle === m ? null : m)}>{t(m)}</button>
           ))}
         </div>
         <div className="gh2-listcard">
@@ -432,14 +434,14 @@ function ExercisePicker({ open, onClose, onPick }: {
             <button key={e.id} className="gh2-exrow" onClick={() => onPick(e)}>
               <ExMedia exerciseId={e.id} name={e.name} size={40} />
               <span className="nm" style={{ flex: 1 }}>
-                <b>{e.name} {e.custom && <em>custom</em>}</b>
+                <b>{e.name} {e.custom && <em>{t('custom')}</em>}</b>
                 <i>{e.muscle} · {e.equipment}</i>
               </span>
               <IPlus size={18} style={{ color: 'var(--g-ember)' }} />
             </button>
           ))}
           {list.length === 0 && (
-            <div className="gh2-emptycell">No matches. Tap + to create "{q.trim() || 'a custom exercise'}".</div>
+            <div className="gh2-emptycell">{t('No matches. Tap + to create "{q}".', { q: q.trim() || t('a custom exercise') })}</div>
           )}
         </div>
       </div>
@@ -499,20 +501,20 @@ function SetRow({ set, index, prev, onChange, onToggle, onCycleType, onRemove }:
           axis.current = '?'
         }}
       >
-        {dx < 0 && <span className="gh2-delhint" aria-hidden="true">Delete</span>}
+        {dx < 0 && <span className="gh2-delhint" aria-hidden="true">{t('Delete')}</span>}
         <div className="gh2-rowwrap" style={dx < 0 ? { transform: `translateX(${dx}px)` } : undefined}>
       <div className={'gh2-setrow' + (set.done ? ' done' : '')}>
-        <button className={'type ' + meta.cls} onClick={onCycleType} aria-label="Set type">
+        <button className={'type ' + meta.cls} onClick={onCycleType} aria-label={t('Set type')}>
           {set.type === 'N' ? index + 1 : meta.label}
         </button>
-        <button className="prev tnum" onClick={() => prev && onChange({ weight: String(prev.weight), reps: String(prev.reps) })} aria-label="Use previous">
+        <button className="prev tnum" onClick={() => prev && onChange({ weight: String(prev.weight), reps: String(prev.reps) })} aria-label={t('Use previous')}>
           {prev ? `${prev.weight} × ${prev.reps}` : '—'}
         </button>
         <input inputMode="decimal" value={set.weight} placeholder={prev ? String(prev.weight) : 'kg'}
-          onChange={(e) => onChange({ weight: e.target.value })} className="in tnum" aria-label="Weight" />
+          onChange={(e) => onChange({ weight: e.target.value })} className="in tnum" aria-label={t('Weight')} />
         <input inputMode="numeric" value={set.reps} placeholder={prev ? String(prev.reps) : 'reps'}
-          onChange={(e) => onChange({ reps: e.target.value })} className="in reps tnum" aria-label="Reps" />
-        <button className={'check' + (set.done ? ' on gh2-ring' : '')} onClick={onToggle} aria-pressed={set.done} aria-label="Complete set">
+          onChange={(e) => onChange({ reps: e.target.value })} className="in reps tnum" aria-label={t('Reps')} />
+        <button className={'check' + (set.done ? ' on gh2-ring' : '')} onClick={onToggle} aria-pressed={set.done} aria-label={t('Complete set')}>
           <ICheck size={20} sw={3} />
         </button>
       </div>
@@ -520,7 +522,7 @@ function SetRow({ set, index, prev, onChange, onToggle, onCycleType, onRemove }:
       </div>
       {set.prs.length > 0 && (
         <div className="gh2-prline">
-          {set.prs.map((p) => <PRBadge key={p} label={p + ' PR'} />)}
+          {set.prs.map((p) => <PRBadge key={p} label={t('{p} PR', { p })} />)}
         </div>
       )}
     </>
@@ -540,13 +542,13 @@ function LiveExerciseCard({ entry, exercise, prevSets, ssLabel, ssColor, onToggl
     <div className="gh2-card gh2-rise" style={ssColor ? { borderLeft: `3px solid ${ssColor}` } : undefined}>
       <div className="gh2-cardhead">
         <div>
-          <div className="gh2-display gh2-cardtitle">{exercise ? exercise.name : 'Exercise'}</div>
+          <div className="gh2-display gh2-cardtitle">{exercise ? exercise.name : t('Exercise')}</div>
           {ssLabel && <div className="gh2-sslabel" style={{ color: ssColor ?? undefined }}><ILink size={11} /> {ssLabel}</div>}
         </div>
-        <IconBtn small onClick={onMenu} label="Exercise options"><IMore size={18} /></IconBtn>
+        <IconBtn small onClick={onMenu} label={t('Exercise options')}><IMore size={18} /></IconBtn>
       </div>
       <div className="gh2-cols">
-        <span>Set</span><span>Prev</span><span>kg</span><span>Reps</span><span>✓</span>
+        <span>{t('Set')}</span><span>{t('Prev')}</span><span>kg</span><span>{t('Reps')}</span><span>✓</span>
       </div>
       {entry.sets.map((s, i) => (
         <SetRow key={s.id} set={s} index={i} prev={prevSets ? prevSets[i] ?? null : null}
@@ -555,7 +557,7 @@ function LiveExerciseCard({ entry, exercise, prevSets, ssLabel, ssColor, onToggl
           onCycleType={() => cycleType(entry.id, s.id)}
           onRemove={() => removeSet(entry.id, s.id)} />
       ))}
-      <button className="gh2-addset" onClick={() => addSet(entry.id)}><IPlus size={16} /> Add set</button>
+      <button className="gh2-addset" onClick={() => addSet(entry.id)}><IPlus size={16} /> {t('Add set')}</button>
     </div>
   )
 }
@@ -628,13 +630,13 @@ function LiveWorkout({ active, workouts, onMinimize, onFinished, onStartRest }: 
   return (
     <div className="gh2 gh2-live gh2-fade">
       <div className="gh2-livehead">
-        <IconBtn onClick={onMinimize} label="Minimize"><IArrowLeft size={20} /></IconBtn>
+        <IconBtn onClick={onMinimize} label={t('Minimize')}><IArrowLeft size={20} /></IconBtn>
         <div className="mid">
           <ElapsedTimer start={active.startedAt} />
-          <div className="sub tnum">{totals.sets} sets · {fmtVol(totals.volume)} kg</div>
+          <div className="sub tnum">{t('{n} sets · {v} kg', { n: totals.sets, v: fmtVol(totals.volume) })}</div>
         </div>
         <button className="gh2-finishbtn" onClick={() => { setName(active.name || suggestName()); setFinishing(true) }}>
-          Finish
+          {t('Finish')}
         </button>
       </div>
 
@@ -645,14 +647,14 @@ function LiveWorkout({ active, workouts, onMinimize, onFinished, onStartRest }: 
             return (
               <LiveExerciseCard key={en.id} entry={en} exercise={exerciseById(st, en.exerciseId)}
                 prevSets={prevByExercise[en.exerciseId]}
-                ssLabel={gi >= 0 ? 'Superset ' + String.fromCharCode(65 + gi) : null}
+                ssLabel={gi >= 0 ? t('Superset {x}', { x: String.fromCharCode(65 + gi) }) : null}
                 ssColor={gi >= 0 ? SS_COLORS[gi % SS_COLORS.length] : null}
                 onToggleSet={(setId) => toggleSet(en.id, setId)}
                 onMenu={() => setMenuFor(en.id)} />
             )
           })}
-          <BigButton tone="ghost" onClick={() => setPicker(true)}><IPlus size={18} /> Add exercise</BigButton>
-          <button className="gh2-discard" onClick={() => setConfirmCancel(true)}>Discard workout</button>
+          <BigButton tone="ghost" onClick={() => setPicker(true)}><IPlus size={18} /> {t('Add exercise')}</BigButton>
+          <button className="gh2-discard" onClick={() => setConfirmCancel(true)}>{t('Discard workout')}</button>
         </div>
       </div>
 
@@ -660,35 +662,35 @@ function LiveWorkout({ active, workouts, onMinimize, onFinished, onStartRest }: 
         onPick={(ex) => { addEntryFor(ex.id); setPicker(false) }} />
 
       <ActionSheet open={menuFor !== null} onClose={() => setMenuFor(null)}
-        title={menuEx ? menuEx.name : 'Exercise'}
+        title={menuEx ? menuEx.name : t('Exercise')}
         actions={menuEntry ? [
-          { label: 'Add drop set', icon: <IZap size={18} style={{ color: '#A78BFA' }} />, onClick: () => addSet(menuEntry.id, 'D') },
+          { label: t('Add drop set'), icon: <IZap size={18} style={{ color: '#A78BFA' }} />, onClick: () => addSet(menuEntry.id, 'D') },
           menuEntry.supersetGroup
-            ? { label: 'Remove from superset', icon: <ILink size={18} style={{ color: 'var(--g-muted)' }} />, onClick: () => clearSuperset(menuEntry.id) }
-            : { label: 'Superset with next exercise', icon: <ILink size={18} style={{ color: 'var(--g-ember)' }} />, onClick: () => supersetWithNext(menuEntry.id) },
-          { label: 'Remove last set', icon: <IMinus size={18} style={{ color: 'var(--g-muted)' }} />, onClick: () => removeLastSet(menuEntry.id) },
-          { label: 'Remove exercise', icon: <ITrash size={18} />, danger: true, onClick: () => removeEntry(menuEntry.id) },
+            ? { label: t('Remove from superset'), icon: <ILink size={18} style={{ color: 'var(--g-muted)' }} />, onClick: () => clearSuperset(menuEntry.id) }
+            : { label: t('Superset with next exercise'), icon: <ILink size={18} style={{ color: 'var(--g-ember)' }} />, onClick: () => supersetWithNext(menuEntry.id) },
+          { label: t('Remove last set'), icon: <IMinus size={18} style={{ color: 'var(--g-muted)' }} />, onClick: () => removeLastSet(menuEntry.id) },
+          { label: t('Remove exercise'), icon: <ITrash size={18} />, danger: true, onClick: () => removeEntry(menuEntry.id) },
         ] : []} />
 
-      <ActionSheet open={confirmCancel} onClose={() => setConfirmCancel(false)} title="Discard this workout?"
-        actions={[{ label: 'Discard workout', icon: <ITrash size={18} />, danger: true, onClick: cancelWorkout }]} />
+      <ActionSheet open={confirmCancel} onClose={() => setConfirmCancel(false)} title={t('Discard this workout?')}
+        actions={[{ label: t('Discard workout'), icon: <ITrash size={18} />, danger: true, onClick: cancelWorkout }]} />
 
-      <GSheet open={finishing} onClose={() => setFinishing(false)} title="Finish workout">
+      <GSheet open={finishing} onClose={() => setFinishing(false)} title={t('Finish workout')}>
         <div className="gh2-pad">
-          <div className="gh2-k">Workout name</div>
+          <div className="gh2-k">{t('Workout name')}</div>
           <input value={name} onChange={(e) => setName(e.target.value)} className="gh2-input" style={{ marginBottom: 16 }} />
           <div className="gh2-grid3" style={{ marginBottom: 16 }}>
-            <StatCard label="Sets" value={totals.sets} />
-            <StatCard label="Reps" value={totals.reps} />
-            <StatCard label="Volume" value={fmtVol(totals.volume)} sub="kg" />
+            <StatCard label={t('Sets')} value={totals.sets} />
+            <StatCard label={t('Reps')} value={totals.reps} />
+            <StatCard label={t('Volume')} value={fmtVol(totals.volume)} sub="kg" />
           </div>
-          {totals.sets === 0 && <div className="gh2-note">No completed sets yet — tap ✓ on a set first.</div>}
+          {totals.sets === 0 && <div className="gh2-note">{t('No completed sets yet — tap ✓ on a set first.')}</div>}
           <BigButton onClick={() => {
             setFinishing(false)
             const r = finishWorkout(name.trim() || suggestName())
             if (r) onFinished(r)
           }}>
-            <ICheck size={18} sw={3} /> Save workout
+            <ICheck size={18} sw={3} /> {t('Save workout')}
           </BigButton>
         </div>
       </GSheet>
@@ -702,25 +704,25 @@ function SummarySheet({ summary, onClose }: { summary: (FinishResult & { integ?:
   if (!summary) return null
   const w = summary.workout
   return (
-    <GSheet open onClose={onClose} title="Workout saved">
+    <GSheet open onClose={onClose} title={t('Workout saved')}>
       <Confetti kind="workout" count={w.prCount > 0 || summary.volumePR ? 34 : 16} />
       <div className="gh2-pad gh2-center">
         <div className="gh2-trophy gh2-pop"><ITrophy size={34} /></div>
-        <div className="gh2-cheer">{w.prCount > 0 || summary.volumePR ? 'PR day. Savor it.' : 'Nice work — banked.'}</div>
+        <div className="gh2-cheer">{w.prCount > 0 || summary.volumePR ? t('PR day. Savor it.') : t('Nice work — banked.')}</div>
         <div className="gh2-display gh2-sumname">{w.name}</div>
         <div className="gh2-sumsub">{fmtDate(w.startedAt)} · {fmtDur(w.duration)}</div>
         <div className="gh2-grid3" style={{ marginTop: 20, textAlign: 'left' }}>
-          <StatCard label="Sets" value={w.sets} />
-          <StatCard label="Reps" value={w.reps} />
-          <StatCard label="Volume" value={fmtVol(w.volume)} sub="kg" />
+          <StatCard label={t('Sets')} value={w.sets} />
+          <StatCard label={t('Reps')} value={w.reps} />
+          <StatCard label={t('Volume')} value={fmtVol(w.volume)} sub="kg" />
         </div>
         {summary.integ && (summary.integ.caliberPRs.length > 0 || summary.integ.cadenceMarked.length > 0) && (
           <div className="gh2-integ">
             {summary.integ.caliberPRs.map((l) => (
-              <div key={l} className="row"><i>→</i> CALIBER: new <b>{l.toUpperCase()}</b> PR logged</div>
+              <div key={l} className="row"><i>→</i> {t('CALIBER: new {lift} PR logged', { lift: l.toUpperCase() })}</div>
             ))}
             {summary.integ.cadenceMarked.map((n) => (
-              <div key={n} className="row"><i>→</i> CADENCE: "{n}" checked for today</div>
+              <div key={n} className="row"><i>→</i> {t('CADENCE: "{name}" checked for today', { name: n })}</div>
             ))}
           </div>
         )}
@@ -728,13 +730,13 @@ function SummarySheet({ summary, onClose }: { summary: (FinishResult & { integ?:
           <div className="gh2-goldnote">
             <ISparkles size={16} />
             <b>
-              {w.prCount > 0 ? w.prCount + ' personal record' + (w.prCount > 1 ? 's' : '') : ''}
+              {w.prCount > 0 ? (w.prCount > 1 ? t('{n} personal records', { n: w.prCount }) : t('{n} personal record', { n: w.prCount })) : ''}
               {w.prCount > 0 && summary.volumePR ? ' · ' : ''}
-              {summary.volumePR ? 'All-time volume PR' : ''}
+              {summary.volumePR ? t('All-time volume PR') : ''}
             </b>
           </div>
         )}
-        <div style={{ marginTop: 20 }}><BigButton onClick={onClose}>Done</BigButton></div>
+        <div style={{ marginTop: 20 }}><BigButton onClick={onClose}>{t('Done')}</BigButton></div>
       </div>
     </GSheet>
   )
@@ -790,10 +792,10 @@ function HomeScreen({ st, hasActive, onOpenSettings, onOpenCalc, onResume }: {
     return trimLeading(bucketMetric(st.workouts, spec[0], spec[1], 'volume'))
   }, [st.workouts, period])
   const volTitle =
-    period === 'week' ? 'Daily volume · this week'
-    : period === 'month' ? 'Weekly volume · last 5 weeks'
-    : period === 'year' ? 'Monthly volume · last 12 months'
-    : 'Monthly volume · all time'
+    period === 'week' ? t('Daily volume · this week')
+    : period === 'month' ? t('Weekly volume · last 5 weeks')
+    : period === 'year' ? t('Monthly volume · last 12 months')
+    : t('Monthly volume · all time')
 
   const recent = useMemo(
     () => [...st.workouts].sort((a, b) => b.startedAt - a.startedAt).slice(0, 3),
@@ -804,11 +806,11 @@ function HomeScreen({ st, hasActive, onOpenSettings, onOpenCalc, onResume }: {
     <div className="gh2 gh2-page">
       <div className="gh2-pagehead">
         <div className="gh2-datehead">
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {new Date().toLocaleDateString(localeTag(), { weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
         <div className="btns">
-          <IconBtn onClick={onOpenCalc} label="1RM calculator"><ICalc size={19} /></IconBtn>
-          <IconBtn onClick={onOpenSettings} label="Settings"><IGear size={19} /></IconBtn>
+          <IconBtn onClick={onOpenCalc} label={t('1RM calculator')}><ICalc size={19} /></IconBtn>
+          <IconBtn onClick={onOpenSettings} label={t('Settings')}><IGear size={19} /></IconBtn>
         </div>
       </div>
 
@@ -817,8 +819,8 @@ function HomeScreen({ st, hasActive, onOpenSettings, onOpenCalc, onResume }: {
           <span className="left">
             <span className="playdot"><IPlay size={18} fill /></span>
             <span className="txt">
-              <b>Workout in progress</b>
-              <i>Tap to resume tracking</i>
+              <b>{t('Workout in progress')}</b>
+              <i>{t('Tap to resume tracking')}</i>
             </span>
           </span>
           <IChevronR size={20} style={{ color: 'var(--g-ember)' }} />
@@ -826,24 +828,24 @@ function HomeScreen({ st, hasActive, onOpenSettings, onOpenCalc, onResume }: {
       )}
 
       <Segmented value={period} onChange={setPeriod}
-        options={[{ value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }, { value: 'year', label: 'Year' }, { value: 'all', label: 'All' }]} />
+        options={[{ value: 'week', label: t('Week') }, { value: 'month', label: t('Month') }, { value: 'year', label: t('Year') }, { value: 'all', label: t('All') }]} />
 
       {st.workouts.length === 0 ? (
         <div className="gh2-empty gh2-rise">
           <IDumbbell size={32} style={{ color: 'var(--g-ember)' }} />
-          <div className="gh2-display t">No workouts yet</div>
-          <div className="s">Start your first session from the Train tab, or explore the app with sample data.</div>
-          <BigButton tone="ghost" onClick={seedDemo}><ISparkles size={17} style={{ color: 'var(--g-ember)' }} /> Generate sample data</BigButton>
+          <div className="gh2-display t">{t('No workouts yet')}</div>
+          <div className="s">{t('Start your first session from the Train tab, or explore the app with sample data.')}</div>
+          <BigButton tone="ghost" onClick={seedDemo}><ISparkles size={17} style={{ color: 'var(--g-ember)' }} /> {t('Generate sample data')}</BigButton>
         </div>
       ) : (
         <>
           <div className="gh2-grid2" style={{ marginTop: 16 }}>
-            <StatCard label="Workouts" value={stats.workouts} delay={0} />
-            <StatCard label="Volume" value={fmtVol(stats.totalVol)} sub="kg lifted" delay={40} />
-            <StatCard label="Sets" value={stats.totalSets} delay={80} />
-            <StatCard label="Reps" value={stats.totalReps} delay={120} />
-            <StatCard label="Streak" value={stats.streak} sub={stats.streak === 1 ? 'week' : 'weeks'} delay={160} />
-            <StatCard label="Avg duration" value={stats.avgDur ? fmtDur(stats.avgDur) : '—'} delay={200} />
+            <StatCard label={t('Workouts')} value={stats.workouts} delay={0} />
+            <StatCard label={t('Volume')} value={fmtVol(stats.totalVol)} sub={t('kg lifted')} delay={40} />
+            <StatCard label={t('Sets')} value={stats.totalSets} delay={80} />
+            <StatCard label={t('Reps')} value={stats.totalReps} delay={120} />
+            <StatCard label={t('Streak')} value={stats.streak} sub={stats.streak === 1 ? t('week') : t('weeks')} delay={160} />
+            <StatCard label={t('Avg duration')} value={stats.avgDur ? fmtDur(stats.avgDur) : '—'} delay={200} />
           </div>
 
           <div className="gh2-card gh2-rise" style={{ marginTop: 16, animationDelay: '240ms' }}>
@@ -852,8 +854,8 @@ function HomeScreen({ st, hasActive, onOpenSettings, onOpenCalc, onResume }: {
           </div>
 
           <div className="gh2-secrow">
-            <div className="gh2-k" style={{ margin: 0 }}>Recent workouts</div>
-            <button className="gh2-linkbtn" onClick={() => navigate('/m/ghisa/history')}>See all</button>
+            <div className="gh2-k" style={{ margin: 0 }}>{t('Recent workouts')}</div>
+            <button className="gh2-linkbtn" onClick={() => navigate('/m/ghisa/history')}>{t('See all')}</button>
           </div>
           <div className="gh2-stack sm">
             {recent.map((w) => <WorkoutRow key={w.id} w={w} onClick={() => navigate('/m/ghisa/history')} />)}
@@ -892,35 +894,34 @@ function ProgramSheet({ open, onClose, st }: { open: boolean; onClose: () => voi
   const isCurrent = installed === `${goal}-${days}`
 
   return (
-    <GSheet open={open} onClose={onClose} full title="Build a program">
+    <GSheet open={open} onClose={onClose} full title={t('Build a program')}>
       <div className="gh2-prog">
-        <div className="gh2-k">Goal</div>
+        <div className="gh2-k">{t('Goal')}</div>
         <Segmented value={goal} onChange={setGoal}
-          options={GOALS.map((g) => ({ value: g.id, label: g.label }))} />
-        <p className="gh2-progtext">{goalInfo.detail}</p>
+          options={GOALS.map((g) => ({ value: g.id, label: t(g.label) }))} />
+        <p className="gh2-progtext">{t(goalInfo.detail)}</p>
 
-        <div className="gh2-k">Days per week</div>
+        <div className="gh2-k">{t('Days per week')}</div>
         <Segmented value={String(days) as '2' | '3' | '4'} onChange={(v) => setDays(Number(v) as Days)}
-          options={FREQUENCIES.map((f) => ({ value: String(f.days) as '2' | '3' | '4', label: f.label }))} />
-        <p className="gh2-progtext">{freqInfo.detail}</p>
+          options={FREQUENCIES.map((f) => ({ value: String(f.days) as '2' | '3' | '4', label: t(f.label) }))} />
+        <p className="gh2-progtext">{t(freqInfo.detail)}</p>
 
         <div className="gh2-progwhy">
-          <div className="gh2-display gh2-progsplit">{prog.split}</div>
-          <p>{prog.why}</p>
+          <div className="gh2-display gh2-progsplit">{t(prog.split)}</div>
+          <p>{t(prog.why)}</p>
         </div>
 
-        <div className="gh2-k">Weekly hard sets</div>
+        <div className="gh2-k">{t('Weekly hard sets')}</div>
         <div className="gh2-progvol">
           {volume.map(([muscle, sets]) => (
-            <span key={muscle} className="gh2-volchip"><b className="tnum">{sets}</b> {muscle}</span>
+            <span key={muscle} className="gh2-volchip"><b className="tnum">{sets}</b> {t(muscle)}</span>
           ))}
         </div>
         <p className="gh2-progtext gh2-progfoot">
-          Direct sets only, so the true figure per muscle is higher — a row also
-          trains biceps. For size the target is roughly 10–20 per muscle per week.
+          {t('Direct sets only, so the true figure per muscle is higher — a row also trains biceps. For size the target is roughly 10–20 per muscle per week.')}
         </p>
 
-        <div className="gh2-k">The week</div>
+        <div className="gh2-k">{t('The week')}</div>
         <div className="gh2-stack">
           {tpls.map((t) => (
             <div key={t.id} className="gh2-card">
@@ -939,12 +940,10 @@ function ProgramSheet({ open, onClose, st }: { open: boolean; onClose: () => voi
         </div>
 
         <BigButton onClick={() => { applyProgram(tpls); onClose() }}>
-          {isCurrent ? 'Reinstall this program' : 'Use this program'}
+          {isCurrent ? t('Reinstall this program') : t('Use this program')}
         </BigButton>
         <p className="gh2-progtext gh2-progfoot">
-          Adds {tpls.length} templates and replaces any previous program.
-          Templates you built yourself are never touched, and you can edit these
-          like any other once they land.
+          {t('Adds {n} templates and replaces any previous program. Templates you built yourself are never touched, and you can edit these like any other once they land.', { n: tpls.length })}
         </p>
       </div>
     </GSheet>
@@ -961,24 +960,24 @@ function TrainScreen({ st, onStart }: { st: GhisaState; onStart: (tpl: Template 
 
   return (
     <div className="gh2 gh2-page">
-      <div className="gh2-display gh2-h1">Train</div>
-      <BigButton onClick={() => onStart(null)}><IPlay size={18} fill /> Start empty workout</BigButton>
+      <div className="gh2-display gh2-h1">{t('Train')}</div>
+      <BigButton onClick={() => onStart(null)}><IPlay size={18} fill /> {t('Start empty workout')}</BigButton>
 
       <button className="gh2-progcta" onClick={() => setPrograms(true)}>
         <span className="t">
-          <b className="gh2-display">{installed ? 'Change your program' : 'Build me a program'}</b>
+          <b className="gh2-display">{installed ? t('Change your program') : t('Build me a program')}</b>
           <span className="s">
             {installed
-              ? `${GOALS.find((g) => g.id === installed.split('-')[0])?.label ?? ''} · ${installed.split('-')[1]} days a week`
-              : 'Strength, size or both — 2, 3 or 4 days a week'}
+              ? t('{goal} · {days} days a week', { goal: t(GOALS.find((g) => g.id === installed.split('-')[0])?.label ?? ''), days: installed.split('-')[1] })
+              : t('Strength, size or both — 2, 3 or 4 days a week')}
           </span>
         </span>
         <IChevronR size={18} />
       </button>
 
       <div className="gh2-secrow" style={{ marginTop: 24 }}>
-        <div className="gh2-k" style={{ margin: 0 }}>Templates</div>
-        <button className="gh2-linkbtn" onClick={() => setEditing('new')}><IPlus size={14} /> New template</button>
+        <div className="gh2-k" style={{ margin: 0 }}>{t('Templates')}</div>
+        <button className="gh2-linkbtn" onClick={() => setEditing('new')}><IPlus size={14} /> {t('New template')}</button>
       </div>
 
       <div className="gh2-stack">
@@ -992,23 +991,23 @@ function TrainScreen({ st, onStart }: { st: GhisaState; onStart: (tpl: Template 
             </div>
             {t.note && <div className="gh2-tplnote">{t.note}</div>}
             <div className="gh2-tplbtns">
-              <button className="start" onClick={() => onStart(t)}><IPlay size={15} fill /> Start</button>
-              <button className="edit" onClick={() => setEditing(t)} aria-label={`Edit ${t.name}`}><IPencil size={18} /></button>
-              <button className="edit trash" onClick={() => setMenuFor(t.id)} aria-label={`Delete ${t.name}`}><ITrash size={18} /></button>
+              <button className="start" onClick={() => onStart(t)}><IPlay size={15} fill /> {tr('Start')}</button>
+              <button className="edit" onClick={() => setEditing(t)} aria-label={tr('Edit {name}', { name: t.name })}><IPencil size={18} /></button>
+              <button className="edit trash" onClick={() => setMenuFor(t.id)} aria-label={tr('Delete {name}', { name: t.name })}><ITrash size={18} /></button>
             </div>
           </div>
         ))}
         {st.templates.length === 0 && (
-          <div className="gh2-empty"><div className="s">No templates yet. Create one to start workouts in a single tap.</div></div>
+          <div className="gh2-empty"><div className="s">{t('No templates yet. Create one to start workouts in a single tap.')}</div></div>
         )}
       </div>
 
       <ProgramSheet open={programs} onClose={() => setPrograms(false)} st={st} />
 
       <ActionSheet open={menuFor !== null} onClose={() => setMenuFor(null)}
-        title={menuTpl ? `Delete "${menuTpl.name}"?` : ''}
+        title={menuTpl ? t('Delete "{name}"?', { name: menuTpl.name }) : ''}
         actions={[
-          { label: 'Delete template', icon: <ITrash size={18} />, danger: true, onClick: () => { if (menuFor) deleteTemplate(menuFor) } },
+          { label: t('Delete template'), icon: <ITrash size={18} />, danger: true, onClick: () => { if (menuFor) deleteTemplate(menuFor) } },
         ]} />
 
       <TemplateEditor open={editing !== null} tpl={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
@@ -1038,28 +1037,28 @@ function TemplateEditor({ open, tpl, onClose }: { open: boolean; tpl: Template |
   }
 
   return (
-    <GSheet open={open} onClose={onClose} full title={tpl ? 'Edit template' : 'New template'}
-      right={<button className={'gh2-savebtn' + (valid ? ' on' : '')} onClick={save}>Save</button>}>
+    <GSheet open={open} onClose={onClose} full title={tpl ? t('Edit template') : t('New template')}
+      right={<button className={'gh2-savebtn' + (valid ? ' on' : '')} onClick={save}>{t('Save')}</button>}>
       <div className="gh2-pad">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Template name (e.g. Upper A)"
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('Template name (e.g. Upper A)')}
           className="gh2-input" style={{ marginBottom: 16 }} />
         <div className="gh2-stack sm" style={{ marginBottom: 16 }}>
           {items.map((it, i) => (
             <div key={i} className="gh2-tplrow">
               <div className="nm">
                 <b>{exerciseById(st, it.exerciseId)?.name ?? '?'}</b>
-                <i>{it.sets} sets</i>
+                <i>{t('{n} sets', { n: it.sets })}</i>
               </div>
               <div className="ctl">
-                <button onClick={() => setItems(items.map((x, j) => (j === i ? { ...x, sets: Math.max(1, x.sets - 1) } : x)))} aria-label="Fewer sets"><IMinus size={15} /></button>
+                <button onClick={() => setItems(items.map((x, j) => (j === i ? { ...x, sets: Math.max(1, x.sets - 1) } : x)))} aria-label={t('Fewer sets')}><IMinus size={15} /></button>
                 <span className="tnum">{it.sets}</span>
-                <button onClick={() => setItems(items.map((x, j) => (j === i ? { ...x, sets: Math.min(10, x.sets + 1) } : x)))} aria-label="More sets"><IPlus size={15} /></button>
-                <button className="del" onClick={() => setItems(items.filter((_, j) => j !== i))} aria-label="Remove"><ITrash size={15} /></button>
+                <button onClick={() => setItems(items.map((x, j) => (j === i ? { ...x, sets: Math.min(10, x.sets + 1) } : x)))} aria-label={t('More sets')}><IPlus size={15} /></button>
+                <button className="del" onClick={() => setItems(items.filter((_, j) => j !== i))} aria-label={t('Remove')}><ITrash size={15} /></button>
               </div>
             </div>
           ))}
         </div>
-        <BigButton tone="ghost" onClick={() => setPicker(true)}><IPlus size={18} /> Add exercise</BigButton>
+        <BigButton tone="ghost" onClick={() => setPicker(true)}><IPlus size={18} /> {t('Add exercise')}</BigButton>
       </div>
       <ExercisePicker open={picker} onClose={() => setPicker(false)}
         onPick={(ex) => { setItems((arr) => [...arr, { exerciseId: ex.id, sets: 3 }]); setPicker(false) }} />
@@ -1102,69 +1101,69 @@ function ProfileScreen({ st }: { st: GhisaState }) {
     <div className="gh2 gh2-page">
       <div className="gh2-pagehead" style={{ marginBottom: 8 }}>
         <div>
-          <div className="gh2-display gh2-h1" style={{ margin: 0 }}>Profile</div>
+          <div className="gh2-display gh2-h1" style={{ margin: 0 }}>{t('Profile')}</div>
           {bodyline && <div className="gh2-datehead" style={{ marginTop: 2 }}>{bodyline}</div>}
         </div>
         <div className="gh2-profcount">
           <b className="gh2-display tnum">{st.workouts.length}</b>
-          <i>workouts</i>
+          <i>{t('workouts')}</i>
         </div>
       </div>
 
       <div className="gh2-card gh2-rise" style={{ marginBottom: 16 }}>
         <Segmented value={metric} onChange={setMetric}
-          options={(['duration', 'volume', 'reps'] as ProfileMetric[]).map((m) => ({ value: m, label: METRIC_LABEL[m].seg }))} />
+          options={(['duration', 'volume', 'reps'] as ProfileMetric[]).map((m) => ({ value: m, label: t(METRIC_LABEL[m].seg) }))} />
         <div className="gh2-chips" style={{ margin: '12px 0 0' }}>
           {([12, 26, 52] as const).map((r) => (
             <button key={r} className={'gh2-chip' + (range === r ? ' on' : '')} onClick={() => setRange(r)}>
-              {r === 12 ? 'Last 3 months' : r === 26 ? '6 months' : 'Year'}
+              {r === 12 ? t('Last 3 months') : r === 26 ? t('6 months') : t('Year')}
             </button>
           ))}
         </div>
         <div style={{ height: 150, marginTop: 8 }}>
           {rangeTotal > 0
             ? <GBarChart data={series} />
-            : <div className="gh2-emptycell" style={{ paddingTop: 48 }}>No data in time period</div>}
+            : <div className="gh2-emptycell" style={{ paddingTop: 48 }}>{t('No data in time period')}</div>}
         </div>
         <div className="gh2-datehead tnum" style={{ textAlign: 'right' }}>
-          {rangeTotal > 0 ? `${metric === 'volume' ? fmtVol(rangeTotal) : rangeTotal.toLocaleString()} ${METRIC_LABEL[metric].unit} total` : '\u00a0'}
+          {rangeTotal > 0 ? t('{x} {unit} total', { x: metric === 'volume' ? fmtVol(rangeTotal) : rangeTotal.toLocaleString(), unit: METRIC_LABEL[metric].unit }) : '\u00a0'}
         </div>
       </div>
 
-      <div className="gh2-k">Dashboard</div>
+      <div className="gh2-k">{t('Dashboard')}</div>
       <div className="gh2-dash">
-        <button className="gh2-dashcard" onClick={() => setSheet('stats')}><ITrend size={19} /> Statistics</button>
-        <button className="gh2-dashcard" onClick={() => setSheet('exercises')}><IDumbbell size={19} /> Exercises</button>
-        <button className="gh2-dashcard" onClick={() => setSheet('measures')}><IRuler size={19} /> Measures</button>
-        <button className="gh2-dashcard" onClick={() => setSheet('calendar')}><ICalendarI size={19} /> Calendar</button>
+        <button className="gh2-dashcard" onClick={() => setSheet('stats')}><ITrend size={19} /> {t('Statistics')}</button>
+        <button className="gh2-dashcard" onClick={() => setSheet('exercises')}><IDumbbell size={19} /> {t('Exercises')}</button>
+        <button className="gh2-dashcard" onClick={() => setSheet('measures')}><IRuler size={19} /> {t('Measures')}</button>
+        <button className="gh2-dashcard" onClick={() => setSheet('calendar')}><ICalendarI size={19} /> {t('Calendar')}</button>
       </div>
 
-      <div className="gh2-k" style={{ marginTop: 20 }}>Workouts</div>
+      <div className="gh2-k" style={{ marginTop: 20 }}>{t('Workouts')}</div>
       <div className="gh2-stack sm">
         {sorted.map((x) => <WorkoutRow key={x.id} w={x} onClick={() => setDetail(x.id)} />)}
         {sorted.length === 0 && (
           <div className="gh2-empty">
             <IHistoryI size={28} style={{ color: 'var(--g-muted)' }} />
-            <div className="s">Finished workouts will appear here.</div>
+            <div className="s">{t('Finished workouts will appear here.')}</div>
           </div>
         )}
       </div>
 
       <GSheet open={w !== undefined} onClose={() => setDetail(null)} full title={w ? w.name : ''}
-        right={w && <IconBtn small tone="danger" onClick={() => setConfirmDel(true)} label="Delete workout"><ITrash size={17} /></IconBtn>}>
+        right={w && <IconBtn small tone="danger" onClick={() => setConfirmDel(true)} label={t('Delete workout')}><ITrash size={17} /></IconBtn>}>
         {w && (
           <div className="gh2-pad">
             <div className="gh2-sumsub" style={{ textAlign: 'left', marginBottom: 16 }}>{fmtDate(w.startedAt)} · {fmtDur(w.duration)}</div>
             <div className="gh2-grid3" style={{ marginBottom: 16 }}>
-              <StatCard label="Sets" value={w.sets} />
-              <StatCard label="Reps" value={w.reps} />
-              <StatCard label="Volume" value={fmtVol(w.volume)} sub="kg" />
+              <StatCard label={t('Sets')} value={w.sets} />
+              <StatCard label={t('Reps')} value={w.reps} />
+              <StatCard label={t('Volume')} value={fmtVol(w.volume)} sub="kg" />
             </div>
             <div className="gh2-stack">
               {w.entries.map((e) => (
                 <div key={e.id} className="gh2-card">
                   <div className="gh2-display gh2-cardtitle" style={{ marginBottom: 8 }}>
-                    {exerciseById(st, e.exerciseId)?.name ?? 'Exercise'}
+                    {exerciseById(st, e.exerciseId)?.name ?? t('Exercise')}
                   </div>
                   {e.sets.map((s, i) => {
                     const meta = TYPE_META[s.type]
@@ -1184,8 +1183,8 @@ function ProfileScreen({ st }: { st: GhisaState }) {
         )}
       </GSheet>
 
-      <ActionSheet open={confirmDel} onClose={() => setConfirmDel(false)} title="Delete this workout?"
-        actions={[{ label: 'Delete workout', icon: <ITrash size={18} />, danger: true, onClick: () => { if (detail) deleteWorkout(detail); setDetail(null) } }]} />
+      <ActionSheet open={confirmDel} onClose={() => setConfirmDel(false)} title={t('Delete this workout?')}
+        actions={[{ label: t('Delete workout'), icon: <ITrash size={18} />, danger: true, onClick: () => { if (detail) deleteWorkout(detail); setDetail(null) } }]} />
 
       <StatisticsSheet st={st} open={sheet === 'stats'} onClose={() => setSheet(null)} />
       <MyExercisesSheet st={st} open={sheet === 'exercises'} onClose={() => setSheet(null)} onPick={setExDetail} />
@@ -1221,30 +1220,30 @@ function StatisticsSheet({ st, open, onClose }: { st: GhisaState; open: boolean;
   const vol8 = useMemo(() => weeklyMetric(all, 8, 'volume'), [all])
 
   return (
-    <GSheet open={open} onClose={onClose} full title="Statistics">
+    <GSheet open={open} onClose={onClose} full title={t('Statistics')}>
       <div className="gh2-pad">
         <div className="gh2-grid2" style={{ marginBottom: 16 }}>
-          <StatCard label="Workouts" value={stats.workouts} />
-          <StatCard label="Volume" value={fmtVol(stats.vol)} sub="kg lifted" />
-          <StatCard label="Sets" value={stats.sets} />
-          <StatCard label="Reps" value={stats.reps} />
-          <StatCard label="Hours trained" value={round1(stats.hours)} />
-          <StatCard label="Streak" value={stats.streak} sub={stats.streak === 1 ? 'week' : 'weeks'} />
+          <StatCard label={t('Workouts')} value={stats.workouts} />
+          <StatCard label={t('Volume')} value={fmtVol(stats.vol)} sub={t('kg lifted')} />
+          <StatCard label={t('Sets')} value={stats.sets} />
+          <StatCard label={t('Reps')} value={stats.reps} />
+          <StatCard label={t('Hours trained')} value={round1(stats.hours)} />
+          <StatCard label={t('Streak')} value={stats.streak} sub={stats.streak === 1 ? t('week') : t('weeks')} />
         </div>
         <div className="gh2-card" style={{ marginBottom: 16 }}>
-          <div className="gh2-k">Weekly volume · last 8 weeks</div>
+          <div className="gh2-k">{t('Weekly volume · last 8 weeks')}</div>
           <div style={{ height: 150 }}><GBarChart data={vol8} /></div>
         </div>
         <div className="gh2-card">
-          <div className="gh2-k">Sets per muscle group</div>
+          <div className="gh2-k">{t('Sets per muscle group')}</div>
           {perMuscle.map(([muscle, n]) => (
             <div key={muscle} className="gh2-musclerow">
-              <span className="m">{muscle}</span>
+              <span className="m">{t(muscle)}</span>
               <span className="track"><i style={{ width: (n / maxMuscle) * 100 + '%' }} /></span>
               <span className="n tnum">{n}</span>
             </div>
           ))}
-          {perMuscle.length === 0 && <div className="gh2-emptycell">Log workouts to see the distribution.</div>}
+          {perMuscle.length === 0 && <div className="gh2-emptycell">{t('Log workouts to see the distribution.')}</div>}
         </div>
       </div>
     </GSheet>
@@ -1269,7 +1268,7 @@ function MyExercisesSheet({ st, open, onClose, onPick }: {
   }, [st])
 
   return (
-    <GSheet open={open} onClose={onClose} full title="My exercises">
+    <GSheet open={open} onClose={onClose} full title={t('My exercises')}>
       <div className="gh2-pad">
         <div className="gh2-listcard">
           {used.map((x) => (
@@ -1277,12 +1276,12 @@ function MyExercisesSheet({ st, open, onClose, onPick }: {
               <ExMedia exerciseId={x.id} name={x.ex ? x.ex.name : '?'} size={44} />
               <span className="nm" style={{ flex: 1 }}>
                 <b>{x.ex ? x.ex.name : '?'}</b>
-                <i>{x.sets} sets · last {fmtDateShort(x.last)}</i>
+                <i>{t('{n} sets · last {date}', { n: x.sets, date: fmtDateShort(x.last) })}</i>
               </span>
               <IChevronR size={18} style={{ color: 'var(--g-muted)' }} />
             </button>
           ))}
-          {used.length === 0 && <div className="gh2-emptycell">Exercises you train will collect here.</div>}
+          {used.length === 0 && <div className="gh2-emptycell">{t('Exercises you train will collect here.')}</div>}
         </div>
       </div>
     </GSheet>
@@ -1323,10 +1322,10 @@ function MeasuresSheet({ st, open, onClose }: { st: GhisaState; open: boolean; o
   }
 
   return (
-    <GSheet open={open} onClose={onClose} full title="Measures">
+    <GSheet open={open} onClose={onClose} full title={t('Measures')}>
       <div className="gh2-pad">
         <div className="gh2-card" style={{ marginBottom: 16 }}>
-          <div className="gh2-k">Height</div>
+          <div className="gh2-k">{t('Height')}</div>
           <div className="gh2-hrow">
             <input inputMode="decimal" value={height} placeholder="cm"
               onChange={(e) => setHeightStr(e.target.value)}
@@ -1337,36 +1336,36 @@ function MeasuresSheet({ st, open, onClose }: { st: GhisaState; open: boolean; o
         </div>
 
         <div className="gh2-card" style={{ marginBottom: 16 }}>
-          <div className="gh2-k ember">New measurement</div>
+          <div className="gh2-k ember">{t('New measurement')}</div>
           <div className="gh2-mgrid">
             {MEASURE_FIELDS.map((f) => (
               <label key={f.key} className="gh2-mfield">
-                <span>{f.label} · {f.unit}</span>
+                <span>{t(f.label)} · {f.unit}</span>
                 <input inputMode="decimal" value={form[f.key] ?? ''} placeholder="—"
                   onChange={(e) => setForm({ ...form, [f.key]: e.target.value })} />
               </label>
             ))}
           </div>
           <BigButton onClick={save} style={{ height: 46, marginTop: 12, opacity: anyFilled ? 1 : 0.4 }}>
-            <IPlus size={17} /> Save measurement
+            <IPlus size={17} /> {t('Save measurement')}
           </BigButton>
         </div>
 
-        <div className="gh2-k">Log</div>
+        <div className="gh2-k">{t('Log')}</div>
         <div className="gh2-stack sm">
           {entries.map((m) => (
             <div key={m.id} className="gh2-card slim gh2-mrow">
               <div className="top">
                 <b>{fmtDate(m.ts)}</b>
-                <button onClick={() => deleteMeasure(m.id)} aria-label="Delete entry"><ITrash size={15} /></button>
+                <button onClick={() => deleteMeasure(m.id)} aria-label={t('Delete entry')}><ITrash size={15} /></button>
               </div>
               <div className="vals tnum">
                 {MEASURE_FIELDS.filter((f) => typeof m[f.key] === 'number')
-                  .map((f) => `${f.label} ${m[f.key]}${f.unit}`).join(' · ')}
+                  .map((f) => `${t(f.label)} ${m[f.key]}${f.unit}`).join(' · ')}
               </div>
             </div>
           ))}
-          {entries.length === 0 && <div className="gh2-emptycell">No measurements yet — log the first above.</div>}
+          {entries.length === 0 && <div className="gh2-emptycell">{t('No measurements yet — log the first above.')}</div>}
         </div>
       </div>
     </GSheet>
@@ -1392,21 +1391,21 @@ function CalendarSheet({ st, open, onClose }: { st: GhisaState; open: boolean; o
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const months = [0, 1, 2].map((back) => {
     const d = new Date(now.getFullYear(), now.getMonth() - back, 1)
-    return { y: d.getFullYear(), m: d.getMonth(), label: d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) }
+    return { y: d.getFullYear(), m: d.getMonth(), label: d.toLocaleDateString(localeTag(), { month: 'long', year: 'numeric' }) }
   })
 
   return (
-    <GSheet open={open} onClose={onClose} full title="Calendar">
+    <GSheet open={open} onClose={onClose} full title={t('Calendar')}>
       <div className="gh2-pad">
         <div className="gh2-calhead">
-          <span>🔥 <b className="tnum">{streak}</b> week streak</span>
-          <span>🌙 <b className="tnum">{rest}</b> rest days</span>
+          <span>🔥 {t('{n} week streak', { n: streak })}</span>
+          <span>🌙 {t('{n} rest days', { n: rest })}</span>
         </div>
         {months.map(({ y, m, label }) => (
           <div key={label} className="gh2-card" style={{ marginBottom: 12 }}>
             <div className="gh2-k">{label}</div>
             <div className="gh2-calgrid hdr">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => <span key={d}>{d}</span>)}
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => <span key={d}>{t(d)}</span>)}
             </div>
             {monthMatrix(y, m).map((row, ri) => (
               <div key={ri} className="gh2-calgrid">
@@ -1450,18 +1449,18 @@ function LibraryScreen({ st }: { st: GhisaState }) {
   return (
     <div className="gh2 gh2-page">
       <div className="gh2-pagehead">
-        <div className="gh2-display gh2-h1" style={{ margin: 0 }}>Exercises</div>
+        <div className="gh2-display gh2-h1" style={{ margin: 0 }}>{t('Exercises')}</div>
         <IconBtn tone="ember" onClick={() => setCreating(true)} label="New custom exercise"><IPlus size={20} /></IconBtn>
       </div>
       <div className="gh2-search">
         <ISearch size={18} />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search exercises" />
-        {q && <button onClick={() => setQ('')} aria-label="Clear search"><IX size={16} /></button>}
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Search exercises')} />
+        {q && <button onClick={() => setQ('')} aria-label={t('Clear search')}><IX size={16} /></button>}
       </div>
       <div className="gh2-chips">
-        <button className={'gh2-chip' + (!muscle ? ' on' : '')} onClick={() => setMuscle(null)}>All</button>
+        <button className={'gh2-chip' + (!muscle ? ' on' : '')} onClick={() => setMuscle(null)}>{t('All')}</button>
         {MUSCLES.map((m) => (
-          <button key={m} className={'gh2-chip' + (muscle === m ? ' on' : '')} onClick={() => setMuscle(muscle === m ? null : m)}>{m}</button>
+          <button key={m} className={'gh2-chip' + (muscle === m ? ' on' : '')} onClick={() => setMuscle(muscle === m ? null : m)}>{t(m)}</button>
         ))}
       </div>
       <div className="gh2-listcard">
@@ -1469,7 +1468,7 @@ function LibraryScreen({ st }: { st: GhisaState }) {
           <button key={e.id} className="gh2-exrow" onClick={() => setDetail(e.id)}>
             <ExMedia exerciseId={e.id} name={e.name} size={44} />
             <span className="nm" style={{ flex: 1 }}>
-              <b>{e.name} {e.custom && <em>custom</em>}</b>
+              <b>{e.name} {e.custom && <em>{t('custom')}</em>}</b>
               <i>{e.muscle} · {e.equipment}</i>
             </span>
             <IChevronR size={18} style={{ color: 'var(--g-muted)' }} />
@@ -1477,12 +1476,12 @@ function LibraryScreen({ st }: { st: GhisaState }) {
         ))}
       </div>
 
-      <GSheet open={creating} onClose={() => setCreating(false)} title="New custom exercise">
+      <GSheet open={creating} onClose={() => setCreating(false)} title={t('New custom exercise')}>
         <div className="gh2-pad">
-          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Exercise name" className="gh2-input" style={{ marginBottom: 12 }} />
+          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t('Exercise name')} className="gh2-input" style={{ marginBottom: 12 }} />
           <div className="gh2-chips" style={{ marginBottom: 16 }}>
             {MUSCLES.map((m) => (
-              <button key={m} className={'gh2-chip fill' + (newMuscle === m ? ' on' : '')} onClick={() => setNewMuscle(m)}>{m}</button>
+              <button key={m} className={'gh2-chip fill' + (newMuscle === m ? ' on' : '')} onClick={() => setNewMuscle(m)}>{t(m)}</button>
             ))}
           </div>
           <BigButton onClick={() => {
@@ -1491,7 +1490,7 @@ function LibraryScreen({ st }: { st: GhisaState }) {
             addCustomExercise({ id: 'custom-' + uid(), name, muscle: newMuscle, equipment: 'Custom', custom: true })
             setNewName('')
             setCreating(false)
-          }}>Create exercise</BigButton>
+          }}>{t('Create exercise')}</BigButton>
         </div>
       </GSheet>
 
@@ -1540,22 +1539,22 @@ function ExerciseDetail({ st, exerciseId, onClose }: { st: GhisaState; exerciseI
           </div>
           {ex.cue && <div className="gh2-cue">{ex.cue}</div>}
           {zoom && (
-            <div className="gh2 gh2-lightbox gh2-fade" onClick={() => setZoom(false)} role="button" aria-label="Close">
+            <div className="gh2 gh2-lightbox gh2-fade" onClick={() => setZoom(false)} role="button" aria-label={t('Close')}>
               <ExMedia exerciseId={ex.id} name={ex.name} size={360} animate />
               <div className="cap gh2-display">{ex.name}</div>
             </div>
           )}
           <div className="gh2-grid2" style={{ marginBottom: 16 }}>
-            <StatCard label="Heaviest" value={maxes.maxW > 0 ? maxes.maxW + ' kg' : '—'} />
-            <StatCard label="Best est. 1RM" value={maxes.maxE > 0 ? round1(maxes.maxE) + ' kg' : '—'} />
-            <StatCard label="Most reps" value={maxes.maxR > 0 ? maxes.maxR : '—'} />
-            <StatCard label="Sessions" value={maxes.sessions} />
+            <StatCard label={t('Heaviest')} value={maxes.maxW > 0 ? maxes.maxW + ' kg' : '—'} />
+            <StatCard label={t('Best est. 1RM')} value={maxes.maxE > 0 ? round1(maxes.maxE) + ' kg' : '—'} />
+            <StatCard label={t('Most reps')} value={maxes.maxR > 0 ? maxes.maxR : '—'} />
+            <StatCard label={t('Sessions')} value={maxes.sessions} />
           </div>
 
           {sessions.length > 1 && (
             <div className="gh2-card" style={{ marginBottom: 16 }}>
               <div className="gh2-secrow" style={{ margin: '0 0 12px' }}>
-                <div className="gh2-k" style={{ margin: 0 }}>Progression</div>
+                <div className="gh2-k" style={{ margin: 0 }}>{t('Progression')}</div>
                 <div style={{ width: 160 }}>
                   <Segmented value={metric} onChange={setMetric}
                     options={[{ value: 'e1rm', label: '1RM' }, { value: 'vol', label: 'Volume' }]} />
@@ -1569,7 +1568,7 @@ function ExerciseDetail({ st, exerciseId, onClose }: { st: GhisaState; exerciseI
             </div>
           )}
 
-          <div className="gh2-k">History</div>
+          <div className="gh2-k">{t('History')}</div>
           <div className="gh2-stack sm">
             {[...sessions].reverse().map((s) => (
               <div key={s.date} className="gh2-card slim">
@@ -1580,7 +1579,7 @@ function ExerciseDetail({ st, exerciseId, onClose }: { st: GhisaState; exerciseI
                 <div className="gh2-histsets tnum">{s.sets.map((x) => `${x.weight}×${x.reps}`).join('  ·  ')}</div>
               </div>
             ))}
-            {sessions.length === 0 && <div className="gh2-emptycell">No sets logged for this exercise yet.</div>}
+            {sessions.length === 0 && <div className="gh2-emptycell">{t('No sets logged for this exercise yet.')}</div>}
           </div>
         </div>
       )}
@@ -1594,30 +1593,30 @@ function SettingsSheet({ st, open, onClose }: { st: GhisaState; open: boolean; o
   const [confirmReset, setConfirmReset] = useState(false)
   const restOptions = [0, 60, 90, 120, 150, 180]
   return (
-    <GSheet open={open} onClose={onClose} title="Settings">
+    <GSheet open={open} onClose={onClose} title={t('Settings')}>
       <div className="gh2-pad">
-        <div className="gh2-k">Auto rest timer</div>
+        <div className="gh2-k">{t('Auto rest timer')}</div>
         <div className="gh2-restgrid">
           {restOptions.map((sec) => (
             <button key={sec} className={st.settings.restSec === sec ? 'on' : ''} onClick={() => setRestSec(sec)}>
-              {sec === 0 ? 'Off' : sec % 60 === 0 ? sec / 60 + ' min' : '2.5 min'}
+              {sec === 0 ? t('Off') : sec % 60 === 0 ? t('{n} min', { n: sec / 60 }) : t('2.5 min')}
             </button>
           ))}
         </div>
-        <div className="gh2-k" style={{ marginTop: 24 }}>Data</div>
+        <div className="gh2-k" style={{ marginTop: 24 }}>{t('Data')}</div>
         <div className="gh2-stack sm">
           <BigButton tone="ghost" onClick={() => { seedDemo(); onClose() }}>
-            <ISparkles size={17} style={{ color: 'var(--g-ember)' }} /> Generate sample data
+            <ISparkles size={17} style={{ color: 'var(--g-ember)' }} /> {t('Generate sample data')}
           </BigButton>
           <BigButton tone="ghost" onClick={() => setConfirmReset(true)} style={{ color: '#F87171' }}>
-            <ITrash size={17} /> Reset all data
+            <ITrash size={17} /> {t('Reset all data')}
           </BigButton>
         </div>
-        <div className="gh2-footnote">GHISA · local-first — your data lives on this device.</div>
+        <div className="gh2-footnote">{t('GHISA · local-first — your data lives on this device.')}</div>
       </div>
       <ActionSheet open={confirmReset} onClose={() => setConfirmReset(false)}
-        title="Delete all workouts, templates and custom exercises?"
-        actions={[{ label: 'Reset everything', icon: <ITrash size={18} />, danger: true, onClick: () => { resetAll(); onClose() } }]} />
+        title={t('Delete all workouts, templates and custom exercises?')}
+        actions={[{ label: t('Reset everything'), icon: <ITrash size={18} />, danger: true, onClick: () => { resetAll(); onClose() } }]} />
     </GSheet>
   )
 }
@@ -1675,7 +1674,7 @@ export default function GhisaScreen({ tab = 'home' }: { tab?: string }) {
 
       {st.active && !liveOpen && (
         <button className="gh2 gh2-resumebar gh2-rise" onClick={() => setLiveOpen(true)}>
-          <span><IPlay size={17} fill /> Resume workout</span>
+          <span><IPlay size={17} fill /> {t('Resume workout')}</span>
           <ElapsedResume start={st.active.startedAt} />
         </button>
       )}

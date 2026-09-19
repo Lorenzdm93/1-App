@@ -5,6 +5,7 @@ import { send as sendNotify, canScheduleAhead } from '../../core/notify'
  * the stages as bezel arcs, and every fast ends with honest numbers.
  */
 import { useEffect, useRef, useState } from 'react'
+import { t, localeTag } from '../../core/i18n'
 import type { CSSProperties } from 'react'
 import { useStore } from '../../core/hooks'
 import { todayKey, dayKey, lastNDayKeys } from '../../core/dates'
@@ -41,8 +42,8 @@ const fmtClock = (ms: number): { hhmm: string; ss: string } => {
     ss: String(s % 60).padStart(2, '0'),
   }
 }
-const timeAt = (ts: number): string => new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-const dayAt = (ts: number): string => new Date(ts).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+const timeAt = (ts: number): string => new Date(ts).toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit' })
+const dayAt = (ts: number): string => new Date(ts).toLocaleDateString(localeTag(), { weekday: 'short', day: 'numeric', month: 'short' })
 const toLocalInput = (ts: number): string => {
   const d = new Date(ts)
   const p = (n: number) => String(n).padStart(2, '0')
@@ -108,22 +109,22 @@ function WindowSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
   }, [open])
   const fastH = windowFastHours(first, last)
   return (
-    <Sheet open={open} title="Eating window" onClose={onClose}>
+    <Sheet open={open} title={t('Eating window')} onClose={onClose}>
       <div className="or2">
-        <Field label="First bite">
+        <Field label={t('First bite')}>
           <input className="tinput" type="time" value={first} onChange={(e) => setFirst(e.target.value)} />
         </Field>
-        <Field label="Last bite">
+        <Field label={t('Last bite')}>
           <input className="tinput" type="time" value={last} onChange={(e) => setLast(e.target.value)} />
         </Field>
         <div className="or2-winsum">
           {fastH !== null
-            ? <>Eat <b>{first}–{last}</b> · ORA fasts you <b>{fmtHM(fastH)}</b> around it, overnight included.</>
-            : 'Enter both times to see the fast this implies.'}
+            ? t('Eat {a}–{b} · ORA fasts you {f} around it, overnight included.', { a: first, b: last, f: fmtHM(fastH) })
+            : t('Enter both times to see the fast this implies.')}
         </div>
         <button className="btn btn-primary" style={{ width: '100%' }} disabled={fastH === null}
-          onClick={() => { setWindow(first, last); setProtocol('window'); onClose(); toast('Window saved') }}>
-          Save window
+          onClick={() => { setWindow(first, last); setProtocol('window'); onClose(); toast(t('Window saved')) }}>
+          {t('Save window')}
         </button>
       </div>
     </Sheet>
@@ -135,7 +136,7 @@ function CustomSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
   const [h, setH] = useState(st.customH)
   useEffect(() => { if (open) setH(st.customH) }, [open])
   return (
-    <Sheet open={open} title="Custom target" onClose={onClose}>
+    <Sheet open={open} title={t('Custom target')} onClose={onClose}>
       <div className="or2">
         <div className="or2-bignum num">{h}<small>h</small></div>
         <div className="or2-chips">
@@ -145,12 +146,12 @@ function CustomSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
         </div>
         <div className="or2-stepline">
           <button onClick={() => setH((x) => Math.max(4, x - 1))} aria-label="Less">−</button>
-          <span>fine-tune</span>
+          <span>{t('fine-tune')}</span>
           <button onClick={() => setH((x) => Math.min(96, x + 1))} aria-label="More">+</button>
         </div>
         <button className="btn btn-primary" style={{ width: '100%', marginTop: 12 }}
-          onClick={() => { setCustomH(h); setProtocol('custom'); onClose(); toast(`${h}h target set`) }}>
-          Set target
+          onClick={() => { setCustomH(h); setProtocol('custom'); onClose(); toast(t('{h}h target set', { h })) }}>
+          {t('Set target')}
         </button>
       </div>
     </Sheet>
@@ -162,22 +163,22 @@ function StartSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [v, setV] = useState(() => toLocalInput(st.current?.startTs ?? Date.now()))
   useEffect(() => { if (open) setV(toLocalInput(oraStore.get().current?.startTs ?? Date.now())) }, [open])
   return (
-    <Sheet open={open} title="When did this fast start?" onClose={onClose}>
+    <Sheet open={open} title={t('When did this fast start?')} onClose={onClose}>
       <div className="or2">
-        <p className="guide-p">Already fasting before you pressed the button? Set the true start — the clock, stages and goal all follow it.</p>
-        <Field label="Fast began">
+        <p className="guide-p">{t('Already fasting before you pressed the button? Set the true start — the clock, stages and goal all follow it.')}</p>
+        <Field label={t('Fast began')}>
           <input className="tinput" type="datetime-local" value={v} max={toLocalInput(Date.now())} onChange={(e) => setV(e.target.value)} />
         </Field>
         <button className="btn btn-primary" style={{ width: '100%' }}
           onClick={() => {
             const ts = fromLocalInput(v)
-            if (ts === null || ts > Date.now()) { toast('Pick a time in the past'); return }
+            if (ts === null || ts > Date.now()) { toast(t('Pick a time in the past')); return }
             if (!oraStore.get().current) beginFast(ts)
             else setStartTime(ts)
             onClose()
-            toast('Start time set')
+            toast(t('Start time set'))
           }}>
-          Save start time
+          {t('Save start time')}
         </button>
       </div>
     </Sheet>
@@ -194,13 +195,13 @@ function EndSheet({ open, onClose, onEnded }: { open: boolean; onClose: () => vo
   const hit = hours >= cur.targetH
   const d = fmtClock(el)
   return (
-    <Sheet open={open} title="End this fast?" onClose={onClose}>
+    <Sheet open={open} title={t('End this fast?')} onClose={onClose}>
       <div className="or2 or2-endsheet">
         <div className="or2-bignum num">{d.hhmm}<small>:{d.ss}</small></div>
         <p className={'or2-goalline' + (hit ? ' good' : '')}>
           {hit
-            ? `Goal reached — ${fmtHM(cur.targetH)} target, done.`
-            : `${fmtHM(cur.targetH - hours)} short of your ${fmtHM(cur.targetH)} goal. Early is data, not failure.`}
+            ? t('Goal reached — {t} target, done.', { t: fmtHM(cur.targetH) })
+            : t('{short} short of your {target} goal. Early is data, not failure.', { short: fmtHM(cur.targetH - hours), target: fmtHM(cur.targetH) })}
         </p>
         <button className="btn btn-primary" style={{ width: '100%' }}
           onClick={() => {
@@ -208,9 +209,9 @@ function EndSheet({ open, onClose, onEnded }: { open: boolean; onClose: () => vo
             onClose()
             if (f) onEnded(f)
           }}>
-          {hit ? 'Log this fast' : 'End early & log'}
+          {hit ? t('Log this fast') : t('End early & log')}
         </button>
-        <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={onClose}>Keep fasting</button>
+        <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={onClose}>{t('Keep fasting')}</button>
       </div>
     </Sheet>
   )
@@ -222,10 +223,10 @@ function CelebrateSheet({ ms, extra, onClose }: { ms: Milestone | null; extra: n
       {ms && (
         <div className="or2 or2-celebrate">
           <div className="badge">★</div>
-          <div className="eyebrow">Milestone unlocked{extra > 0 ? ` · +${extra} more` : ''}</div>
-          <h3>{ms.name}</h3>
-          <p>{ms.desc}</p>
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={onClose}>Keep it up</button>
+          <div className="eyebrow">{t('Milestone unlocked')}{extra > 0 ? ' · ' + t('+{n} more', { n: extra }) : ''}</div>
+          <h3>{t(ms.name)}</h3>
+          <p>{t(ms.desc)}</p>
+          <button className="btn btn-primary" style={{ width: '100%' }} onClick={onClose}>{t('Keep it up')}</button>
         </div>
       )}
     </Sheet>
@@ -240,36 +241,36 @@ function EditFastSheet({ fast, onClose }: { fast: Fast | null; onClose: () => vo
     if (fast) { setStart(toLocalInput(fast.startTs)); setEnd(toLocalInput(fast.endTs)) }
   }, [fast?.id])
   return (
-    <Sheet open={fast !== null} title="Edit fast" onClose={onClose}>
+    <Sheet open={fast !== null} title={t('Edit fast')} onClose={onClose}>
       {fast && (
         <div className="or2">
-          <Field label="Started">
+          <Field label={t('Started')}>
             <input className="tinput" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
           </Field>
-          <Field label="Ended">
+          <Field label={t('Ended')}>
             <input className="tinput" type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
           </Field>
           <button className="btn btn-primary" style={{ width: '100%' }}
             onClick={() => {
               const s = fromLocalInput(start)
               const e = fromLocalInput(end)
-              if (s === null || e === null || e <= s) { toast('End must come after start'); return }
+              if (s === null || e === null || e <= s) { toast(t('End must come after start')); return }
               editFast(fast.id, { startTs: s, endTs: e })
               onClose()
-              toast('Fast updated')
+              toast(t('Fast updated'))
             }}>
-            Save changes
+            {t('Save changes')}
           </button>
           <button className="btn btn-ghost danger" style={{ width: '100%', marginTop: 8 }} onClick={() => setConfirmDel(true)}>
-            Delete fast
+            {t('Delete fast')}
           </button>
           <ConfirmSheet
             open={confirmDel}
-            title="Delete this fast?"
-            body="It will be removed from your history and stats. This can't be undone."
-            actionLabel="Delete fast"
+            title={t('Delete this fast?')}
+            body={t("It will be removed from your history and stats. This can't be undone.")}
+            actionLabel={t('Delete fast')}
             danger
-            onConfirm={() => { deleteFast(fast.id); setConfirmDel(false); onClose(); toast('Fast deleted') }}
+            onConfirm={() => { deleteFast(fast.id); setConfirmDel(false); onClose(); toast(t('Fast deleted')) }}
             onClose={() => setConfirmDel(false)}
           />
         </div>
@@ -310,22 +311,22 @@ function TimerTab() {
   function onEnded(f: Fast) {
     const fresh = claimNewMilestones()
     if (fresh.length > 0) setCelebrate({ ms: fresh[0], extra: fresh.length - 1 })
-    toast(f.hit ? 'Nicely done — goal reached' : 'Fast logged — next one\u2019s fresh')
+    toast(f.hit ? t('Nicely done — goal reached') : t("Fast logged — next one's fresh"))
   }
 
   const groups: [string, string, typeof PROTOCOLS[number][]][] = [
-    ['Your schedule', 'tap to choose', PROTOCOLS.filter((p) => p.kind === 'window' || p.kind === 'custom')],
-    ['Daily rhythms', 'intermittent fasting', PROTOCOLS.filter((p) => p.kind === 'rhythm')],
-    ['Extended', 'water fasts — read the stage notes', PROTOCOLS.filter((p) => p.kind === 'extended')],
+    [t('Your schedule'), t('tap to choose'), PROTOCOLS.filter((p) => p.kind === 'window' || p.kind === 'custom')],
+    [t('Daily rhythms'), t('intermittent fasting'), PROTOCOLS.filter((p) => p.kind === 'rhythm')],
+    [t('Extended'), t('water fasts — read the stage notes'), PROTOCOLS.filter((p) => p.kind === 'extended')],
   ]
   const splitLabel = (p: typeof PROTOCOLS[number]): string => {
     if (p.kind === 'window') {
       const fh = windowFastHours(st.window.firstBite, st.window.lastBite)
-      return fh !== null ? `eat ${st.window.firstBite}–${st.window.lastBite} · fast ${fmtHM(fh)}` : 'you choose the times'
+      return fh !== null ? t('eat {a}–{b} · fast {f}', { a: st.window.firstBite, b: st.window.lastBite, f: fmtHM(fh) }) : t('you choose the times')
     }
-    if (p.kind === 'custom') return 'any length you like'
-    if (p.kind === 'extended') return `${p.fastH}h fast · water only`
-    return `${p.fastH}h fast · ${p.eatH}h eating`
+    if (p.kind === 'custom') return t('any length you like')
+    if (p.kind === 'extended') return t('{h}h fast · water only', { h: p.fastH })
+    return t('{f}h fast · {e}h eating', { f: p.fastH, e: p.eatH })
   }
   const bigName = (p: typeof PROTOCOLS[number]): string =>
     p.kind === 'custom' ? `${st.customH}h` : p.name
@@ -339,34 +340,34 @@ function TimerTab() {
             {cur && d ? (
               <>
                 <div className="big num">{d.hhmm}<small>:{d.ss}</small></div>
-                <div className="phase" style={{ color: stage?.color }}>{stage?.name}</div>
+                <div className="phase" style={{ color: stage?.color }}>{stage ? t(stage.name) : ''}</div>
                 <div className="meta">
                   {over
-                    ? `+${fmtHM((el as number) / H - cur.targetH)} past your ${fmtHM(cur.targetH)} goal`
-                    : `${fmtHM(cur.targetH)} target · ends ${timeAt(cur.startTs + cur.targetH * H)}`}
+                    ? t('+{over} past your {target} goal', { over: fmtHM((el as number) / H - cur.targetH), target: fmtHM(cur.targetH) })
+                    : t('{target} target · ends {time}', { target: fmtHM(cur.targetH), time: timeAt(cur.startTs + cur.targetH * H) })}
                 </div>
               </>
             ) : (
               <>
                 <div className="big num">{Math.round(targetH * 10) / 10}</div>
-                <div className="meta">hour target</div>
+                <div className="meta">{t('hour target')}</div>
               </>
             )}
           </div>
         </div>
         {cur ? (
-          <button className="or2-mainbtn end" onClick={() => setSheet('end')}>■ End fast</button>
+          <button className="or2-mainbtn end" onClick={() => setSheet('end')}>{t('■ End fast')}</button>
         ) : (
-          <button className="or2-mainbtn" onClick={() => { beginFast(); toast('Fast started — stay hydrated') }}>▶ Begin fast</button>
+          <button className="or2-mainbtn" onClick={() => { beginFast(); toast(t('Fast started — stay hydrated')) }}>{t('▶ Begin fast')}</button>
         )}
         {!cur && (
           <button className="or2-startlink" onClick={() => setSheet('start')}>
-            Already fasting? <u>Set your start time</u>
+            {t('Already fasting? Set your start time')}
           </button>
         )}
         {cur && (
           <button className="or2-startlink" onClick={() => setSheet('start')}>
-            Started {dayAt(cur.startTs)} · {timeAt(cur.startTs)} — <u>adjust</u>
+            {t('Started {day} · {time} — adjust', { day: dayAt(cur.startTs), time: timeAt(cur.startTs) })}
           </button>
         )}
       </div>
@@ -375,16 +376,16 @@ function TimerTab() {
         <div className="or2-eating card">
           {eatingLeft > 0 ? (
             <>
-              <b>Eating window open</b>
-              <span>closes {timeAt(st.eating.startTs + st.eating.windowH * H)} · {fmtHM(eatingLeft / H)} left — your next fast starts when it closes.</span>
+              <b>{t('Eating window open')}</b>
+              <span>{t('closes {time} · {left} left — your next fast starts when it closes.', { time: timeAt(st.eating.startTs + st.eating.windowH * H), left: fmtHM(eatingLeft / H) })}</span>
             </>
           ) : (
             <>
-              <b>Window closed</b>
-              <span>Ready when you are — begin the next fast above.</span>
+              <b>{t('Window closed')}</b>
+              <span>{t('Ready when you are — begin the next fast above.')}</span>
             </>
           )}
-          <button className="x" onClick={dismissEating} aria-label="Dismiss">✕</button>
+          <button className="x" onClick={dismissEating} aria-label={t('Dismiss')}>✕</button>
         </div>
       )}
 
@@ -399,13 +400,13 @@ function TimerTab() {
                 onClick={() => {
                   if (p.kind === 'window') setSheet('window')
                   else if (p.kind === 'custom') setSheet('custom')
-                  else { setProtocol(p.id); toast(`${p.name} selected`) }
+                  else { setProtocol(p.id); toast(t('{name} selected', { name: p.name })) }
                 }}
               >
                 <span className="nm">{bigName(p)}</span>
                 <span className="mid">
                   <b className="mono">{splitLabel(p)}</b>
-                  <i>{p.desc}</i>
+                  <i>{t(p.desc)}</i>
                 </span>
                 <span className={'radio' + (st.protocolId === p.id ? ' on' : '')} />
               </button>
@@ -433,18 +434,18 @@ function BodyTab() {
   const curStage = hours !== null ? stageFor(hours) : null
   return (
     <div className="or2" style={curStage ? ({ '--or-accent': curStage.color } as CSSProperties) : undefined}>
-      <div className="or2-eyebrow">The fasting timeline</div>
-      <h2 className="or2-h1">What's happening inside</h2>
+      <div className="or2-eyebrow">{t('The fasting timeline')}</div>
+      <h2 className="or2-h1">{t("What's happening inside")}</h2>
       <div className="card or2-intro">
         {cur && curStage ? (
-          <>Fasting for <b className="num">{fmtHM(hours as number)}</b> — you're in <b style={{ color: curStage.color }}>{curStage.name}</b>. The timeline below tracks your progress hour by hour.</>
+          <>{t("Fasting for {h} — you're in {stage}. The timeline below tracks your progress hour by hour.", { h: fmtHM(hours as number), stage: t(curStage.name) })}</>
         ) : (
-          <>Every fast moves through these stages. Start a fast to see where you are in real time — the timeline below tracks your progress hour by hour.</>
+          <>{t('Every fast moves through these stages. Start a fast to see where you are in real time — the timeline below tracks your progress hour by hour.')}</>
         )}
       </div>
       <div className="or2-stagehead">
-        <h3>Stage by stage</h3>
-        <span>hours fasting</span>
+        <h3>{t('Stage by stage')}</h3>
+        <span>{t('hours fasting')}</span>
       </div>
       <div className="or2-stages">
         {STAGES.map((s) => {
@@ -454,13 +455,13 @@ function BodyTab() {
             <div key={s.name} className={'or2-stage card' + (active ? ' on' : '')}>
               <span className={'dot' + (passed ? ' lit' : '')} style={passed ? { borderColor: s.color, background: active ? s.color : undefined } : undefined} />
               <div className="head">
-                <b style={{ color: s.color }}>{s.name}</b>
+                <b style={{ color: s.color }}>{t(s.name)}</b>
                 <span className="hrs mono">{s.toH === null ? `${s.fromH}h+` : `${s.fromH}–${s.toH}h`}</span>
-                {active && <span className="nowchip" style={{ background: s.color }}>Now</span>}
+                {active && <span className="nowchip" style={{ background: s.color }}>{t('Now')}</span>}
               </div>
-              <p className="body">{s.body}</p>
+              <p className="body">{t(s.body)}</p>
               <div className="tip" style={{ borderLeftColor: s.color }}>
-                <b>{active ? 'Now' : s.noteKind}.</b> {s.note}
+                <b>{active ? t('Now') : t(s.noteKind)}.</b> {t(s.note)}
               </div>
             </div>
           )
@@ -501,22 +502,22 @@ function ProgressTab() {
 
   return (
     <div className="or2">
-      <div className="or2-eyebrow">Your progress</div>
-      <h2 className="or2-h1">Progress</h2>
+      <div className="or2-eyebrow">{t('Your progress')}</div>
+      <h2 className="or2-h1">{t('Progress')}</h2>
       <div className="or2-tiles">
-        <div className="card t"><b className="num">{s.streak}<small> d</small></b><span>Current streak</span></div>
-        <div className="card t"><b className="num">{s.bestStreak}<small> d</small></b><span>Best streak</span></div>
-        <div className="card t"><b className="num">{s.count}</b><span>Fasts logged</span></div>
-        <div className="card t"><b className="num">{s.hitRate}<small>%</small></b><span>Goal hit rate</span></div>
-        <div className="card t"><b className="num">{fmtHM(s.longestH)}</b><span>Longest fast</span></div>
-        <div className="card t"><b className="num">{fmtHM(s.avgH)}</b><span>Average fast</span></div>
+        <div className="card t"><b className="num">{s.streak}<small> d</small></b><span>{t('Current streak')}</span></div>
+        <div className="card t"><b className="num">{s.bestStreak}<small> d</small></b><span>{t('Best streak')}</span></div>
+        <div className="card t"><b className="num">{s.count}</b><span>{t('Fasts logged')}</span></div>
+        <div className="card t"><b className="num">{s.hitRate}<small>%</small></b><span>{t('Goal hit rate')}</span></div>
+        <div className="card t"><b className="num">{fmtHM(s.longestH)}</b><span>{t('Longest fast')}</span></div>
+        <div className="card t"><b className="num">{fmtHM(s.avgH)}</b><span>{t('Average fast')}</span></div>
       </div>
-      <div className="card or2-total"><b className="num">{Math.round(s.totalH)}</b> hours fasted, all time</div>
+      <div className="card or2-total"><b className="num">{Math.round(s.totalH)}</b> {t('hours fasted, all time')}</div>
 
-      <div className="or2-seclabel">Recent fasts<span>last {recent.length}</span></div>
+      <div className="or2-seclabel">{t('Recent fasts')}<span>{t('last {n}', { n: recent.length })}</span></div>
       <div className="card or2-chart">
         {recent.length === 0 ? (
-          <div className="or2-empty">Complete a few fasts to see your trend.</div>
+          <div className="or2-empty">{t('Complete a few fasts to see your trend.')}</div>
         ) : (
           <svg viewBox={`0 0 ${recent.length * 26} ${CH + 14}`} style={{ width: '100%', height: 'auto' }} aria-hidden="true">
             {recent.map((f, i) => {
@@ -536,13 +537,13 @@ function ProgressTab() {
           </svg>
         )}
         <div className="or2-legend">
-          <span><i className="sw good" /> Goal reached</span>
-          <span><i className="sw acc" /> Ended early</span>
-          <span><i className="sw line" /> Goal line</span>
+          <span><i className="sw good" /> {t('Goal reached')}</span>
+          <span><i className="sw acc" /> {t('Ended early')}</span>
+          <span><i className="sw line" /> {t('Goal line')}</span>
         </div>
       </div>
 
-      <div className="or2-seclabel">Consistency<span>last 17 weeks</span></div>
+      <div className="or2-seclabel">{t('Consistency')}<span>{t('last 17 weeks')}</span></div>
       <div className="card or2-heatwrap">
         <div className="or2-heat">
           {weeks.map((w, wi) => (
@@ -556,59 +557,59 @@ function ProgressTab() {
           ))}
         </div>
         <div className="or2-legend">
-          <span><i className="sw good" /> Goal hit</span>
-          <span><i className="sw acc" /> Fasted</span>
-          <span><i className="sw none" /> None</span>
+          <span><i className="sw good" /> {t('Goal hit')}</span>
+          <span><i className="sw acc" /> {t('Fasted')}</span>
+          <span><i className="sw none" /> {t('None')}</span>
         </div>
       </div>
 
-      <div className="or2-seclabel">Weight<span>kg</span></div>
+      <div className="or2-seclabel">{t('Weight')}<span>kg</span></div>
       <div className="card or2-weight">
         <div className="row">
-          <input className="tinput" inputMode="decimal" placeholder="—" value={kg} onChange={(e) => setKg(e.target.value)} aria-label="Weight in kg" />
+          <input className="tinput" inputMode="decimal" placeholder="—" value={kg} onChange={(e) => setKg(e.target.value)} aria-label={t('Weight in kg')} />
           <span className="unit">kg</span>
           <button className="btn btn-primary btn-sm" onClick={() => {
             const v = Number(kg.replace(',', '.'))
-            if (!Number.isFinite(v) || v <= 0) { toast('Enter a weight first'); return }
+            if (!Number.isFinite(v) || v <= 0) { toast(t('Enter a weight first')); return }
             logWeight(v)
             setKg('')
-            toast('Weight logged')
-          }}>Log</button>
+            toast(t('Weight logged'))
+          }}>{t('Log')}</button>
         </div>
         {lastW ? (
           <p className="hint">
-            Last: <b className="num">{lastW.kg} kg</b> · {dayAt(lastW.ts)}
-            {prevW && <> · {lastW.kg - prevW.kg <= 0 ? '' : '+'}{(Math.round((lastW.kg - prevW.kg) * 10) / 10)} kg since previous</>}
+            {t('Last: {kg} kg · {day}', { kg: lastW.kg, day: dayAt(lastW.ts) })}
+            {prevW && <> {t('{sign}{d} kg since previous', { sign: lastW.kg - prevW.kg <= 0 ? '' : '+', d: Math.round((lastW.kg - prevW.kg) * 10) / 10 })}</>}
           </p>
         ) : (
-          <p className="hint">Log your weight now and then to see the trend alongside your fasts.</p>
+          <p className="hint">{t('Log your weight now and then to see the trend alongside your fasts.')}</p>
         )}
       </div>
 
-      <div className="or2-seclabel">Hydration today<span>aim 8+ glasses</span></div>
+      <div className="or2-seclabel">{t('Hydration today')}<span>{t('aim 8+ glasses')}</span></div>
       <div className="card or2-hydro">
         <div className="left">
-          <b className="num">{glasses}</b><span className="mono"> / 8 glasses</span>
-          <p>≈ 250 ml each</p>
+          <b className="num">{glasses}</b><span className="mono">{t(' / 8 glasses')}</span>
+          <p>{t('≈ 250 ml each')}</p>
           <div className="glasses">
             {Array.from({ length: 8 }, (_, i) => <i key={i} className={i < glasses ? 'on' : ''} />)}
           </div>
         </div>
         <div className="btns">
-          <button onClick={() => addGlass(-1)} aria-label="Remove glass">−</button>
-          <button onClick={() => addGlass(1)} aria-label="Add glass">+</button>
+          <button onClick={() => addGlass(-1)} aria-label={t('Remove glass')}>−</button>
+          <button onClick={() => addGlass(1)} aria-label={t('Add glass')}>+</button>
         </div>
       </div>
 
-      <div className="or2-seclabel">Milestones<span>{unlockedCount}/{MILESTONES.length}</span></div>
+      <div className="or2-seclabel">{t('Milestones')}<span>{unlockedCount}/{MILESTONES.length}</span></div>
       <div className="or2-miles">
         {MILESTONES.map((m) => {
           const onIt = m.test(st.fasts, s)
           return (
             <div key={m.id} className={'card m' + (onIt ? ' on' : '')}>
               <span className="ic">{onIt ? '★' : '☆'}</span>
-              <b>{m.name}</b>
-              <span>{m.desc}</span>
+              <b>{t(m.name)}</b>
+              <span>{t(m.desc)}</span>
             </div>
           )
         })}
@@ -624,10 +625,10 @@ function LogTab() {
   const [editing, setEditing] = useState<Fast | null>(null)
   return (
     <div className="or2">
-      <div className="or2-eyebrow">Every fast</div>
-      <h2 className="or2-h1">Log</h2>
+      <div className="or2-eyebrow">{t('Every fast')}</div>
+      <h2 className="or2-h1">{t('Log')}</h2>
       {st.fasts.length === 0 ? (
-        <div className="card or2-empty">No fasts yet — the first one starts on the Timer tab.</div>
+        <div className="card or2-empty">{t('No fasts yet — the first one starts on the Timer tab.')}</div>
       ) : (
         <div className="or2-log">
           {st.fasts.map((f) => {
@@ -636,12 +637,12 @@ function LogTab() {
             return (
               <button key={f.id} className="card or2-fast" onClick={() => setEditing(f)}>
                 <span className="mid">
-                  <b>{p.kind === 'custom' ? `${Math.round(f.targetH)}h custom` : p.kind === 'window' ? 'Window' : p.name}</b>
+                  <b>{p.kind === 'custom' ? t('{h}h custom', { h: Math.round(f.targetH) }) : p.kind === 'window' ? t('Window') : p.name}</b>
                   <i>{dayAt(f.endTs)} · {timeAt(f.startTs)} → {timeAt(f.endTs)}</i>
                 </span>
                 <span className="side">
                   <b className="num">{fmtHM(hrs)}</b>
-                  <span className={'chip' + (f.hit ? ' good' : '')}>{f.hit ? '✓ goal' : 'early'}</span>
+                  <span className={'chip' + (f.hit ? ' good' : '')}>{f.hit ? t('✓ goal') : t('early')}</span>
                 </span>
               </button>
             )
@@ -660,10 +661,10 @@ export function OraSettingsExtra() {
   return (
     <div className="or2 or2-setx">
       <div className="kv">
-        <span className="k">Stage notifications — a quiet note when you cross into a new phase</span>
+        <span className="k">{t('Stage notifications — a quiet note when you cross into a new phase')}</span>
         <Toggle
           on={st.phaseAlerts}
-          label="Stage notifications"
+          label={t('Stage notifications')}
           onChange={() => {
             const next = !st.phaseAlerts
             setPhaseAlerts(next)
@@ -676,8 +677,7 @@ export function OraSettingsExtra() {
         />
       </div>
       <div className="or2-disclaimer">
-        <b>Not medical advice.</b> Don't fast if you're pregnant, under 18, or have a history of disordered
-        eating — talk to a doctor first. Break any fast that makes you feel faint, dizzy or unwell.
+        <b>{t('Not medical advice.')}</b> {t("Don't fast if you're pregnant, under 18, or have a history of disordered eating — talk to a doctor first. Break any fast that makes you feel faint, dizzy or unwell.")}
       </div>
     </div>
   )

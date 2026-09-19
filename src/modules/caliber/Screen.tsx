@@ -353,11 +353,7 @@ function ProgressTab() {
         )}
       </div>
       <div className="card guide">
-        <p>
-          <b>Test rarely, train mostly.</b> An e1RM check every two to four weeks per lift is plenty —
-          the chart should climb in stairs, not wobble daily. Same lift, similar rep range, similar
-          fatigue: that's what makes two points comparable.
-        </p>
+        <p><b>{t("Test rarely, train mostly.")}</b> {t("An e1RM check every two to four weeks per lift is plenty \u2014 the chart should climb in stairs, not wobble daily. Same lift, similar rep range, similar fatigue: that's what makes two points comparable.")}</p>
       </div>
     </>
   )
@@ -409,28 +405,10 @@ function StandardsTab() {
       </div>
 
       <div className="card guide">
-        <p>
-          <b>1RM estimate.</b> Uses the Epley formula (weight × (1 + reps ÷ 30)), with Brzycki shown
-          as a cross-check. Both are most accurate at <b>5 reps or fewer</b>; past ~10 they drift and
-          tend to overestimate — the confidence dot warns you. For sporadic testing this matters: a
-          heavy triple tells you far more than a light set of fifteen.
-        </p>
-        <p>
-          <b>Percentiles and goals.</b> Standards are approximate, drawn from aggregated public lifter
-          data, keyed to <b>bodyweight</b> and the M/W switch. Height is recorded for context (BMI)
-          but isn't a percentile axis — leverages vary, and no reliable dataset segments lifts by
-          height. Your goal for each lift is the weight that would place you at your chosen
-          percentile, rounded to the nearest 2.5.
-        </p>
-        <p>
-          <b>Weighted pull-ups.</b> Computed on the full system load (bodyweight + added), then
-          reported as the <b>added</b> weight. Enter only the weight you hang from the belt.
-        </p>
-        <p>
-          <b>Reverse math.</b> "At your weight → N reps" is the reps you'd need at the weight you just
-          entered to prove your goal 1RM. "At your reps → W kg" is the weight that would prove it at
-          the rep count you entered.
-        </p>
+        <p><b>{t("1RM estimate.")}</b> {t("Uses the Epley formula (weight \u00d7 (1 + reps \u00f7 30)), with Brzycki shown as a cross-check. Both are most accurate at 5 reps or fewer; past ~10 they drift and tend to overestimate \u2014 the confidence dot warns you. For sporadic testing this matters: a heavy triple tells you far more than a light set of fifteen.")}</p>
+        <p><b>{t("Percentiles and goals.")}</b> {t("Standards are approximate, drawn from aggregated public lifter data, keyed to bodyweight and the M/W switch. Height is recorded for context (BMI) but isn't a percentile axis \u2014 leverages vary, and no reliable dataset segments lifts by height. Your goal for each lift is the weight that would place you at your chosen percentile, rounded to the nearest 2.5.")}</p>
+        <p><b>{t("Weighted pull-ups.")}</b> {t("Computed on the full system load (bodyweight + added), then reported as the added weight. Enter only the weight you hang from the belt.")}</p>
+        <p><b>{t("Reverse math.")}</b> {t("\u201cAt your weight \u2192 N reps\u201d is the reps you'd need at the weight you just entered to prove your goal 1RM. \u201cAt your reps \u2192 W kg\u201d is the weight that would prove it at the rep count you entered.")}</p>
       </div>
       <p className="rs-foot">Percentile anchors sit at the {PERCENTILES.join(' / ')}th marks; everything between is interpolated.</p>
     </>

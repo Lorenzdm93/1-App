@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
+import { t } from '../../core/i18n'
 import { useStore } from '../../core/hooks'
 import { logEvent, eventsStore } from '../../core/events'
 import { formatDuration, dayKey, todayKey, lastNDayKeys } from '../../core/dates'
@@ -224,11 +225,11 @@ function TechCard({ tech, onOpen }: { tech: Technique; onOpen: () => void }) {
       <span className="glyph"><MiniGeo tech={tech} /></span>
       <span className="mid">
         <b>{tech.name}</b>
-        <i>{tech.sub}</i>
+        <i>{tech.sub ? t(tech.sub) : ''}</i>
       </span>
       <span className="side">
         <span className="pat">{tech.patternStr}</span>
-        <span className="goal">{tech.goal}</span>
+        <span className="goal">{t(tech.goal)}</span>
       </span>
     </button>
   )
@@ -247,14 +248,14 @@ function PracticeTab({ onConfig }: { onConfig: (techId: string) => void }) {
   return (
     <div className="rp2">
       <button className="rp2-hero" onClick={() => onConfig(last.id)}>
-        <span className="t1">Continue with<br />{last.name}</span>
+        <span className="t1">{t('Continue with')}<br />{last.name}</span>
         <span className="t2">{last.sub}</span>
-        <span className="begin">▶ Begin · {last.defDur ?? 2} min</span>
+        <span className="begin">▶ {t('Begin')} · {last.defDur ?? 2} {t('min')}</span>
         <span className="heroglyph"><MiniGeo tech={last} size={120} /></span>
       </button>
       {PRACTICE_SECTIONS.map(([title, ids]) => (
         <div key={title}>
-          <div className="rp2-seclabel">{title}</div>
+          <div className="rp2-seclabel">{t(title)}</div>
           <div className="rp2-cards">
             {ids.map((id) => {
               const t = resolveTech(id, st.custom)
@@ -298,40 +299,40 @@ function ConfigSheet({ techId, onStart, onClose }: {
       {tech && (
         <div className="rp2">
           <div className="rp2-cfgeo"><MiniGeo tech={tech} size={132} /><span className="pat">{tech.patternStr}{tech.pattern ? ' s' : ''}</span></div>
-          <p className="guide-p">{tech.desc}</p>
+          <p className="guide-p">{t(tech.desc)}</p>
           {tech.custom && (
             <div className="rp2-studio">
               {CUSTOM_FIELDS.map((f) => (
                 <label key={f.k} className="ph">
-                  <span>{f.label}</span>
+                  <span>{t(f.label)}</span>
                   <span className="step">
-                    <button onClick={() => setCustom({ [f.k]: Math.max(0, st.custom[f.k] - 1) })} aria-label={`Less ${f.label}`}>−</button>
+                    <button onClick={() => setCustom({ [f.k]: Math.max(0, st.custom[f.k] - 1) })} aria-label={t('Less {label}', { label: f.label })}>−</button>
                     <b className="num">{st.custom[f.k]}s</b>
-                    <button onClick={() => setCustom({ [f.k]: Math.min(20, st.custom[f.k] + 1) })} aria-label={`More ${f.label}`}>+</button>
+                    <button onClick={() => setCustom({ [f.k]: Math.min(20, st.custom[f.k] + 1) })} aria-label={t('More {label}', { label: f.label })}>+</button>
                   </span>
                 </label>
               ))}
-              <p className="rs-foot">The shape redraws to scale as you tune it — every side is as long as its phase.</p>
+              <p className="rs-foot">{t("The shape redraws to scale as you tune it \u2014 every side is as long as its phase.")}</p>
             </div>
           )}
           {tech.pattern ? (
             <>
-              <div className="rp2-cflabel">Length</div>
+              <div className="rp2-cflabel">{t('Length')}</div>
               <div className="rp2-chips">
                 {(tech.durations ?? [2, 3, 5]).map((m) => (
-                  <button key={m} className={'chip' + (m === mins ? ' on' : '')} onClick={() => setMins(m)}>{m} min</button>
+                  <button key={m} className={'chip' + (m === mins ? ' on' : '')} onClick={() => setMins(m)}>{t('{n} min', { n: m })}</button>
                 ))}
               </div>
             </>
           ) : (
             <>
-              <div className="rp2-cflabel">Rounds</div>
+              <div className="rp2-cflabel">{t('Rounds')}</div>
               <div className="rp2-chips">
                 {[1, 2, 3, 4, 5].map((r) => (
                   <button key={r} className={'chip' + (r === rounds ? ' on' : '')} onClick={() => setRounds(r)}>{r}</button>
                 ))}
               </div>
-              <div className="rp2-cflabel">Breaths per round</div>
+              <div className="rp2-cflabel">{t('Breaths per round')}</div>
               <div className="rp2-chips">
                 {[20, 25, 30, 35, 40].map((b) => (
                   <button key={b} className={'chip' + (b === breaths ? ' on' : '')} onClick={() => setBreaths(b)}>{b}</button>
@@ -339,10 +340,10 @@ function ConfigSheet({ techId, onStart, onClose }: {
               </div>
             </>
           )}
-          {tech.caution && <div className="rs-warning" style={{ marginTop: 12 }}><b>Read first.</b> {tech.caution}</div>}
+          {tech.caution && <div className="rs-warning" style={{ marginTop: 12 }}><b>{t('Read first.')}</b> {t(tech.caution)}</div>}
           <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }}
             onClick={() => onStart(tech, { mins, rounds, breaths })}>
-            ▶ Begin
+            ▶ {t('Begin')}
           </button>
         </div>
       )}
@@ -458,7 +459,7 @@ function SessionOverlay({ tech, cfg, onDone }: {
     const t = now()
     if (t < E.preRoll) {
       const left = Math.ceil(E.preRoll - t)
-      txt(labelRef, 'Settle in')
+      txt(labelRef, t('Settle in'))
       txt(countRef, String(left))
       set(numRef, 'opacity', 1)
       txt(numRef, String(left))
@@ -483,8 +484,8 @@ function SessionOverlay({ tech, cfg, onDone }: {
       E.lastCycle = cycle
       AudioEngineR.chime(seg.k)
       buzz(seg.k === 'in' || seg.k === 'in2' ? [35] : seg.k === 'out' ? [70] : [15, 50, 15])
-      let label = PHASE_LABEL[seg.k]
-      if (tech.nostril && seg.k !== 'hold') label += ' — ' + (tech.nostril[ix] === 'L' ? 'left' : 'right')
+      let label = t(PHASE_LABEL[seg.k])
+      if (tech.nostril && seg.k !== 'hold') label += ' — ' + (tech.nostril[ix] === 'L' ? t('left') : t('right'))
       txt(labelRef, label)
       if (labelRef.current) labelRef.current.style.color = PHASE_COLOR[seg.k]
       if (tech.nostril) {
@@ -520,7 +521,7 @@ function SessionOverlay({ tech, cfg, onDone }: {
     if (barRef.current) barRef.current.style.width = Math.min(100, (e / E.totalDur) * 100) + '%'
     txt(elRef, fmtSec(e))
     txt(leftRef, '-' + fmtSec(E.totalDur - e))
-    txt(cyRef, 'cycle ' + (cycle + 1))
+    txt(cyRef, t('cycle {n}', { n: cycle + 1 }))
   }
 
   function hofSetStage(stage: HofState['stage'], e: number): void {
@@ -551,16 +552,16 @@ function SessionOverlay({ tech, cfg, onDone }: {
       set(glowRef, 'r', 40 + lvl * 95)
       set(glowRef, 'opacity', 0.25 + lvl * 0.55)
       set(coreRef, 'r', 8 + lvl * 10)
-      txt(labelRef, inhale ? 'Breathe in' : 'Let go')
+      txt(labelRef, inhale ? t('Breathe in') : t('Let go'))
       if (labelRef.current) labelRef.current.style.color = inhale ? 'var(--rp-coral)' : 'var(--rp-dim)'
-      txt(countRef, `round ${h.round} · breath ${rep + 1} / ${cfg.breaths}`)
+      txt(countRef, t('round {r} · breath {n} / {total}', { r: h.round, n: rep + 1, total: cfg.breaths }))
       set(numRef, 'opacity', 1)
       txt(numRef, String(rep + 1))
       AudioEngineR.setAmbientLevel(lvl)
     } else if (h.stage === 'retain') {
-      txt(labelRef, 'Hold — empty lungs')
+      txt(labelRef, t('Hold — empty lungs'))
       if (labelRef.current) labelRef.current.style.color = 'var(--rp-moon)'
-      txt(countRef, 'tap the button when you need air')
+      txt(countRef, t('tap the button when you need air'))
       set(numRef, 'opacity', 1)
       txt(numRef, fmtSec(stageT))
       const pulse = 0.5 + 0.5 * Math.sin(stageT * 1.6)
@@ -575,16 +576,16 @@ function SessionOverlay({ tech, cfg, onDone }: {
         hofSetStage('breathe', e)
         return
       }
-      txt(labelRef, 'Deep inhale — hold')
+      txt(labelRef, t('Deep inhale — hold'))
       if (labelRef.current) labelRef.current.style.color = 'var(--rp-jade)'
-      txt(countRef, 'recovery breath')
+      txt(countRef, t('recovery breath'))
       set(numRef, 'opacity', 1)
       txt(numRef, String(Math.ceil(left)))
       set(glowRef, 'r', 135)
       set(glowRef, 'opacity', 0.75)
     }
     txt(elRef, fmtSec(e))
-    txt(cyRef, `round ${h.round} / ${cfg.rounds}`)
+    txt(cyRef, t('round {r} / {total}', { r: h.round, total: cfg.rounds }))
     txt(leftRef, '')
     const roundFrac = (h.round - 1 + (h.stage === 'breathe' ? Math.min(1, stageT / (cfg.breaths * 3)) * 0.6 : h.stage === 'retain' ? 0.75 : 0.9)) / cfg.rounds
     if (barRef.current) barRef.current.style.width = Math.min(100, roundFrac * 100) + '%'
@@ -626,7 +627,7 @@ function SessionOverlay({ tech, cfg, onDone }: {
       buzz([60, 80, 60, 80, 120])
       onDone(rec)
     } else {
-      toast(early ? 'Session ended' : 'Done')
+      toast(early ? t('Session ended') : t('Done'))
       onDone(null)
     }
   }
@@ -634,7 +635,7 @@ function SessionOverlay({ tech, cfg, onDone }: {
   return (
     <div className="rp2 rp2-sess">
       <div className="top">
-        <button className="icon" onClick={() => setConfirmEnd(true)} aria-label="Close">✕</button>
+        <button className="icon" onClick={() => setConfirmEnd(true)} aria-label={t('Close')}>✕</button>
         <div className="title">
           <div className="t1">{tech.name}</div>
           <div className="t2">{tech.pattern ? tech.patternStr + ' s' : `${cfg.rounds} rounds · ${cfg.breaths} breaths`}</div>
@@ -686,17 +687,17 @@ function SessionOverlay({ tech, cfg, onDone }: {
         <div className="stats"><span ref={elRef}>0:00</span><span ref={cyRef} /><span ref={leftRef} /></div>
         <div className="bar"><i ref={barRef} /></div>
         <div className="ctrl">
-          <button className="pill" onClick={togglePause}>{paused ? '▶ Resume' : '⏸ Pause'}</button>
-          {retaining && <button className="pill primary" onClick={hofTap}>I need to breathe</button>}
-          <button className="pill danger" onClick={() => setConfirmEnd(true)}>■ End</button>
+          <button className="pill" onClick={togglePause}>{paused ? '▶ ' + t('Resume') : '⏸ ' + t('Pause')}</button>
+          {retaining && <button className="pill primary" onClick={hofTap}>{t('I need to breathe')}</button>}
+          <button className="pill danger" onClick={() => setConfirmEnd(true)}>■ {t('End')}</button>
         </div>
-        {isHof && <div className="hoftap">Sit or lie down. Tap End any time.</div>}
+        {isHof && <div className="hoftap">{t('Sit or lie down. Tap End any time.')}</div>}
       </div>
       <ConfirmSheet
         open={confirmEnd}
-        title="End session?"
-        body="Anything over 30 seconds is saved to your history."
-        actionLabel="End session"
+        title={t('End session?')}
+        body={t('Anything over 30 seconds is saved to your history.')}
+        actionLabel={t('End session')}
         danger
         onConfirm={() => finish(true)}
         onClose={() => setConfirmEnd(false)}
@@ -707,15 +708,15 @@ function SessionOverlay({ tech, cfg, onDone }: {
 
 function SummarySheet({ rec, onClose }: { rec: SessionRec | null; onClose: () => void }) {
   return (
-    <Sheet open={rec !== null} title="Session complete" onClose={onClose}>
+    <Sheet open={rec !== null} title={t('Session complete')} onClose={onClose}>
       {rec && (
         <div className="rp2 rp2-sum">
           <div className="big">{rec.mins}<small> min</small></div>
-          <div className="line">{rec.name} · {rec.holds ? `${rec.cycles} round${rec.cycles === 1 ? '' : 's'}` : `${rec.cycles} cycle${rec.cycles === 1 ? '' : 's'}`}</div>
+          <div className="line">{rec.name} · {rec.holds ? (rec.cycles === 1 ? t('{n} round', { n: rec.cycles }) : t('{n} rounds', { n: rec.cycles })) : (rec.cycles === 1 ? t('{n} cycle', { n: rec.cycles }) : t('{n} cycles', { n: rec.cycles }))}</div>
           {rec.holds && rec.holds.length > 0 && (
-            <div className="holds">Holds: {rec.holds.map((h) => fmtSec(h)).join(' · ')}</div>
+            <div className="holds">{t('Holds')}: {rec.holds.map((h) => fmtSec(h)).join(' · ')}</div>
           )}
-          <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }} onClick={onClose}>Done</button>
+          <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }} onClick={onClose}>{t('Done')}</button>
         </div>
       )}
     </Sheet>
@@ -754,23 +755,19 @@ function ProgressTab() {
   return (
     <>
       <div className="ins-grid">
-        <StatBox label="sessions" value={String(sessions.length)} />
-        <StatBox label="total minutes" value={String(totalMin)} />
-        <StatBox label="practice streak" value={`${streak}d`} />
-        <StatBox label="best hold" value={st.bestHold > 0 ? `${st.bestHold}s` : '—'} />
+        <StatBox label={t('sessions')} value={String(sessions.length)} />
+        <StatBox label={t('total minutes')} value={String(totalMin)} />
+        <StatBox label={t('practice streak')} value={`${streak}d`} />
+        <StatBox label={t('best hold')} value={st.bestHold > 0 ? `${st.bestHold}s` : '—'} />
       </div>
       <div className="card">
         <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-respiro)' }}>Minutes · last 14 days</span>
+          <span className="label" style={{ color: 'var(--m-respiro)' }}>{t('Minutes · last 14 days')}</span>
         </div>
         <Bars data={perDay} accentVar="var(--m-respiro)" />
       </div>
       <div className="card guide">
-        <p>
-          <b>Consistency beats intensity.</b> Five daily minutes of coherent breathing moves resting
-          heart-rate variability more than an occasional half-hour. The streak above counts any
-          logged session — protect it with the smallest one you can do.
-        </p>
+        <p><b>{t("Consistency beats intensity.")}</b> {t("Five daily minutes of coherent breathing moves resting heart-rate variability more than an occasional half-hour. The streak above counts any logged session \u2014 protect it with the smallest one you can do.")}</p>
       </div>
     </>
   )
@@ -786,7 +783,7 @@ function HoldTest({ now, onTick }: { now: number; onTick: (active: boolean) => v
   return (
     <div className="card">
       <div className="card-head">
-        <span className="label" style={{ color: 'var(--m-respiro)' }}>Breath hold</span>
+        <span className="label" style={{ color: 'var(--m-respiro)' }}>{t('Breath hold')}</span>
       </div>
       {start !== null ? (
         <div className="rs-hold-live num">{formatDuration(now - start)}</div>
@@ -794,11 +791,11 @@ function HoldTest({ now, onTick }: { now: number; onTick: (active: boolean) => v
         <div className="w-stat-row">
           <div className="w-stat">
             <div className="v num">{st.lastHold > 0 ? `${st.lastHold}s` : '—'}</div>
-            <div className="k">last</div>
+            <div className="k">{t('last')}</div>
           </div>
           <div className="w-stat">
             <div className="v num">{st.bestHold > 0 ? `${st.bestHold}s` : '—'}</div>
-            <div className="k">best</div>
+            <div className="k">{t('best')}</div>
           </div>
         </div>
       )}
@@ -808,20 +805,20 @@ function HoldTest({ now, onTick }: { now: number; onTick: (active: boolean) => v
             className="btn btn-ghost"
             onClick={() => {
               const { isBest } = recordHold(elapsed)
-              toast(isBest ? `New best hold — ${elapsed}s` : `${elapsed}s hold logged`)
+              toast(isBest ? t('New best hold — {n}s', { n: elapsed }) : t('{n}s hold logged', { n: elapsed }))
               setStart(null)
             }}
           >
-            Stop
+            {t('Stop')}
           </button>
         ) : (
           <button className="btn btn-ghost" onClick={() => setStart(Date.now())}>
-            Exhale, then start
+            {t('Exhale, then start')}
           </button>
         )}
       </div>
       <p className="rs-foot" style={{ marginTop: 10 }}>
-        Time your Wim Hof retentions here, or track CO₂ tolerance on its own. Always seated.
+        {t("Time your Wim Hof retentions here, or track CO\u2082 tolerance on its own. Always seated.")}
       </p>
     </div>
   )
@@ -854,40 +851,38 @@ function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
     <>
       <div className="card">
         <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-respiro)' }}>Cues</span>
+          <span className="label" style={{ color: 'var(--m-respiro)' }}>{t('Cues')}</span>
         </div>
         <div className="kv">
-          <span className="k">Phase ticks — a soft chime at each transition, eyes closed</span>
-          <Toggle on={st.cues} onChange={() => setSound({ cues: !st.cues })} label="Phase cues" />
+          <span className="k">{t('Phase ticks — a soft chime at each transition, eyes closed')}</span>
+          <Toggle on={st.cues} onChange={() => setSound({ cues: !st.cues })} label={t('Phase cues')} />
         </div>
         <div className="kv">
-          <span className="k">Completion bell when a session is logged</span>
-          <Toggle on={st.bell} onChange={() => setSound({ bell: !st.bell })} label="Completion bell" />
+          <span className="k">{t('Completion bell when a session is logged')}</span>
+          <Toggle on={st.bell} onChange={() => setSound({ bell: !st.bell })} label={t('Completion bell')} />
         </div>
         <p className="rs-foot" style={{ marginTop: 8 }}>
-          All sounds are synthesised on-device — nothing to download, nothing leaves the phone.
+          {t("All sounds are synthesised on-device \u2014 nothing to download, nothing leaves the phone.")}
         </p>
       </div>
 
       <div className="card">
         <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-respiro)' }}>Sound library</span>
+          <span className="label" style={{ color: 'var(--m-respiro)' }}>{t('Sound library')}</span>
         </div>
         <p className="rs-foot" style={{ marginBottom: 10 }}>
-          Save Spotify or YouTube links — guided meditations, drones, whatever carries you.
-          Tap ▶ to dock the player above the tab bar; it keeps playing while you practise.
-          YouTube plays full-length; Spotify plays full tracks only with a Spotify login in this browser.
+          {t("Save Spotify or YouTube links \u2014 guided meditations, drones, whatever carries you. Tap \u25b6 to dock the player above the tab bar; it keeps playing while you practise. YouTube plays full-length; Spotify plays full tracks only with a Spotify login in this browser.")}
         </p>
         <input
           className="tinput"
-          placeholder="Paste a Spotify or YouTube link…"
+          placeholder={t('Paste a Spotify or YouTube link…')}
           value={libUrl}
           onChange={(e) => setLibUrl(e.target.value)}
         />
         <input
           className="tinput"
           style={{ marginTop: 8 }}
-          placeholder="Name (optional)"
+          placeholder={t('Name (optional)')}
           value={libName}
           onChange={(e) => setLibName(e.target.value)}
         />
@@ -897,15 +892,15 @@ function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
           onClick={() => {
             const item = addSoundItem(libUrl, libName)
             if (!item) {
-              toast('That link is neither Spotify nor YouTube')
+              toast(t('That link is neither Spotify nor YouTube'))
               return
             }
             setLibUrl('')
             setLibName('')
-            toast('Saved to library')
+            toast(t('Saved to library'))
           }}
         >
-          + Save to library
+          {t('+ Save to library')}
         </button>
         {st.soundLibrary.length > 0 && (
           <div className="rp2-liblist">
@@ -913,8 +908,8 @@ function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
               <div key={item.id} className="rp2-libitem">
                 <span className={'kind ' + item.kind}>{item.kind === 'youtube' ? 'YT' : 'SP'}</span>
                 <span className="nm">{item.name}</span>
-                <button className="play" onClick={() => onDock(item)} aria-label={`Play ${item.name}`}>▶</button>
-                <button className="rm" onClick={() => removeSoundItem(item.id)} aria-label={`Remove ${item.name}`}>✕</button>
+                <button className="play" onClick={() => onDock(item)} aria-label={t('Play {name}', { name: item.name })}>▶</button>
+                <button className="rm" onClick={() => removeSoundItem(item.id)} aria-label={t('Remove {name}', { name: item.name })}>✕</button>
               </div>
             ))}
           </div>
@@ -923,7 +918,7 @@ function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
 
       <div className="card">
         <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-respiro)' }}>Spotify</span>
+          <span className="label" style={{ color: 'var(--m-respiro)' }}>{t('Spotify')}</span>
         </div>
         {ref && !editing ? (
           <>
@@ -937,7 +932,7 @@ function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
             />
             <div className="btn-row" style={{ marginTop: 10 }}>
               <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>
-                Change
+                {t('Change')}
               </button>
               <button
                 className="btn btn-ghost btn-sm"
@@ -947,7 +942,7 @@ function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
                   setEditing(true)
                 }}
               >
-                Remove
+                {t('Remove')}
               </button>
             </div>
           </>
@@ -955,7 +950,7 @@ function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
           <>
             <input
               className="tinput"
-              placeholder="Paste a Spotify link — track, playlist, album…"
+              placeholder={t('Paste a Spotify link — track, playlist, album…')}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
@@ -965,26 +960,25 @@ function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
                 onClick={() => {
                   if (setSpotify(url)) {
                     setEditing(false)
-                    if (url.trim()) toast('Sound linked')
+                    if (url.trim()) toast(t('Sound linked'))
                   } else {
-                    toast("That doesn't look like a Spotify link")
+                    toast(t("That doesn't look like a Spotify link"))
                   }
                 }}
               >
-                Save
+                {t('Save')}
               </button>
             </div>
           </>
         )}
         <p className="rs-foot" style={{ marginTop: 10 }}>
-          The link is saved on this device and survives restarts — your guided track is one tap away
-          before every session.
+          {t("The link is saved on this device and survives restarts \u2014 your guided track is one tap away before every session.")}
         </p>
       </div>
 
       <div className="card">
         <div className="card-head">
-          <span className="label" style={{ color: 'var(--m-respiro)' }}>Local file</span>
+          <span className="label" style={{ color: 'var(--m-respiro)' }}>{t('Local file')}</span>
         </div>
         {localUrl ? (
           <>
@@ -995,7 +989,7 @@ function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
           </>
         ) : (
           <label className="btn btn-ghost" style={{ display: 'inline-flex', cursor: 'pointer' }}>
-            Choose an audio file
+            {t('Choose an audio file')}
             <input
               type="file"
               accept="audio/*"
@@ -1011,9 +1005,7 @@ function ToolsTab({ onDock }: { onDock: (i: SoundItem) => void }) {
           </label>
         )}
         <p className="rs-foot" style={{ marginTop: 10 }}>
-          Plays your own recording — a teacher's meditation, a favourite piece. Honest limitation: a
-          browser app can't keep file access between visits, so re-pick it next session. The Spotify
-          link above is the one that persists.
+          {t("Plays your own recording \u2014 a teacher's meditation, a favourite piece. Honest limitation: a browser app can't keep file access between visits, so re-pick it next session. The Spotify link above is the one that persists.")}
         </p>
       </div>
 
